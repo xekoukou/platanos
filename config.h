@@ -27,7 +27,7 @@ int oconfig_comp_name(oconfig_t *config,char *comp_name);
 
 //4th line
 //unique resource name
-int oconfig_port(oconfig_t *config,char *name);
+int oconfig_res_name(oconfig_t *config,char *name);
 
 //5th line
 //number of pieces in the hash ring

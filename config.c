@@ -15,7 +15,7 @@ FILE *fconfig=fopen("./config","r");
 
 int line_position=0;
 while((fgets((*config)->line[line_position],1000,fconfig))&&(line_position<30)){
-
+(*config)->line[line_position][strlen((*config)->line[line_position])-1]='\0';
 //TODO here I write the structure of the configuration
 
 //first line is the host

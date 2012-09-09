@@ -26,19 +26,19 @@ oconfig_init(&config);
 
 char temp[1000];
 oconfig_host(config,temp);
-if(strcmp("127.0.0.1:4565,197.45.23.21:89\n",temp)){
+if(strcmp("127.0.0.1:4565,197.45.23.21:89",temp)){
 passed=0;
 printf("\n%s",temp);
 }
 
 oconfig_port(config,temp);
-if(strcmp("2456\n",temp)){
+if(strcmp("2456",temp)){
 passed=0;
 printf("\n%s",temp);
 }
 
 oconfig_comp_name(config,temp);
-if(strcmp("computer_name\n",temp)){
+if(strcmp("computer_name",temp)){
 passed=0;
 printf("\n%s",temp);
 }
@@ -58,7 +58,7 @@ printf("\n%d",int_temp);
 }
 
 oconfig_res_name(config,temp);
-if(strcmp("core1\n",temp)){
+if(strcmp("core1",temp)){
 passed=0;
 printf("\n%s",temp);
 }
