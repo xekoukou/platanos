@@ -2,10 +2,10 @@
 #include<assert.h>
 #include<stdio.h>
 #include<string.h>
+#include<proc/sysinfo.h>
 
 
 #define _LL_CAST_ (long long)
-
 
 static const char* state2String(int state){
   if (state == 0)
@@ -76,7 +76,7 @@ int main(){
 
 //backup previous config
 
-printf("Starting Registering Process");
+printf("Starting Registration Process");
 
 printf("\n Backing up previous config file");
 
@@ -112,7 +112,7 @@ scanf("%s",config[2]);
 printf("\nIs this computer name new or has it already been initialized by other resources? 1 or 0)");
 int new_computer;
 
-scanf("%d",new_computer);
+scanf("%d",&new_computer);
 
 printf("A unique to this computer name for the resource:");
 
@@ -132,7 +132,7 @@ zhandle_t *zh=zookeeper_init(config[0],global_watcher, 3000, 0,0,0);
 int result;
 char path[1000];
 sprintf(path,"/%s",config[2]);
-result=zoo_create(zh,path,NULL,-1,&ZOO_READ_ACL_UNSAFE,0,NULL,0);
+result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
 
 if(result==ZNODEEXISTS && new_computer){
 
@@ -143,16 +143,47 @@ return 0;
 
 if(result==ZOK && new_computer==0){
 printf("this computer_name doesnt already exist, reverting back and exiting..");
-if(ZOK==zoo_delete(zh,config[2],1)){
+sprintf(path,"/%s",config[2]);
+if(ZOK==zoo_delete(zh,path,1)){
 return 0;
 }else {printf("\nThere has been an error"); 
        return 1;
        }         
 }
+
+if(new_computer){
+
+meminfo();
+sprintf(path,"/%s/resources",config[2]);
+result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
+
+if(ZOK!=result){
+printf("\n Couldnt create the resources node, exiting..");
+return 1;
+}
+sprintf(path,"/%s/resources/max_memory",config[2]);
+result=zoo_create(zh,path,(const char *)&kb_main_total,sizeof(unsigned long),&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
+
+if(ZOK!=result){
+printf("\n Couldnt create the max_memory node, exiting..");
+return 1;
+}
+
+sprintf(path,"/%s/resources/free_memory",config[2]);
+result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
+
+if(ZOK!=result){
+printf("\n Couldnt create the free_memory node, exiting..");
+return 1;
+}
+
+
+}
+
 // the resource name
 
 sprintf(path,"/%s/%s",config[2],config[3]);
-result=zoo_create(zh,path,NULL,-1,&ZOO_READ_ACL_UNSAFE,0,NULL,0);
+result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
 
 if(ZNODEEXISTS==result){
 printf("\nThis resource name has already been assigned to a resource of this computer, exiting..."); 
@@ -160,12 +191,15 @@ return 0;
 } else{
        if(ZOK==result){
                        sprintf(path,"/%s/%s/n_pieces",config[2],config[3]);
-                       result=zoo_create(zh,path,config[4],strlen(config[4]),&ZOO_READ_ACL_UNSAFE,0,NULL,0);
+                       result=zoo_create(zh,path,config[4],strlen(config[4]),&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
        if(ZOK==result){
                        sprintf(path,"/%s/%s/port",config[2],config[3]);
-                       result=zoo_create(zh,path,config[5],strlen(config[5]),&ZOO_READ_ACL_UNSAFE,0,NULL,0);
+                       result=zoo_create(zh,path,config[5],strlen(config[5]),&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
                      }
                      }
+  else{
+   printf("\nthere has been an error:%d",result);
+  }
 
 }
 
