@@ -151,6 +151,14 @@ printf("\n Error.. exiting");
 return 1;
 }
 
+sprintf(path,"/%s/%s/%s/%s/st_piece",octopus,comp_name,root,res_name);
+result=zoo_delete(zh,path,-1);
+if(ZOK!=result && ZOK!=ZNONODE){
+printf("\n Error.. exiting");
+return 1;
+}
+
+
 sprintf(path,"/%s/%s/%s/%s/bind_point",octopus,comp_name,root,res_name);
 result=zoo_delete(zh,path,-1);
 if(ZOK!=result && ZOK!=ZNONODE){

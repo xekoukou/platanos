@@ -230,6 +230,11 @@ return 0;
                        sprintf(path,"/%s/%s/%s/%s/n_pieces",config[6],config[2],root,config[3]);
                        result=zoo_create(zh,path,config[4],strlen(config[4]),&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
        if(ZOK==result){
+                       unsigned long zero=0;
+                       sprintf(path,"/%s/%s/%s/%s/st_piece",config[6],config[2],root,config[3]);
+                       result=zoo_create(zh,path,(const char *)&zero,sizeof(unsigned long),&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
+
+       if(ZOK==result){
                        sprintf(path,"/%s/%s/%s/%s/bind_point",config[6],config[2],root,config[3]);
                        result=zoo_create(zh,path,config[5],strlen(config[5]),&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
       //interval of unique ids that represent a persistent vertex 
@@ -240,6 +245,8 @@ return 0;
                        result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
 
                      }               
+                     }
+                     }
                      }
                      }
   else{
