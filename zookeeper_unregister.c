@@ -99,59 +99,91 @@ oconfig_host(config,host);
 
 
 zhandle_t *zh=zookeeper_init(host,global_watcher, 3000, 0,0,0);
+
+int db;
+if(oconfig_db_node(config)){
+ db=1;
+ }else{
+       if(oconfig_worker_node(config)){
+       }else{
+       db=0;
+       } 
+ }
+
+char root[1000];
+
+if(db){
+strcpy(root,"db_nodes");
+}else {
+strcpy(root,"worker_nodes"); 
+}
+
+char octopus[1000];
+oconfig_octopus(config,octopus);
+
 char comp_name[1000];
 oconfig_comp_name(config,comp_name);
 
-sprintf(path,"/%s",comp_name);
-struct String_vector children;
-result=zoo_get_children(zh,path,0,&children);
+sprintf(path,"/%s/%s/worker_nodes",octopus,comp_name);
+struct String_vector worker_children;
+result=zoo_get_children(zh,path,0,&worker_children);
 if(ZOK!=result){
 printf("\n Couldnt get the children.. exiting");
 return 1;
 }
 
+sprintf(path,"/%s/%s/db_nodes",octopus,comp_name);
+struct String_vector db_children;
+result=zoo_get_children(zh,path,0,&db_children);
+if(ZOK!=result){
+printf("\n Couldnt get the children.. exiting");
+return 1;
+}
+
+
 char res_name[1000];
 oconfig_res_name(config,res_name);
 
-sprintf(path,"/%s/%s/n_pieces",comp_name,res_name);
+sprintf(path,"/%s/%s/%s/%s/n_pieces",octopus,comp_name,root,res_name);
 result=zoo_delete(zh,path,-1);
 if(ZOK!=result && ZOK!=ZNONODE){
 printf("\n Error.. exiting");
 return 1;
 }
 
-sprintf(path,"/%s/%s/port",comp_name,res_name);
+sprintf(path,"/%s/%s/%s/%s/bind_point",octopus,comp_name,root,res_name);
 result=zoo_delete(zh,path,-1);
 if(ZOK!=result && ZOK!=ZNONODE){
 printf("\n Error.. exiting");
 return 1;
 }
 
-sprintf(path,"/%s/%s",comp_name,res_name);
+sprintf(path,"/%s/%s/%s/%s",octopus,comp_name,root,res_name);
 result=zoo_delete(zh,path,-1);
 if(ZOK!=result && ZOK!=ZNONODE){
 printf("\n Error.. exiting");
 return 1;
 }
 
-if(children.count==2){
+//no more than 1 registration/unregistration should happen concurrently
+if((worker_children.count+db_children.count)==1){
 printf("\nThere are no more resources registered in this computer, deleting the computer node as well");
 
-sprintf(path,"/%s/resources/max_memory",comp_name);
+sprintf(path,"/%s/%s/resources/max_memory",octopus,comp_name);
 result=zoo_delete(zh,path,-1);
 if(ZOK!=result && ZOK!=ZNONODE){
 printf("\n Error.. exiting");
 return 1;
 }
 
-sprintf(path,"/%s/resources/free_memory",comp_name);
+sprintf(path,"/%s/%s/resources/free_memory",octopus,comp_name);
 result=zoo_delete(zh,path,-1);
 if(ZOK!=result && ZOK!=ZNONODE){
 printf("\n Error.. exiting");
 return 1;
 }
 
-sprintf(path,"/%s/resources",comp_name);
+sprintf(path,"/%s/%s/resources",octopus,comp_name);
 result=zoo_delete(zh,path,-1);
 if(ZOK!=result && ZOK!=ZNONODE){
 printf("\n Error.. exiting");
@@ -160,12 +192,27 @@ return 1;
 
 
 
-sprintf(path,"/%s",comp_name);
+sprintf(path,"/%s/%s/worker_nodes",octopus,comp_name);
 result=zoo_delete(zh,path,-1);
 if(ZOK!=result && ZOK!=ZNONODE){
 printf("\n Error.. exiting");
 return 1;
 }
+
+sprintf(path,"/%s/%s/db_nodes",octopus,comp_name);
+result=zoo_delete(zh,path,-1);
+if(ZOK!=result && ZOK!=ZNONODE){
+printf("\n Error.. exiting");
+return 1;
+}
+
+sprintf(path,"/%s/%s",octopus,comp_name);
+result=zoo_delete(zh,path,-1);
+if(ZOK!=result && ZOK!=ZNONODE){
+printf("\n Error.. exiting");
+return 1;
+}
+
 
 
 }

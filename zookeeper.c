@@ -2,21 +2,23 @@
 #include"config.h"
 #include"zookeeper.h"
 
-int watcherctx_init(watcherctx_t **watcherctx,config_t *config){
-*watcherctx=(watcherctx_t *)malloc(sizeof(watcherctx_t));
+int global_watcherctx_init(globa_watcherctx_t **watcherctx,config_t *config){
+*watcherctx=(global_watcherctx_t *)malloc(sizeof(global_watcherctx_t));
 watcherctx->replies=0;
 watcherctx->max_retries=2000;
 watcherctx->config=config;
 }
 
-int ozookeeper_init(ozookeeper_t **ozookeeper, config_t *config,watcherctx_t *watcherctx){
+int ozookeeper_init(ozookeeper_t **ozookeeper, config_t *config,global_watcherctx_t *watcherctx){
 
 *ozookeeper=(ozookeeper_t *)malloc(sizeof(ozookeeper_t));
 
+*ozookeeper->config=config;
+
 char host[1000];
-config_host(config,host);
+oconfig_host(config,host);
 int recv_timeout;
-config_recv_timeout(config,&recv_timeout);
+oconfig_recv_timeout(config,&recv_timeout);
 
 watcherctx->ozookeeper=*ozookeeper;
 
@@ -24,7 +26,6 @@ ozookeeper->zh=zookeeper_init(host, global_watcher, recv_timeout, 0,0,watcherctx
 
 //check that the computer name and hr_name are unique
 //then update/create the node that holds the configuration
-
 
 }
 
@@ -37,7 +38,36 @@ int ozookeeper_zhandle(ozookeeper_t *ozookeeper, zhandle_t **zh){
 
 
 int ozookeeper_destroy(ozookeeper_t *ozookeeper){
+zookeeper_close(ozookeeper->zh);
 free(ozookeeper);
+}
+
+int global_watcherctx_destroy(global_watcherctx_t *watcherctx){
+free(watcherctx);
+}
+
+//creating ephemeral node online
+int ozookeeper_online(ozookeeper_t *ozookeeper){
+char comp_name[1000];
+char res_name[1000];
+
+oconfig_comp_name(ozookeeper->config,comp_name);
+oconfig_res_name(ozookeeper->config,res_name);
+
+int result;
+char path[1000];
+sprintf(path,"/%s/%s/online",comp_name,res_name);
+result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,ZOO_EPHEMERAL,NULL,0);
+
+if(result!=ZNODEEXISTS && result!=ZOK ){
+printf("\nCouldnt create ephemeral node online, exiting");
+}
+
+}
+
+//one time function that sets watches on the nodes
+int ozookeeper_watch(ozookeeper_t *ozookeeper){
+
 }
 
 
@@ -97,14 +127,12 @@ watcherctx_t *watcherctx= (watcherctx_t*) context;
         } else {if (watcher->retries<watcher->max_retries){
                    if (state == ZOO_AUTH_FAILED_STATE) {
                    fprintf(stderr, "Authentication failure. Retrying...\n");
-                   zookeeper_close(zzh);
                    watcherctx->retries++;
                    ozookeeper_destroy(watcherctx->ozookeeper);
                    ozookeeper_init(watcherctx->ozookeeper,watcherctx->config,watcherctx);
 
                 } else if (state == ZOO_EXPIRED_SESSION_STATE) {
                    fprintf(stderr, "Session expired. Retrying...\n");
-                   zookeeper_close(zzh);
                    watcherctx->retries++;
                    ozookeeper_destroy(watcherctx->ozookeeper);
                    ozookeeper_init(watcherctx->ozookeeper,watcherctx->config,watcherctx);
@@ -112,8 +140,9 @@ watcherctx_t *watcherctx= (watcherctx_t*) context;
            }
            } else {
               fprintf(stderr, "Maximum retries reached. Shutting down...\n");
-              zookeeper_close(zzh);
-              }
+              ozookeeper_destroy(watcherctx->ozookeeper);
+              global_watcherctx_destroy(watcherctx); 
+                 }
           }
    }
 }

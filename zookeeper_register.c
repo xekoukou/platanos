@@ -96,7 +96,15 @@ if(iter){
 assert(0==rename("./config",location));
 }
 
-char config[6][1000];
+char config[7][1000];
+
+printf("\nWhat is the name of the octopus?");
+scanf("%s",config[6]);
+
+
+int db;
+printf("\n Is this node a DB node(1) or a worker node(0)?");
+scanf("%s",&db);
 
 printf("\nPlease, provide the connecting points (ip:port,ip:port) to the zookeeper ensemple");
 
@@ -123,16 +131,30 @@ printf("The number of 'chunks' in the hash ring that will be this resources resp
 scanf("%s",config[4]);
 
 //ip could be dynamic, or the computer might change location
-printf("\nThe port to connect to:");
+printf("\nThe bind_point(ip:port) to connect to:");
 
 scanf("%s",config[5]);
 
 zhandle_t *zh=zookeeper_init(config[0],global_watcher, 3000, 0,0,0);
 
+//set the right path based on db
+char root[1000];
+if(db){
+strcpy(root,"db_nodes");
+}else{
+strcpy(root,"worker_nodes");
+}
 int result;
 char path[1000];
-sprintf(path,"/%s",config[2]);
+sprintf(path,"/%s/%s",config[6],config[2]);
+
+
 result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
+
+if(result=ZNONODE){
+printf("\nThe octopus you specified doesnt exist");
+return 0;
+}
 
 if(result==ZNODEEXISTS && new_computer){
 
@@ -143,7 +165,7 @@ return 0;
 
 if(result==ZOK && new_computer==0){
 printf("this computer_name doesnt already exist, reverting back and exiting..");
-sprintf(path,"/%s",config[2]);
+sprintf(path,"/%s/%s",config[6],config[2]);
 if(ZOK==zoo_delete(zh,path,1)){
 return 0;
 }else {printf("\nThere has been an error"); 
@@ -154,14 +176,29 @@ return 0;
 if(new_computer){
 
 meminfo();
-sprintf(path,"/%s/resources",config[2]);
+sprintf(path,"/%s/%s/worker_nodes",config[6],config[2]);
 result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
 
 if(ZOK!=result){
 printf("\n Couldnt create the resources node, exiting..");
 return 1;
 }
-sprintf(path,"/%s/resources/max_memory",config[2]);
+sprintf(path,"/%s/%s/db_nodes",config[6],config[2]);
+result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
+
+if(ZOK!=result){
+printf("\n Couldnt create the resources node, exiting..");
+return 1;
+}
+
+sprintf(path,"/%s/%s/resources",config[6],config[2]);
+result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
+
+if(ZOK!=result){
+printf("\n Couldnt create the resources node, exiting..");
+return 1;
+}
+sprintf(path,"/%s/%s/resources/max_memory",config[6],config[2]);
 result=zoo_create(zh,path,(const char *)&kb_main_total,sizeof(unsigned long),&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
 
 if(ZOK!=result){
@@ -169,7 +206,7 @@ printf("\n Couldnt create the max_memory node, exiting..");
 return 1;
 }
 
-sprintf(path,"/%s/resources/free_memory",config[2]);
+sprintf(path,"/%s/%s/resources/free_memory",config[6],config[2]);
 result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
 
 if(ZOK!=result){
@@ -182,7 +219,7 @@ return 1;
 
 // the resource name
 
-sprintf(path,"/%s/%s",config[2],config[3]);
+sprintf(path,"/%s/%s/%s/%s",config[6],config[2],root,config[3]);
 result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
 
 if(ZNODEEXISTS==result){
@@ -190,11 +227,19 @@ printf("\nThis resource name has already been assigned to a resource of this com
 return 0;
 } else{
        if(ZOK==result){
-                       sprintf(path,"/%s/%s/n_pieces",config[2],config[3]);
+                       sprintf(path,"/%s/%s/%s/%s/n_pieces",config[6],config[2],root,config[3]);
                        result=zoo_create(zh,path,config[4],strlen(config[4]),&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
        if(ZOK==result){
-                       sprintf(path,"/%s/%s/port",config[2],config[3]);
+                       sprintf(path,"/%s/%s/%s/%s/bind_point",config[6],config[2],root,config[3]);
                        result=zoo_create(zh,path,config[5],strlen(config[5]),&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
+      //interval of unique ids that represent a persistent vertex 
+      //this is an integer that is multiplied by the size of the interval
+      if(db==0){
+          if(ZOK==result){
+                       sprintf(path,"/%s/%s/%s/%s/interval",config[6],config[2],root,config[3]);
+                       result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
+
+                     }               
                      }
                      }
   else{
@@ -205,6 +250,11 @@ return 0;
 
 printf("\nAll have gone smoothly, saving configuration and exiting");
 fconfig=fopen("./config","w");
+if(db){
+fprintf(fconfig,"db_node\n");
+}else{
+fprintf(fconfig,"worker_node\n");
+}
 
 for(iter=0; iter<6; iter++){
 fprintf(fconfig,"%s\n",config[iter]);

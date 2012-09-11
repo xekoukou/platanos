@@ -15,25 +15,29 @@ int n_lines;  //maximum lines are 30
 } oconfig_t;
 
 int oconfig_init(oconfig_t** config);
-//1st line
+
+int oconfig_octopus(oconfig_t *config,char *octopus);
+
 int oconfig_host(oconfig_t *config,char *host);
 int oconfig_destroy(oconfig_t* config);
-//2nd line
 int oconfig_recv_timeout(oconfig_t *config,int *timeout);
 
-//3rd line 
 //unique computer name
 int oconfig_comp_name(oconfig_t *config,char *comp_name);
 
-//4th line
 //unique resource name
 int oconfig_res_name(oconfig_t *config,char *name);
 
-//5th line
 //number of pieces in the hash ring
 int oconfig_n_pieces(oconfig_t *config,int *n_pieces);
 
-//port
-int oconfig_port(oconfig_t *config,char *port);
+//ip:port
+int oconfig_bind_point(oconfig_t *config,char *bind_point);
+
+//1 if true
+int oconfig_db_node(oconfig_t *config);
+
+int oconfig_worker_node(oconfig_t *config);
+
 
 #endif
