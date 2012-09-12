@@ -145,6 +145,6 @@ printf("\nError");
 return 1;
 }
 
-
+printf("\n Octopus registered");
 
 }

@@ -88,10 +88,12 @@ return 0;
 }
 
 
-oconfig_t *config;
-oconfig_init(&config);
-
 int result;
+
+oconfig_t *config;
+result=oconfig_init(&config);
+assert(result != -1);
+
 char host[1000];
 char path[1000];
 
@@ -105,8 +107,9 @@ if(oconfig_db_node(config)){
  db=1;
  }else{
        if(oconfig_worker_node(config)){
-       }else{
        db=0;
+       }else{
+       printf("\n Error.. cant find the kind of node");
        } 
  }
 
@@ -147,14 +150,14 @@ oconfig_res_name(config,res_name);
 sprintf(path,"/%s/%s/%s/%s/n_pieces",octopus,comp_name,root,res_name);
 result=zoo_delete(zh,path,-1);
 if(ZOK!=result && ZOK!=ZNONODE){
-printf("\n Error.. exiting");
+printf("\n Error..cant remove n_pieces, exiting");
 return 1;
 }
 
 sprintf(path,"/%s/%s/%s/%s/st_piece",octopus,comp_name,root,res_name);
 result=zoo_delete(zh,path,-1);
 if(ZOK!=result && ZOK!=ZNONODE){
-printf("\n Error.. exiting");
+printf("\n Error..,cant remove st_pieces, exiting");
 return 1;
 }
 
@@ -162,16 +165,37 @@ return 1;
 sprintf(path,"/%s/%s/%s/%s/bind_point",octopus,comp_name,root,res_name);
 result=zoo_delete(zh,path,-1);
 if(ZOK!=result && ZOK!=ZNONODE){
-printf("\n Error.. exiting");
+printf("\n Error.. cant remove bind+point, exiting");
 return 1;
 }
 
-sprintf(path,"/%s/%s/%s/%s",octopus,comp_name,root,res_name);
+if(db){
+sprintf(path,"/%s/%s/%s/%s/db_point",octopus,comp_name,root,res_name);
 result=zoo_delete(zh,path,-1);
 if(ZOK!=result && ZOK!=ZNONODE){
 printf("\n Error.. exiting");
 return 1;
 }
+
+
+}else{
+sprintf(path,"/%s/%s/%s/%s/interval",octopus,comp_name,root,res_name);
+result=zoo_delete(zh,path,-1);
+if(ZOK!=result && ZOK!=ZNONODE){
+printf("\n Error.. exiting");
+return 1;
+}
+
+
+}
+
+sprintf(path,"/%s/%s/%s/%s",octopus,comp_name,root,res_name);
+result=zoo_delete(zh,path,-1);
+if(ZOK!=result && ZOK!=ZNONODE){
+printf("\n Error.. cant remove res_name node, exiting");
+return 1;
+}
+
 
 //no more than 1 registration/unregistration should happen concurrently
 if((worker_children.count+db_children.count)==1){

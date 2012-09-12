@@ -96,7 +96,7 @@ if(iter){
 assert(0==rename("./config",location));
 }
 
-char config[7][1000];
+char config[8][1000];
 
 printf("\nWhat is the name of the octopus?");
 scanf("%s",config[6]);
@@ -104,7 +104,12 @@ scanf("%s",config[6]);
 
 int db;
 printf("\n Is this node a DB node(1) or a worker node(0)?");
-scanf("%s",&db);
+scanf("%d",&db);
+
+if(db){
+printf("\n Provide the full path of the location of the database:");
+scanf("%s",config[7]);
+}
 
 printf("\nPlease, provide the connecting points (ip:port,ip:port) to the zookeeper ensemple");
 
@@ -151,7 +156,7 @@ sprintf(path,"/%s/%s",config[6],config[2]);
 
 result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
 
-if(result=ZNONODE){
+if(result==ZNONODE){
 printf("\nThe octopus you specified doesnt exist");
 return 0;
 }
@@ -245,6 +250,12 @@ return 0;
                        result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
 
                      }               
+                     }else{
+if(ZOK==result){
+                       sprintf(path,"/%s/%s/%s/%s/db_point",config[6],config[2],root,config[3]);
+                       result=zoo_create(zh,path,config[7],strlen(config[7]),&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
+
+                     }
                      }
                      }
                      }
@@ -255,8 +266,11 @@ return 0;
 
 }
 
+
 printf("\nAll have gone smoothly, saving configuration and exiting");
 fconfig=fopen("./config","w");
+
+fprintf(fconfig,"%s\n",config[6]);
 if(db){
 fprintf(fconfig,"db_node\n");
 }else{

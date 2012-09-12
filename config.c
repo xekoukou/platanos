@@ -12,16 +12,16 @@ int oconfig_init(oconfig_t** config){
 
 //Open the configuration file
 FILE *fconfig=fopen("./config","r");
+if(fconfig==NULL){
+printf("\nconfig doesnt exist.. exiting");
+return -1;
+}
 
 int line_position=0;
 while((fgets((*config)->line[line_position],1000,fconfig))&&(line_position<30)){
 (*config)->line[line_position][strlen((*config)->line[line_position])-1]='\0';
-//TODO here I write the structure of the configuration
 
-//first line is the host
 
-//host comma separated host:port pairs, each corresponding to a zk
-//server. e.g. "127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002"
 
 line_position++;
 (*config)->n_lines=line_position;
