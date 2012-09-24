@@ -16,6 +16,7 @@ int n_lines;  //maximum lines are 30
 
 int oconfig_init(oconfig_t** config);
 
+//name of the octopus
 int oconfig_octopus(oconfig_t *config,char *octopus);
 
 int oconfig_host(oconfig_t *config,char *host);

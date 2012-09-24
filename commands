@@ -1,0 +1,2 @@
+gcc zookeeper_register.c -lczmq -lproc -lzookeeper_mt -o register
+

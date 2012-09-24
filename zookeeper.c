@@ -9,6 +9,7 @@ watcherctx->max_retries=2000;
 watcherctx->config=config;
 }
 
+//initialize the ozookeeper object
 int ozookeeper_init(ozookeeper_t **ozookeeper, config_t *config,global_watcherctx_t *watcherctx){
 
 *ozookeeper=(ozookeeper_t *)malloc(sizeof(ozookeeper_t));
@@ -24,8 +25,6 @@ watcherctx->ozookeeper=*ozookeeper;
 
 ozookeeper->zh=zookeeper_init(host, global_watcher, recv_timeout, 0,0,watcherctx);
 
-//check that the computer name and hr_name are unique
-//then update/create the node that holds the configuration
 
 }
 
@@ -50,9 +49,13 @@ free(watcherctx);
 int ozookeeper_online(ozookeeper_t *ozookeeper){
 char comp_name[1000];
 char res_name[1000];
+char octopus[1000];
 
 oconfig_comp_name(ozookeeper->config,comp_name);
 oconfig_res_name(ozookeeper->config,res_name);
+oconfig_octopus(ozookeeper->config,octopus);
+
+char type[1000];
 
 int result;
 char path[1000];
