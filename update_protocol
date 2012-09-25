@@ -1,0 +1,52 @@
+the zookeeper client communicates with the worker through a req-reply socket
+lazy reliability, zookeeper resends the msgs if it receives no responce.
+
+msg
+
+frames
+1 id 
+2 updateable object
+3 content
+
+responce
+
+id
+
+
+note: here I assume that events happen one after the other in an ordered fashion
+note2: the worker keeps the last updated id in case the zookeeper resends the responce
+
+
+objects
+
+"router"
+
+
+
+
+content per object
+
+"router"
+
+1 "worker_node"  or "db_node"
+
+
+the msg that router receives
+|
+|
+v
+  
+2  "key of the first piece of the node"
+
+3          "removed"        +"dead" or "alive"
+
+3 or       "st_piece"     or "n_pieces"
+4                   unsigned long       
+        
+
+
+
+
+
+
+

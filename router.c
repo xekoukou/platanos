@@ -6,6 +6,8 @@
 #include"router.h"
 #include<stdio.h>
 #include<assert.h>
+#include<czmq.h>
+
 
 //result should be big enough
 int node_piece(char *key, unsigned long pnumber, char * result){
@@ -55,6 +57,7 @@ cmp_hash_t (struct hash_t *first, struct hash_t *second)
 
 struct router_t
 {
+  int type;  //1 is db 0 is worker
   struct hash_rb_t hash_rb;
   int repl;  //replication, used only be the db_routing
 };
@@ -63,10 +66,11 @@ struct router_t
 
 
 
-int router_init(struct router_t ** router){
+int router_init(struct router_t ** router,int type){
 
 *router=(struct router_t *) malloc(sizeof(struct router_t));
 
+(*router)->type=type;
 RB_INIT(&((*router)->hash_rb));
 
 }
@@ -256,6 +260,43 @@ int node_init(node_t **node,char *key, unsigned long n_pieces, unsigned long st_
 strcpy((*node)->key,key);
 (*node)->n_pieces=n_pieces;
 (*node)->st_piece=st_piece;
+
+}
+
+
+int router_update(struct router_t *router,zmsg_t *msg){
+
+char pkey[1000];
+node_t *node;
+
+zframe_t *frame=zmsg_first(msg);
+
+strcpy(pkey,zframe_data(frame));
+
+router_fnode(router,pkey,&node);
+
+frame=zmsg_next(msg);
+if(strcmp("removed",zframe_data(frame))==0){
+router_delete(router,node);
+}
+
+if(strcmp("dead",zframe_data(frame))==0){
+assert(router->type==1);
+node_set_alive(node,0);
+}
+
+
+if(strcmp("alive",zframe_data(frame))==0){
+assert(router->type==1);
+node_set_alive(node,1);
+}
+
+
+
+
+
+
+
 
 }
 

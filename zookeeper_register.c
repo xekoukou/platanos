@@ -232,8 +232,9 @@ printf("\nThis resource name has already been assigned to a resource of this com
 return 0;
 } else{
        if(ZOK==result){
+       int n_pieces=atoi(config[4]);
                        sprintf(path,"/%s/%s/%s/%s/n_pieces",config[6],config[2],root,config[3]);
-                       result=zoo_create(zh,path,config[4],strlen(config[4]),&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
+                       result=zoo_create(zh,path,(char *)&n_pieces,sizeof(int),&ZOO_OPEN_ACL_UNSAFE,0,NULL,0);
        if(ZOK==result){
                        unsigned long zero=0;
                        sprintf(path,"/%s/%s/%s/%s/st_piece",config[6],config[2],root,config[3]);

@@ -78,4 +78,7 @@ int node_init(node_t **node,char *key, unsigned long n_pieces, unsigned long st_
 // only used in a db_routing 
 int node_set_alive(node_t *node, int alive);
 
+
+int router_update(struct router_t *router,zmsg_t *msg);
+
 #endif
