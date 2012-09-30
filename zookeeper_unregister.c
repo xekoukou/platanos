@@ -77,40 +77,28 @@ void global_watcher(zhandle_t *zzh, int type, int state, const char *path,
 
 int main(){
 
-printf("\nI am going to unregister the resource that is described in the config file and then delete the config file. Are you sure you want to continue?(1 or 0)");
+printf("\nI am going to unregister the resource that you describe");
 
-int sure;
-
-scanf("%d",&sure);
-
-if(sure!=1){
-return 0;
-}
 
 
 int result;
 
-oconfig_t *config;
-result=oconfig_init(&config);
-assert(result != -1);
 
 char host[1000];
 char path[1000];
 
-oconfig_host(config,host);
-
+printf("\n What is the location of the zookeeper?");
+scanf("%s",host);
 
 zhandle_t *zh=zookeeper_init(host,global_watcher, 3000, 0,0,0);
 
 int db;
-if(oconfig_db_node(config)){
- db=1;
- }else{
-       if(oconfig_worker_node(config)){
-       db=0;
-       }else{
-       printf("\n Error.. cant find the kind of node");
-       } 
+printf("\nIs it a db_node(1) or a worker_node(0)?");
+scanf("%d",&db);
+
+if(db!=1 && db!=0){
+ prinf("\n Error");
+ exit(0);
  }
 
 char root[1000];
@@ -122,10 +110,13 @@ strcpy(root,"worker_nodes");
 }
 
 char octopus[1000];
-oconfig_octopus(config,octopus);
+printf("\nWhat is the name of the octopus?");
+scanf("%s",octopus);
 
 char comp_name[1000];
-oconfig_comp_name(config,comp_name);
+printf("\nWhat is the name of the computer?");
+scanf("%s",comp_name);
+
 
 sprintf(path,"/%s/%s/worker_nodes",octopus,comp_name);
 struct String_vector worker_children;
@@ -145,7 +136,9 @@ return 1;
 
 
 char res_name[1000];
-oconfig_res_name(config,res_name);
+printf("\nWhat is the name of the resource?");
+scanf("%s",res_name);
+
 
 sprintf(path,"/%s/%s/%s/%s/n_pieces",octopus,comp_name,root,res_name);
 result=zoo_delete(zh,path,-1);

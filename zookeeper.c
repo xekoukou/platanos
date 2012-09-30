@@ -3,6 +3,7 @@
 #include"zookeeper.h"
 #include<string.h>
 
+#define RESEND_INTERVAL 1000
 
 int global_watcherctx_init(global_watcherctx_t **watcherctx,oconfig_t *config){
 *watcherctx=(global_watcherctx_t *)malloc(sizeof(global_watcherctx_t));
@@ -17,6 +18,10 @@ int ozookeeper_init(ozookeeper_t **ozookeeper, oconfig_t *config,global_watcherc
 *ozookeeper=(ozookeeper_t *)malloc(sizeof(ozookeeper_t));
 
 (*ozookeeper)->config=config;
+(*ozookeeper)->pub=pub;
+(*ozookeeper)->router=router;
+(*ozookeeper)->id=0;
+
 
 char host[1000];
 oconfig_host(config,host);
@@ -28,7 +33,7 @@ watcherctx->ozookeeper=*ozookeeper;
 (*ozookeeper)->zh=zookeeper_init(host, global_watcher, recv_timeout, 0,watcherctx,0);
 
 if(ozookeeper_not_corrupt(ozookeeper)!=1){
-printf("\n local config and zookeeper config do not match, exiting..");
+printf("\n local config and zookeeper config do not match,\n Have you registered at least one resource for this computer to zookeeper?\n exiting..");
 exit(1);
 }
 
@@ -52,7 +57,6 @@ int val_len;
 
 oconfig_octopus(ozookeeper->config,config[0]);
 oconfig_comp_name(ozookeeper->config,config[1]);
-oconfig_res_name(ozookeeper->config,config[3]);
 
 sprintf(path,"/%s",config[0]);
 if(ZOK!=zoo_exists(ozookeeper->zh,path,0,&stat)){
@@ -63,77 +67,6 @@ if(ZOK!=zoo_exists(ozookeeper->zh,path,0,&stat)){
 return 0;
 }
 
-if(oconfig_db_node(ozookeeper->config)){
-db_bool=1;
-sprintf(config[2],"db_nodes");
-} else if (oconfig_worker_node(ozookeeper->config)){
-db_bool=0;
-sprintf(config[2],"worker_nodes");
-}else {
-return 0;
-}
-
-sprintf(path,"/%s/%s/%s/%s",config[0],config[1],config[2],config[3]);
-if(ZOK!=zoo_exists(ozookeeper->zh,path,0,&stat)){
-return 0;
-}
-
-int zn_pieces=-1;
-sprintf(path,"/%s/%s/%s/%s/n_pieces",config[0],config[1],config[2],config[3]);
-if(ZOK!=zoo_get(ozookeeper->zh,path,0,(char *)&zn_pieces,&val_len,&stat)){
-return 0;
-} else {
-int n_pieces;
-oconfig_n_pieces(ozookeeper->config,&n_pieces);
-if(zn_pieces!=n_pieces){
-return 0;
-}
-}
-
-sprintf(path,"/%s/%s/%s/%s/st_peice",config[0],config[1],config[2],config[3]);
-if(ZOK!=zoo_exists(ozookeeper->zh,path,0,&stat)){
-return 0;
-}
-
-char zbind_point[1000];
-sprintf(path,"/%s/%s/%s/%s/bind_point",config[0],config[1],config[2],config[3]);
-if(ZOK!=zoo_get(ozookeeper->zh,path,0,(char *)&zbind_point,&val_len,&stat)){
-return 0;
-} else {
-char bind_point[1000];
-oconfig_bind_point(ozookeeper->config,bind_point);
-if(strcmp(zbind_point,bind_point)!=0){
-return 0;
-}
-}
-
-if(db_bool){
-
-
-char zdb_point[1000];
-sprintf(path,"/%s/%s/%s/%s/db_point",config[0],config[1],config[2],config[3]);
-if(ZOK!=zoo_get(ozookeeper->zh,path,0,(char *)&zdb_point,&val_len,&stat)){
-return 0;
-} else {
-char db_point[1000];
-oconfig_bind_point(ozookeeper->config,db_point);
-if(strcmp(zdb_point,db_point)!=0){
-return 0;
-}
-}
-
-
-
-}else {
-
-printf(path,"/%s/%s/%s/%s/interval",config[0],config[1],config[2],config[3]);
-if(ZOK!=zoo_exists(ozookeeper->zh,path,0,&stat)){
-return 0;
-}
-}
-
-
-return 1;
 }
 
 
@@ -154,31 +87,111 @@ int global_watcherctx_destroy(global_watcherctx_t *watcherctx){
 free(watcherctx);
 }
 
-//creating ephemeral node online
-int ozookeeper_online(ozookeeper_t *ozookeeper){
-char comp_name[1000];
-char res_name[1000];
-char octopus[1000];
+int ozookeeper_update(ozookeeper_t *ozookeeper,zmsg_t **msg){
+  
+if(ozookeeper->id>1000000000){
+ozookeeper->id=1;
+}else {
+ozookeeper->id++;
+};
+ 
+  zframe_t *address;
+  zframe_t *frame;
 
-oconfig_comp_name(ozookeeper->config,comp_name);
-oconfig_res_name(ozookeeper->config,res_name);
-oconfig_octopus(ozookeeper->config,octopus);
+  zmsg_t *msg_to_send=zmsg_dup(*msg);
+  zmsg_push(msg_to_send,zframe_new(&(ozookeeper->id),sizeof(unsigned int)));
+  zmsg_push(msg_to_send,zframe_new("all",strlen("all")+1));
 
-char type[1000];
+  zmsg_send (msg_to_send, ozookeeper->pub);
 
-int result;
-char path[1000];
-sprintf(path,"/%s/%s/online",comp_name,res_name);
-result=zoo_create(zh,path,NULL,-1,&ZOO_OPEN_ACL_UNSAFE,ZOO_EPHEMERAL,NULL,0);
+  //initializes ok vector
+  zlist_t *ok_list=zlist_new();
 
-if(result!=ZNODEEXISTS && result!=ZOK ){
-printf("\nCouldnt create ephemeral node online, exiting");
+  zmsg_t *resp;
+  size_t time=zclock_time();
+  while (1)
+    {
+      int new=1;
+      resp = zmsg_recv (ozookeeper->router);
+      address = zmsg_unwrap (resp);
+      frame = zmsg_first (resp);
+      //if confirm exists and address is new the ok vector is updated
+       if(memcmp(zframe_data(frame),ozookeeper->id,sizeof(unsigned int))==0){ 
+             zframe_t *iter=zlist_first(ok_list);
+             while(iter){
+              if (zframe_eq (iter, address))
+                {
+                  new=0;
+                  break;
+                }
+                iter=zlist_next(ok_list);
+                }
+
+
+              if (new)
+                {
+                  zlist_append(ok_list, address);
+                } else{
+                  zframe_destroy(&address);
+}
+} else{
+
+zframe_destroy(&address);
+
+}
+                        
+zmsg_destroy(&resp);
+
+
+
+if(zlist_size(ok_list)==workers->size){
+//destroy things
+ iter=zlist_first(ok_list);
+ while(iter){
+ zframe_destroy(&iter);
+ iter=zlist_next(ok_list);
+}
+break;
+}
+//send again to those that didnt respond
+//it assumes that the address of the dealer is the same with
+//the subscription of the sub.
+if(zclock_time()-time>RESEND_INTERVAL){
+time=zclock_time();
+
+int it;
+for(it=0; it<workers->size; it++){
+int exists=0;
+iter=zlist_first(ok_list);
+while(iter){
+if(memcmp(zframe_data(address),&it,sizeof(int))==0){
+exists=1;
+break;
+}
+iter=zlist_next(ok_list);
+}
+if(exists==0){
+  msg_to_send=zmsg_dup(*msg);
+  zmsg_push(msg_to_send,zframe_new(&(ozookeeper->id),sizeof(unsigned int)));
+  zmsg_push(msg_to_send,zframe_new(&it,sizeof(int)));
+  zmsg_send (msg_to_send, ozookeeper->pub);
+
+}
 }
 
 }
+
+}
+}
+//fetches the configuration from the server and informs the threads
+int ozookeeper_init_workers(ozookeeper_t *ozookeeper, workers_t *workers){
+ozookeeper->workers=workers;
+}
+
 
 //one time function that sets watches on the nodes
-int ozookeeper_watch(ozookeeper_t *ozookeeper){
+//and gets configuration
+int ozookeeper_getconfig(ozookeeper_t *ozookeeper){
 
 }
 

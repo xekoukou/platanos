@@ -13,7 +13,7 @@ int oconfig_init(oconfig_t** config){
 //Open the configuration file
 FILE *fconfig=fopen("./config","r");
 if(fconfig==NULL){
-printf("\nconfig doesnt exist.. exiting");
+printf("\nconfig doesnt exist. Are you in the correnct directory? A config file must be created manually for every computer that is part of the octopus.. exiting");
 return -1;
 }
 
@@ -32,56 +32,21 @@ fclose(fconfig);
 
 
 int oconfig_octopus(oconfig_t *config,char *octopus){
-memcpy(octopus,config->line[0],1000);
-}
-
-
-
-//returns 1 if true 0 else
-int oconfig_db_node(oconfig_t *config){
- if(strcmp("db_node",config->line[1])==0){
- return 1;
-}else{ 
-  return 0;   
-}
-}
-
-int oconfig_worker_node(oconfig_t *config){
-
- if(strcmp("worker_node",config->line[1])==0){
- return 1;
-}else{
-  return 0;
-}
+memcpy(octopus,config->line[2],1000);
 }
 
 
 int oconfig_host(oconfig_t *config,char *host){
-memcpy(host,config->line[2],1000);
+memcpy(host,config->line[0],1000);
 }
 
 int oconfig_recv_timeout(oconfig_t *config,int *timeout){
-*timeout=atoi(config->line[3]);
+*timeout=atoi(config->line[1]);
 }
 //computer name
 int oconfig_comp_name(oconfig_t *config,char *comp_name){
-memcpy(comp_name,config->line[4],1000);
+memcpy(comp_name,config->line[3],1000);
 }
-//resource unique name
-int oconfig_res_name(oconfig_t *config,char *name){
-memcpy(name,config->line[5],1000);
-}
-//n_pieces
-int oconfig_n_pieces(oconfig_t *config,int *n_pieces){
-*n_pieces=atoi(config->line[6]);
-}
-//ip:port
-int oconfig_bind_point(oconfig_t *config,char *bind_point){
-memcpy(bind_point,config->line[7],1000);
-}
-
-
-
 
 int oconfig_destroy(oconfig_t *config){
 

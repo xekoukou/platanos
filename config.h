@@ -26,19 +26,5 @@ int oconfig_recv_timeout(oconfig_t *config,int *timeout);
 //unique computer name
 int oconfig_comp_name(oconfig_t *config,char *comp_name);
 
-//unique resource name
-int oconfig_res_name(oconfig_t *config,char *name);
-
-//number of pieces in the hash ring
-int oconfig_n_pieces(oconfig_t *config,int *n_pieces);
-
-//ip:port
-int oconfig_bind_point(oconfig_t *config,char *bind_point);
-
-//1 if true
-int oconfig_db_node(oconfig_t *config);
-
-int oconfig_worker_node(oconfig_t *config);
-
 
 #endif

@@ -52,7 +52,7 @@ int router_add(router_t * router,node_t *node);
 //first I need to find the exact same node I want to delete
 int router_delete(router_t * router,node_t *node);
 
-//rkey, the adrress of the node
+//rkey, the subscription adrress of the node
 int router_route(router_t * router,char *key, char *rkey);
 
 int router_set_repl(router_t * router, int repl);

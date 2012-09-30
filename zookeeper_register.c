@@ -74,27 +74,6 @@ void global_watcher(zhandle_t *zzh, int type, int state, const char *path,
 
 int main(){
 
-//backup previous config
-
-printf("Starting Registration Process");
-
-printf("\n Backing up previous config file");
-
-int iter=0;
-char location[100];
-FILE *fconfig;
-if(fconfig=fopen("./config","r")){
-iter=1;
-}
-while(fconfig){
-sprintf(location,"./config%d",iter);
-fconfig=fopen(location,"r");
-iter++;
-}
-
-if(iter){
-assert(0==rename("./config",location));
-}
 
 char config[8][1000];
 
@@ -115,8 +94,6 @@ printf("\nPlease, provide the connecting points (ip:port,ip:port) to the zookeep
 
 scanf("%s",config[0]);
 
-printf("\n recv_delay:");
-scanf("%s",config[1]);
 
 printf("A unique computer name, common across all resources and configs of this computer:");
 
@@ -268,19 +245,6 @@ if(ZOK==result){
 }
 
 
-printf("\nAll have gone smoothly, saving configuration and exiting");
-fconfig=fopen("./config","w");
-
-fprintf(fconfig,"%s\n",config[6]);
-if(db){
-fprintf(fconfig,"db_node\n");
-}else{
-fprintf(fconfig,"worker_node\n");
-}
-
-for(iter=0; iter<6; iter++){
-fprintf(fconfig,"%s\n",config[iter]);
-}
-fclose(fconfig);
+printf("\nAll have gone smoothly, exiting");
 
 }

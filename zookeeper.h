@@ -10,6 +10,10 @@
 typedef struct{
 zhandle_t *zh;
 oconfig_t *config;
+void *pub;
+void *router;
+unsigned int id;  //used to id updates
+workers_t *workers;
 }ozookeeper_t;
 
 typedef struct{
@@ -20,9 +24,8 @@ oconfig_t *config;
 }global_watcherctx_t;
 
 //initialize the ozookeeper object
-int ozookeeper_init(ozookeeper_t **ozookeeper, oconfig_t *config,global_watcherctx_t *watcherctx);
+int ozookeeper_init(ozookeeper_t **ozookeeper, oconfig_t *config,global_watcherctx_t *watcherctx,void *pub, void * router);
 
-int ozookeeper_online(ozookeeper_t *ozookeeper);
 
 int ozookeeper_set_zhandle(ozookeeper_t *ozookeeper, zhandle_t *zh);
 
