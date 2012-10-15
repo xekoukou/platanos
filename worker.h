@@ -1,4 +1,5 @@
 #include<czmq.h>
+#include"hash/khash.h"
 
 #ifndef OCTOPUS_WORKER_H_
 #define OCTOPUS_WORKER_H_

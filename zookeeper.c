@@ -233,7 +233,7 @@ ozookeeper_init_workers (ozookeeper_t * ozookeeper, workers_t * workers)
 int
 oz_updater_init (oz_updater_t * updater)
 {
-    updater->id = 0;
+    updater->id = 1;
     allocate_String_vector (&(updater->computers), 0);
 }
 

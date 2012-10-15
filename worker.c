@@ -3,6 +3,11 @@
 #include"worker_update.h"
 #include"zookeeper.h"
 #include<zookeeper/zookeeper.h>
+#include"hash/khash.h"
+#include"vertex.h"
+#include"aknowledgements.h"
+
+KHASH_MAP_INIT_INT64(vertices, vertex_t *);
 
 int send( zmsg_t *msg ,router_t *router,void *socket_wb,void *socket_nb,void *self_wb,void *self_nb){
      zframe_t *frame= zmsg_first(msg);
@@ -108,17 +113,21 @@ void *self_nb=zsocket_new(ctx,ZMQ_DEALER);
 char *identity=(char *)malloc(1000);
 
 sprintf(identity,"%swb",arg);
-zmq_setsockopt (socket_wb,ZMQ_IDENTITY,identity, strlen(identity));
+zmq_setsockopt (self_wb,ZMQ_IDENTITY,identity, strlen(identity));
 sprintf(identity,"%snb",arg);
-zmq_setsockopt (socket_nb,ZMQ_IDENTITY,identity, strlen(identity));
+zmq_setsockopt (self_nb,ZMQ_IDENTITY,identity, strlen(identity));
 
 //balance infrastructure
 
 void *balance=zsocket_new(ctx,ZMQ_ROUTER);
-zmq_setsockopt (socket_wb,ZMQ_IDENTITY,arg, strlen(arg));
+void *self_bl=zsocket_new(ctx,ZMQ_DEALER);
+zmq_setsockopt (self_bl,ZMQ_IDENTITY,arg, strlen(arg));
 
 //cleaning
 free(identity);
+
+//hash of vertices
+khash_t(vertices) *hash = kh_init(vertices);
 
 //sleep object
 sleep_t *sleep;
@@ -128,15 +137,33 @@ sleep_init(&sleep);
 //used to find where each msg goes
 router_t *router;
 
-//updater object
-//used to update things, like the router object
-updater_t *updater;
-
-zloop_t *loop=zloop_new();
-
 router_init(&router,0);
-updater_init(&updater,loop,dealer,router,balance);
-    
+
+//intervals object
+
+intervals_t *intervals;
+
+intervals_init(&intervals);
+
+//events ,actions objects
+
+zlist_t *actions=zlist_new();
+zlist_t *events=zlist_new();
+
+
+//balance object
+balance_t *balance;
+
+balance_init(balance_t **balance,hash,router_bl,self_bl,intervals,events,actions)
+
+
+//update object
+//used to update things, like the router object
+update_t *update;
+
+
+update_init(&update,dealer,router,balance);
+ 
 zmq_pollitem_t pollitems[4] = {{ sub, 0, ZMQ_POLLIN },{ balance, 0, ZMQ_POLLIN },{ router_wb, 0, ZMQ_POLLIN },{ router_nb, 0, ZMQ_POLLIN }};
 //main loop
   while (1)
@@ -149,7 +176,7 @@ zmq_pollitem_t pollitems[4] = {{ sub, 0, ZMQ_POLLIN },{ balance, 0, ZMQ_POLLIN }
 
       if (pollitem[0].revents & ZMQ_POLLIN)
         {
-        worker_update(updater,sub);
+        worker_update(update,sub);
 }
       if (pollitem[1].revents & ZMQ_POLLIN)
         {
