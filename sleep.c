@@ -5,63 +5,60 @@
 int
 cmp_smsg_t (struct smsg_t *first, struct smsg_t *second)
 {
-  if (first->expiry > second->expiry)
-    {
-      return 1;
+    if (first->expiry > second->expiry) {
+	return 1;
     }
-  else if (first->expiry < second->expiry)
-    {
-      return -1;
+    else if (first->expiry < second->expiry) {
+	return -1;
     }
-  return 0;
+    return 0;
 }
 
 
-int sleep_init(sleep_t **sleep){
-*sleep=(sleep_t *)malloc(sizeof(sleep_t));
-RB_INIT(&((*sleep)->smsg_rb));
-(*sleep)->timeout=-1;
-(*sleep)->pr_time=zclock_time();
-(*sleep)->min=NULL;
+int
+sleep_init (sleep_t ** sleep)
+{
+    *sleep = (sleep_t *) malloc (sizeof (sleep_t));
+    RB_INIT (&((*sleep)->smsg_rb));
+    (*sleep)->timeout = -1;
+    (*sleep)->pr_time = zclock_time ();
+    (*sleep)->min = NULL;
 }
 
-int sleep_add(sleep_t *sleep,zmsg_t *msg,int64_t delay,unsigned short wb){
-          struct smsg_t *smsg = (struct smsg_t *) malloc (sizeof (struct smsg_t));
-          smsg->expiry = delay + zclock_time ();
-          smsg->msg=msg;
-          smsg->wb=wb;
-          
-          //update min
-          if (sleep->min == NULL)
-            {
-              sleep->min = smsg;
-            }
-          if (cmp_smsg_t (sleep->min, smsg) > 0)
-            {
-              sleep->min = smsg;
-            }
+int
+sleep_add (sleep_t * sleep, zmsg_t * msg, int64_t delay, unsigned short wb)
+{
+    struct smsg_t *smsg = (struct smsg_t *) malloc (sizeof (struct smsg_t));
+    smsg->expiry = delay + zclock_time ();
+    smsg->msg = msg;
+    smsg->wb = wb;
+
+    //update min
+    if (sleep->min == NULL) {
+	sleep->min = smsg;
+    }
+    if (cmp_smsg_t (sleep->min, smsg) > 0) {
+	sleep->min = smsg;
+    }
 //insert into rbtree
-RB_INSERT (smsg_rb_t, &(sleep->smsg_rb), smsg);
+    RB_INSERT (smsg_rb_t, &(sleep->smsg_rb), smsg);
 
 
-          
-         //update timeout if the new msgs needs to be sent sooner than the previous sooner msg
 
-          sleep->timeout = sleep->timeout + sleep->pr_time - zclock_time ();
-          sleep->pr_time = zclock_time ();
+    //update timeout if the new msgs needs to be sent sooner than the previous sooner msg
 
-          if (sleep->timeout > delay)
-            {
-              sleep->timeout = delay;
-            }
-          else
-            {
-              if (sleep->timeout < 0)
-                {
-                  sleep->timeout = 0;
-                }
-            }
- 
+    sleep->timeout = sleep->timeout + sleep->pr_time - zclock_time ();
+    sleep->pr_time = zclock_time ();
+
+    if (sleep->timeout > delay) {
+	sleep->timeout = delay;
+    }
+    else {
+	if (sleep->timeout < 0) {
+	    sleep->timeout = 0;
+	}
+    }
+
 
 
 }
@@ -70,46 +67,46 @@ RB_INSERT (smsg_rb_t, &(sleep->smsg_rb), smsg);
 //awake and pop one msg
 //this should be put into a loop
 //if the msg is null it means it cannot pop more msgs
-zmsg_t * sleep_awake(sleep_t *sleep,unsigned short *wb){
+zmsg_t *
+sleep_awake (sleep_t * sleep, unsigned short *wb)
+{
 
 
 //check if the timeout has expired, we need to send the msg of min
 //update the timeout
 //if there is no other msg set the timeout to -1;
-if(sleep->min!=NULL){
-if((sleep->min->expiry-zclock_time())<0){
+    if (sleep->min != NULL) {
+	if ((sleep->min->expiry - zclock_time ()) < 0) {
 
-      struct smsg_t *temp;
-      zmsg_t *msg;
+	    struct smsg_t *temp;
+	    zmsg_t *msg;
 
-      temp = sleep->min;
-      //update the min
-      sleep->min = RB_PARENT (sleep->min, field);
-      msg=temp->msg;
-      *wb=temp->wb;
-      //free the previous min smsg
-      free (temp);
+	    temp = sleep->min;
+	    //update the min
+	    sleep->min = RB_PARENT (sleep->min, field);
+	    msg = temp->msg;
+	    *wb = temp->wb;
+	    //free the previous min smsg
+	    free (temp);
 
 //update the timeout 
 
-      if (sleep->min == NULL)
-        {
-          sleep->timeout = -1;
-        }
-      else
-        {
-          sleep->timeout = sleep->min->expiry - zclock_time ();
-          sleep->pr_time = zclock_time ();
+	    if (sleep->min == NULL) {
+		sleep->timeout = -1;
+	    }
+	    else {
+		sleep->timeout = sleep->min->expiry - zclock_time ();
+		sleep->pr_time = zclock_time ();
 
-          if (sleep->timeout < 0)
-            {
-              sleep->timeout = 0;
-            }
+		if (sleep->timeout < 0) {
+		    sleep->timeout = 0;
+		}
 
 
-        }
-        return msg;
-}}
-return NULL;
+	    }
+	    return msg;
+	}
+    }
+    return NULL;
 
 }

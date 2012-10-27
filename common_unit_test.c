@@ -2,12 +2,14 @@
 #include"common.h"
 
 
-void main(){
+void
+main ()
+{
 
-printf("\nGive a path:");
+    printf ("\nGive a path:");
 
-char path[1000];
-scanf("%s",path);
+    char path[1000];
+    scanf ("%s", path);
 
-printf("\nLast node:%s",last_path(path));
+    printf ("\nLast node:%s", last_path (path));
 }
