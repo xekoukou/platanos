@@ -62,8 +62,26 @@ interval_init (interval_t ** interval, struct _hkey_t *start,
 
 }
 
+int
+interval_minit (interval_t ** action, zmsg_t * msg)
+{
+
+    *interval = (interval_t *) malloc (sizeof (interval_t));
+
+    zframe_t *frame = zmsg_first (msg);
+    frame = zframe_next (msg);
+    frame = zframe_next (msg);
+    memcpy ((*interval)->start, zframe_data (frame), zframe_size (frame));
+    frame = zframe_next (msg);
+    memcpy ((*interval)->end, zframe_data (frame), zframe_size (frame));
+
+
+}
+
+
+
 //check for the initial implementation(intervals_belong_h)
-interval_belongs_h (interval_t * interval, struct _hkey_t *hkey)
+int interval_belongs_h (interval_t * interval, struct _hkey_t *hkey)
 {
 
 
@@ -119,6 +137,19 @@ interval_belongs_h (interval_t * interval, struct _hkey_t *hkey)
 //in case there is no interval
     return 0;
 }
+
+int
+interval_belongs (interval_t * interval, uint64_t key)
+{
+
+    struct _hkey_t hkey;
+
+    MurmurHash3_x64_128 ((void *) &key, sizeof (uint64_t), 0, (void *) &hkey);
+
+    return interval_belongs_h (interval, &hkey);
+
+}
+
 
 
 
@@ -342,7 +373,7 @@ intervals_belongs (intervals_t * intervals, uint64_t key)
 
     MurmurHash3_x64_128 ((void *) &key, sizeof (uint64_t), 0, (void *) &hkey);
 
-    return interval_belongs_h (intervals, &hkey);
+    return intervals_belongs_h (intervals, &hkey);
 
 }
 
@@ -510,7 +541,7 @@ actions_update (zlist_t * actions, event_t * event)
 
 //action is only created by a received msg
 int
-action_init (action_t ** action, zmsg_t * msg)
+action_minit (action_t ** action, zmsg_t * msg)
 {
 
     *action = (action_t *) malloc (sizeof (action_t));

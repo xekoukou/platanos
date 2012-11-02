@@ -11,29 +11,35 @@
 typedef struct
 {
     event_t *event;		//the event that is happening, must also be removed from events list before freed
-      kbtree_t (vertices) * unc_vertices;	//vertices that have been send but not confirmed
-    uint64_t counter;		//the counter of the last sent chuck of data
+      zlist_t * unc_vertices;	//vertices that have been send but not confirmed
+                                // contains the khiter where it is saved by the khash
+
     uint64_t rec_counter;	//the counter of the last confirmation
     int un_id;
     uint64_t last_time;		//last_time till I sent the interval(initial msg) or last time till
 //i sent the ending msg(0 counter)
 //those operations will be repeated until they succeed
+   int state; 
+//state 0 giving the interval
+//state 1 giving the main body
+//state 2 sending the ending msg
 } on_give_t;			//ongoing event
 
 
-KBTREE_INIT (counters, uint64_t, kb_generic_cmp);
 typedef struct
 {
     action_t *action;		//this action is happening, you ll need to add it to the list when it finishes
-      kbtree_t (counters) * m_counters;	// counters that were sent but lost in the communication
+     zlist_t * m_counters;	// counters that were sent but lost in the communication
+//they are ordered
     int un_id;			//set by the giver to distinguish the confirmation msgs
+   uint64_t counter;   //counter of the last received data
 } on_receive_t;			//ongoing event
 
 
 typedef struct
 {
 
-    kbtree_t (vertices) * tree;
+    khash_t (vertices) * hash;
     void *router_bl;		//used to tranfer nodes to the apropriate nodes if necessary
     void *self_bl;
     intervals_t *intervals;
@@ -41,7 +47,11 @@ typedef struct
     zlist_t *actions;
     zlist_t *on_gives;
     zlist_t *on_recieves;
+   //used by on_gives scheduling
     int un_id;
+    int64_t timeout;
+    int64_t pr_time;
+    char *self_key;  //used to send the interval of the on_gives
 } balance_t;
 
 
@@ -57,7 +67,7 @@ typedef struct
 int update_init (update_t ** update, void *dealer, router_t * router,
 		 balance_t * balance, compute_t * compute);
 
-int balance_init (balance_t ** balance, kbtree_t (vertices) * tree,
+int balance_init (balance_t ** balance, khash_t (vertices) * hash,
 		  void *router_bl, void *self_bl, intervals_t * intervals,
 		  zlist_t * events, zlist_t * actions);
 

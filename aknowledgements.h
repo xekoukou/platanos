@@ -53,18 +53,30 @@ int
 interval_init (interval_t ** interval, struct _hkey_t *start,
 	       struct _hkey_t *end);
 
-int interval_add (intervals_t * intervals, interval_t * interval);
+//the msg is not deleted, it will be used to create action_t later
+int
+interval_minit (interval_t ** action, zmsg_t * msg);
+
+int interval_belongs_h (interval_t * interval, struct _hkey_t *hkey);
+
+int
+interval_belongs (interval_t * interval, uint64_t key);
+
+int intervals_add (intervals_t * intervals, interval_t * interval);
 
 //returns true if it is contained inside one integral
-interval_t *interval_contained (intervals_t * intervals,
+interval_t *intervals_contained (intervals_t * intervals,
 				interval_t * interval);
 
 //removes and free interval
 //returns true if there was a change
-int interval_remove (intervals_t * intervals, interval_t * interval);
+int intervals_remove (intervals_t * intervals, interval_t * interval);
+
+int
+intervals_belongs_h (intervals_t * intervals, struct _hkey_t *hkey);
 
 //return true if it belongs to one of the intervals
-int interval_belongs (intervals_t * intervals, uint64_t key);
+int intervals_belongs (intervals_t * intervals, uint64_t key);
 
 event_t *events_search (zlist_t * events, action_t * action);
 
@@ -90,6 +102,6 @@ action_t *actions_search (zlist_t * actions, event_t * event);
 int actions_update (zlist_t * actions, event_t * event);
 
 //action is only created by a received msg
-int action_init (action_t ** action, zmsg_t * msg);
+int action_minit (action_t ** action, zmsg_t * msg);
 
 #endif

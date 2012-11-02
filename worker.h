@@ -7,7 +7,7 @@
 #ifndef OCTOPUS_WORKER_H_
 #define OCTOPUS_WORKER_H_
 
-
+//TODO I havent yet provided a destructor function
 typedef struct
 {
     zhandle_t *zh;
@@ -22,7 +22,10 @@ int worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
 
 typedef struct
 {
-    kbtree_t (vertices) * tree;
+    router_t *router;
+    zlist_t *events;
+    intervals_t *intervals;
+    khash_t (vertices) * tree;
     void *socket_nb;
     void *self_nb;
     void *socket_wb;
@@ -35,8 +38,8 @@ typedef struct
 } compute_t;			//the zookeeper handle used to set the worker online or get
 		   //get the interval 
 
-int compute_init (compute_t ** compute, kbtree_t (vertices) * tree,
-		  void *socket_nb, void *self_nb, void *socket_wb,
+int compute_init (compute_t ** compute, kbt;ee_t (vertices) * tree,
+		      router_t *router,zlist_t *events,intervals_t *intervals,void *socket_nb, void *self_nb, void *socket_wb,
 		  void *self_wb, localdb_t * localdb, worker_t * worker);
 
 

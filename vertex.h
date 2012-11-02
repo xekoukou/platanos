@@ -2,13 +2,15 @@
 #define _OCTOPUS_VERTEX_H_
 #include"btree/kbtree.h"
 
+
+//the key of the vertex is saved by the hash 
 typedef struct
 {
-    uint64_t key;
 
 } vertex_t;
 
-#endif
+KHASH_MAP_INIT_INT64(vertices, vertex_t );
 
-#define cmp_vertex_t(a, b) (((a).key > (b).key) - ((a).key < (b).key))
-KBTREE_INIT (vertices, vertex_t, cmp_vertex_t);
+
+
+#endif

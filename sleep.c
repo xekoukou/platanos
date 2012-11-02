@@ -75,11 +75,13 @@ sleep_awake (sleep_t * sleep, unsigned short *wb)
 //check if the timeout has expired, we need to send the msg of min
 //update the timeout
 //if there is no other msg set the timeout to -1;
+
+	    zmsg_t *msg=NULL;
+
     if (sleep->min != NULL) {
 	if ((sleep->min->expiry - zclock_time ()) < 0) {
 
 	    struct smsg_t *temp;
-	    zmsg_t *msg;
 
 	    temp = sleep->min;
 	    //update the min
@@ -88,6 +90,9 @@ sleep_awake (sleep_t * sleep, unsigned short *wb)
 	    *wb = temp->wb;
 	    //free the previous min smsg
 	    free (temp);
+
+             }
+             }
 
 //update the timeout 
 
@@ -105,8 +110,7 @@ sleep_awake (sleep_t * sleep, unsigned short *wb)
 
 	    }
 	    return msg;
-	}
-    }
-    return NULL;
+	
+    
 
 }

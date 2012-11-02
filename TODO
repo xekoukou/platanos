@@ -1,3 +1,5 @@
 deallocate string_vectors when necessary
 
+send function in worker.c is old needs to be updated with the events,actions list
+
 
