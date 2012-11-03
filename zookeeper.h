@@ -18,7 +18,7 @@ typedef struct
     struct String_vector *resources;
 } oz_updater_t;
 
-typedef struct
+struct ozookeeper_t
 {
     zhandle_t *zh;
     oconfig_t *config;
@@ -26,7 +26,9 @@ typedef struct
     void *router;
     oz_updater_t updater;
     workers_t *workers;
-} ozookeeper_t;
+};
+
+typedef struct ozookeeper_t ozookeeper_t;
 
 typedef struct
 {

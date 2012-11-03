@@ -22,22 +22,22 @@ int
 worker_send (zmsg_t * msg, unsigned short wb, compute_t * compute)
 {
     zframe_t *frame = zmsg_first (msg);
-    frame = zframe_next (msg);
+    frame = zmsg_next (msg);
     uint64_t key;
     memcpy (&key, zframe_data (frame), sizeof (uint64_t));
-    char id[1000];
-    router_route (router, key, id);
+    char *id;
+    id = router_route (compute->router, key);
 
     //check that self has been initialized
-    assert (router->self != NULL);
+    assert (compute->router->self != NULL);
 
     //send to self if necessary
-    if (strcmp (router->self->key, id) == 0) {
+    if (strcmp (compute->router->self->key, id) == 0) {
 	if (wb) {
-	    zmsg_send (&msg, self_wb);
+	    zmsg_send (&msg, compute->self_wb);
 	}
 	else {
-	    zmsg_send (&msg, self_nb);
+	    zmsg_send (&msg, compute->self_nb);
 	}
 
     }
@@ -45,10 +45,10 @@ worker_send (zmsg_t * msg, unsigned short wb, compute_t * compute)
 	//write address
 	zmsg_wrap (msg, zframe_new (id, strlen (id)));
 	if (wb) {
-	    zmsg_send (&msg, socket_wb);
+	    zmsg_send (&msg, compute->socket_wb);
 	}
 	else {
-	    zmsg_send (&msg, socket_nb);
+	    zmsg_send (&msg, compute->socket_nb);
 	}
 
     }
@@ -79,7 +79,7 @@ worker_new_interval (worker_t * worker, localdb_t * localdb)
 	sprintf (path, "/%s/global_properties/interval/last_interval",
 		 octopus);
 	result =
-	    zoo_get (worker->zh, path, 0, (char *) buffer, &buffer_len,
+	    zoo_get (worker->zh, path, 0, (char *) &buffer, &buffer_len,
 		     &stat);
 	assert (result == ZOK);
 
@@ -87,7 +87,7 @@ worker_new_interval (worker_t * worker, localdb_t * localdb)
 
 	buffer++;
 
-	result = zoo_set (worker->zh, path, (const char *) buffer,
+	result = zoo_set (worker->zh, path, (const char *) &buffer,
 			  buffer_len, stat.version);
 
 	if (ZBADVERSION == result) {
@@ -125,7 +125,7 @@ worker_balance (balance_t * balance)
 {
 
     zmsg_t *msg = zmsg_recv (balance->self_bl);
-    zmsg_t *response;
+    zmsg_t *responce;
 
     zframe_t *address = zmsg_unwrap (msg);
 
@@ -140,10 +140,11 @@ worker_balance (balance_t * balance)
 // this is confirmation
 
 	//identify the on_give object
-	on_give_t *iter = zlist (balance->on_gives);
+	on_give_t *iter = zlist_first (balance->on_gives);
 	while (iter) {
 	    if ((memcmp
-		 (zframe_data (id_frame), iter->un_id, sizeof (int)) == 0)) {
+		 (zframe_data (id_frame), &(iter->un_id),
+		  sizeof (int)) == 0)) {
 
 
 		if (memcmp (INTERVAL_RECEIVED, zframe_data (type_fr), 1) == 0) {
@@ -162,14 +163,14 @@ worker_balance (balance_t * balance)
 
 
 		    interval_t *interval;
-		    interval_init (&interval, event->start event->end);
+		    interval_init (&interval, &(event->start), &(event->end));
 
 		    khint_t hiter;
 		    uint64_t key;
 		    vertex_t *vertex;
 		    uint64_t counter = 1;
 		    uint64_t vertices = 0;
-		    zmsg_t *response_dup = zmsg_dup (response);
+		    zmsg_t *responce_dup = zmsg_dup (responce);
 		    frame = zframe_new (&counter, sizeof (uint64_t));
 		    zmsg_add (responce_dup, frame);
 
@@ -191,7 +192,7 @@ worker_balance (balance_t * balance)
 				      zframe_new (vertex, sizeof (vertex_t)));
 			    if (counter < 1 + vertices / COUNTER_SIZE) {
 				zmsg_wrap (responce_dup, address);
-				zmsg_send (&responce_dup, router_bl);
+				zmsg_send (&responce_dup, balance->router_bl);
 				counter++;
 				response_dup = zmsg_dup (response);
 				frame =
@@ -287,7 +288,7 @@ worker_balance (balance_t * balance)
 
 
 			zmsg_wrap (responce_dup, address);
-			zmsg_send (&responce_dup, router_bl);
+			zmsg_send (&responce_dup, balance->router_bl);
 
 
 
@@ -346,7 +347,7 @@ worker_balance (balance_t * balance)
 			    frame = zframe_new (&zero, sizeof (uint64_t));
 			    zmsg_add (responce, frame);
 			    zmsg_wrap (responce, address);
-			    zmsg_send (&responce, router_bl);
+			    zmsg_send (&responce, balance->router_bl);
 
 			    //erase event if it exists
 			    if (events_update
@@ -428,7 +429,7 @@ worker_balance (balance_t * balance)
 			    }
 
 			    zmsg_wrap (responce, address);
-			    zmsg_send (&responce, router_bl);
+			    zmsg_send (&responce, balance->router_bl);
 
 
 
@@ -487,7 +488,7 @@ worker_balance (balance_t * balance)
 			    zframe_new (&(iter->counter), sizeof (uint64_t));
 			zmsg_add (responce, frame);
 			zmsg_wrap (responce, address);
-			zmsg_send (&responce, router_bl);
+			zmsg_send (&responce, balance->router_bl);
 
 		    }
 
@@ -549,7 +550,7 @@ worker_balance (balance_t * balance)
 	    frame = zframe_dup (key_frame);
 	    zmsg_add (responce, frame);
 	    zmsg_wrap (responce, address);
-	    zmsg_send (&responce, router_bl);
+	    zmsg_send (&responce, balance->router_bl);
 
 	}
 

@@ -50,20 +50,6 @@ cmp_hash_t (struct hash_t *first, struct hash_t *second)
 }
 
 
-struct router_t
-{
-    int type;			//1 is db 0 is worker
-    struct hash_rb_t hash_rb;
-    int repl;			//replication, used only be the db_routing
-    node_t *self;
-
-      khash_t (nodes_t) * nodes;
-};
-
-
-
-
-
 int
 router_init (struct router_t **router, int type)
 {
@@ -221,7 +207,7 @@ router_dbroute (struct router_t *router, uint64_t key, char **rkey,
 
     if (result == NULL) {
 	*rkey = NULL;
-      goto:end;
+	return;
     }
 
     int all = 1;
@@ -266,8 +252,6 @@ router_dbroute (struct router_t *router, uint64_t key, char **rkey,
 	}
     }
 
-  end:
-
 
 }
 
@@ -291,7 +275,7 @@ router_events (router_t * router, node_t * node, int removal)
 
     int dif_st_piece = 0;
     int dif_n_pieces = 0;
-    struct _hash_t *hash;	//hash array
+    struct hash_t *hash;	//hash array
     int *remove;		// an array that shows if that hash is removed or added
     int size;			//the size of the array
 
@@ -310,8 +294,8 @@ router_events (router_t * router, node_t * node, int removal)
 	    assert (dif_n_pieces == 0);
 
 	    hash =
-		(struct _hash_t *) malloc (dif_st_piece * 2 *
-					   sizeof (struct _hash_t));
+		(struct hash_t *) malloc (dif_st_piece * 2 *
+					  sizeof (struct hash_t));
 	    remove = (int *) malloc (dif_st_piece * 2 * sizeof (int));
 	    size = dif_st_piece * 2;
 
@@ -343,8 +327,8 @@ router_events (router_t * router, node_t * node, int removal)
 	    assert (dif_st_piece == 0);
 
 	    hash =
-		(struct _hash_t *) malloc (dif_n_pieces *
-					   sizeof (struct _hash_t));
+		(struct hash_t *) malloc (dif_n_pieces *
+					  sizeof (struct hash_t));
 	    remove = (int *) malloc (dif_n_pieces * sizeof (int));
 	    size = dif_n_pieces;
 	    char key[1000];
@@ -372,8 +356,8 @@ router_events (router_t * router, node_t * node, int removal)
 	if (doesnt_exist) {
 
 	    hash =
-		(struct _hash_t *) malloc (node->n_pieces *
-					   sizeof (struct _hash_t));
+		(struct hash_t *) malloc (node->n_pieces *
+					  sizeof (struct hash_t));
 	    remove = (int *) malloc (node->n_pieces * sizeof (int));
 	    size = node->n_pieces;
 	    char key[1000];
@@ -401,8 +385,8 @@ router_events (router_t * router, node_t * node, int removal)
     else {
 //the case where we remove a node
 	hash =
-	    (struct _hash_t *) malloc (node->n_pieces *
-				       sizeof (struct _hash_t));
+	    (struct hash_t *) malloc (node->n_pieces *
+				      sizeof (struct hash_t));
 	remove = (int *) malloc (node->n_pieces * sizeof (int));
 	size = node->n_pieces;
 	char key[1000];
@@ -431,25 +415,25 @@ router_events (router_t * router, node_t * node, int removal)
 //
 //
 //
-
-    for (iter = 0; iter < size, iter++) {
+    int iter;
+    for (iter = 0; iter < size; iter++) {
 	if (remove[iter] != 2) {
 	    int siter = 0;
-	    struct _hash_t *forward;
-	    struct _hash_t *backward;
+	    struct hash_t *forward;
+	    struct hash_t *backward;
 
 //if exists true, forward or backward cannot be one of the removed hashes
 //make it faster
-	    forward = &hash[iter];
+	    forward = &(hash[iter]);
 	    forward = RB_NFIND (hash_rb_t, &(router->hash_rb), forward);
-	    while (true) {
+	    while (1) {
 		int br = 1;
 		if (forward == NULL) {
 		    break;
 		}
 		int triter;
 		for (triter = 0; triter < size; triter++) {
-		    if (cmp_hkey (hash[triter].hkey, forward.hkey) == 0) {
+		    if (cmp_hash_t (&(hash[triter]), forward) == 0) {
 			br = 0;
 			break;
 		    }
@@ -462,7 +446,7 @@ router_events (router_t * router, node_t * node, int removal)
 	    //we cross the "river"
 	    if (forward == NULL) {
 		forward = RB_MIN (hash_rb_t, &(router->hash_rb));
-		while (true) {
+		while (1) {
 		    int br = 1;
 		    //the case where there are no nodes at all
 		    if (forward == NULL) {
@@ -470,7 +454,7 @@ router_events (router_t * router, node_t * node, int removal)
 		    }
 		    int triter;
 		    for (triter = 0; triter < size; triter++) {
-			if (cmp_hkey (hash[triter].hkey, forward.hkey) == 0) {
+			if (cmp_hash_t (&(hash[triter]), forward) == 0) {
 			    br = 0;
 			    break;
 			}
@@ -484,7 +468,7 @@ router_events (router_t * router, node_t * node, int removal)
 		}
 
 		backward = RB_MAX (hash_rb_t, &(router->hash_rb));
-		while (true) {
+		while (1) {
 		    int br = 1;
 		    //the case where there are no nodes at all
 		    if (backward == NULL) {
@@ -492,7 +476,7 @@ router_events (router_t * router, node_t * node, int removal)
 		    }
 		    int triter;
 		    for (triter = 0; triter < size; triter++) {
-			if (cmp_hkey (hash[triter].hkey, backward.hkey) == 0) {
+			if (cmp_hash_t (&(hash[triter]), backward) == 0) {
 			    br = 0;
 			    break;
 			}
@@ -511,14 +495,14 @@ router_events (router_t * router, node_t * node, int removal)
 	    else {
 
 		backward = RB_PREV (hash_rb_t, &(router->hash_rb), forward);
-		while (true) {
+		while (1) {
 		    int br = 1;	// same comments as in forward
 		    if (backward == NULL) {
 			break;
 		    }
 		    int triter;
 		    for (triter = 0; triter < size; triter++) {
-			if (cmp_hkey (hash[triter].hkey, backward.hkey) == 0) {
+			if (cmp_hash_t (&(hash[triter]), backward) == 0) {
 			    br = 0;
 			    break;
 			}
@@ -533,15 +517,14 @@ router_events (router_t * router, node_t * node, int removal)
 
 		if (backward == NULL) {
 		    backward = RB_MAX (hash_rb_t, &(router->hash_rb));
-		    while (true) {
+		    while (1) {
 			int br = 1;
 			if (backward == NULL) {
 			    break;
 			}
 			int triter;
 			for (triter = 0; triter < size; triter++) {
-			    if (cmp_hkey (hash[triter].hkey, backward.hkey) ==
-				0) {
+			    if (cmp_hash_t (&(hash[triter]), backward) == 0) {
 				br = 0;
 				break;
 			    }
@@ -576,8 +559,7 @@ router_events (router_t * router, node_t * node, int removal)
 	    }
 	    else {
 //remove non-relevant cases
-		if (forward->node != router->self
-		    && exists->node != router->self) {
+		if (forward->node != router->self && exists != router->self) {
 
 //this wont be necessary
 //as we already made the pass
@@ -591,30 +573,32 @@ router_events (router_t * router, node_t * node, int removal)
 //backward is the start point
 //check also the interval belong implementation
 
-		    for (siter = 0; siter < size, siter++) {
+		    for (siter = 0; siter < size; siter++) {
 			if (remove[siter] != 2) {
 			    interval_t *big_interval;
-			    interval_init (&big_interval, backward->hkey,
-					   forward->hkey);
+			    interval_init (&big_interval, &(backward->hkey),
+					   &(forward->hkey));
 			    if (interval_belongs_h
-				(big_interval, hash[siter])) {
+				(big_interval, &(hash[siter].hkey))) {
 				interval_t *small_interval;
-				interval_init (&big_interval, backward->hkey,
-					       hash[iter]->hkey);
+				interval_init (&big_interval,
+					       &(backward->hkey),
+					       &(hash[iter].hkey));
 				if (interval_belongs_h
-				    (small_interval, hash[siter])) {
+				    (small_interval, &(hash[siter].hkey))) {
 				    remove[siter] = 2;
 
 				}
 				else {
 				    memcpy (&(hash[iter]), &(hash[siter]),
-					    sizeof (hash_t));
+					    sizeof (struct hash_t));
 				    remove[siter] = 2;
 				}
+				free (small_interval);
+
 			    }
 
 			    free (big_interval);
-			    free (small_interval);
 			}
 
 		    }
@@ -623,8 +607,7 @@ router_events (router_t * router, node_t * node, int removal)
 
 //remove the case where the transfer is between itself
 		    if (exists) {
-			if (exists->node == router->self
-			    && exists->node == forward->node) {
+			if (exists == router->self && exists == forward->node) {
 			    remove[iter] = 2;
 			    break;
 			}
@@ -633,7 +616,7 @@ router_events (router_t * router, node_t * node, int removal)
 
 //create the event 
 		    event = (event_t *) malloc (sizeof (event_t));
-		    event->start = backward.hkey;
+		    event->start = backward->hkey;
 		    event->end = hash[iter].hkey;
 
 
@@ -645,8 +628,7 @@ router_events (router_t * router, node_t * node, int removal)
 		    }
 		    else {
 			if (exists) {
-			    if ((remove[iter] == 0
-				 && exists->node == router->self)) {
+			    if ((remove[iter] == 0 && exists == router->self)) {
 
 				event->give = 0;
 			    }

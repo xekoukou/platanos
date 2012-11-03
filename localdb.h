@@ -1,3 +1,7 @@
+#ifndef _OCTOPUS_LOCALDB_H_
+#define _OCTOPUS_LOCALDB_H_
+
+
 //leveldb
 #include<leveldb/c.h>
 
@@ -25,3 +29,6 @@ unsigned long localdb_get_counter (localdb_t * localdb);
 int localdb_set_interval (localdb_t * localdb, int interval);
 
 int localdb_get_interval (localdb_t * localdb);
+
+
+#endif

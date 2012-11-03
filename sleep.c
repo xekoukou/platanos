@@ -76,7 +76,7 @@ sleep_awake (sleep_t * sleep, unsigned short *wb)
 //update the timeout
 //if there is no other msg set the timeout to -1;
 
-	    zmsg_t *msg=NULL;
+    zmsg_t *msg = NULL;
 
     if (sleep->min != NULL) {
 	if ((sleep->min->expiry - zclock_time ()) < 0) {
@@ -91,26 +91,26 @@ sleep_awake (sleep_t * sleep, unsigned short *wb)
 	    //free the previous min smsg
 	    free (temp);
 
-             }
-             }
+	}
+    }
 
 //update the timeout 
 
-	    if (sleep->min == NULL) {
-		sleep->timeout = -1;
-	    }
-	    else {
-		sleep->timeout = sleep->min->expiry - zclock_time ();
-		sleep->pr_time = zclock_time ();
+    if (sleep->min == NULL) {
+	sleep->timeout = -1;
+    }
+    else {
+	sleep->timeout = sleep->min->expiry - zclock_time ();
+	sleep->pr_time = zclock_time ();
 
-		if (sleep->timeout < 0) {
-		    sleep->timeout = 0;
-		}
+	if (sleep->timeout < 0) {
+	    sleep->timeout = 0;
+	}
 
 
-	    }
-	    return msg;
-	
-    
+    }
+    return msg;
+
+
 
 }

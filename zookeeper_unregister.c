@@ -107,7 +107,7 @@ main ()
     scanf ("%d", &db);
 
     if (db != 1 && db != 0) {
-	prinf ("\n Error");
+	printf ("\n Error");
 	exit (0);
     }
 

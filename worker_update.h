@@ -11,15 +11,15 @@
 typedef struct
 {
     event_t *event;		//the event that is happening, must also be removed from events list before freed
-      zlist_t * unc_vertices;	//vertices that have been send but not confirmed
-                                // contains the khiter where it is saved by the khash
+    zlist_t *unc_vertices;	//vertices that have been send but not confirmed
+    // contains the khiter where it is saved by the khash
 
     uint64_t rec_counter;	//the counter of the last confirmation
     int un_id;
     uint64_t last_time;		//last_time till I sent the interval(initial msg) or last time till
 //i sent the ending msg(0 counter)
 //those operations will be repeated until they succeed
-   int state; 
+    int state;
 //state 0 giving the interval
 //state 1 giving the main body
 //state 2 sending the ending msg
@@ -29,10 +29,10 @@ typedef struct
 typedef struct
 {
     action_t *action;		//this action is happening, you ll need to add it to the list when it finishes
-     zlist_t * m_counters;	// counters that were sent but lost in the communication
+    zlist_t *m_counters;	// counters that were sent but lost in the communication
 //they are ordered
     int un_id;			//set by the giver to distinguish the confirmation msgs
-   uint64_t counter;   //counter of the last received data
+    uint64_t counter;		//counter of the last received data
 } on_receive_t;			//ongoing event
 
 
@@ -47,11 +47,11 @@ typedef struct
     zlist_t *actions;
     zlist_t *on_gives;
     zlist_t *on_recieves;
-   //used by on_gives scheduling
+    //used by on_gives scheduling
     int un_id;
     int64_t timeout;
     int64_t pr_time;
-    char *self_key;  //used to send the interval of the on_gives
+    char *self_key;		//used to send the interval of the on_gives
 } balance_t;
 
 

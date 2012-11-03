@@ -3,6 +3,8 @@
 #include"btree/kbtree.h"
 #include"localdb.h"
 #include"vertex.h"
+#include"router.h"
+#include"zookeeper.h"
 
 #ifndef OCTOPUS_WORKER_H_
 #define OCTOPUS_WORKER_H_
@@ -25,7 +27,7 @@ typedef struct
     router_t *router;
     zlist_t *events;
     intervals_t *intervals;
-    khash_t (vertices) * tree;
+      khash_t (vertices) * tree;
     void *socket_nb;
     void *self_nb;
     void *socket_wb;
@@ -38,9 +40,11 @@ typedef struct
 } compute_t;			//the zookeeper handle used to set the worker online or get
 		   //get the interval 
 
-int compute_init (compute_t ** compute, kbt;ee_t (vertices) * tree,
-		      router_t *router,zlist_t *events,intervals_t *intervals,void *socket_nb, void *self_nb, void *socket_wb,
-		  void *self_wb, localdb_t * localdb, worker_t * worker);
+int compute_init (compute_t ** compute, khash_t (vertices) * hash,
+		  router_t * router, zlist_t * events,
+		  intervals_t * intervals, void *socket_nb, void *self_nb,
+		  void *socket_wb, void *self_wb, localdb_t * localdb,
+		  worker_t * worker);
 
 
 
@@ -58,8 +62,9 @@ typedef struct
     int size;
 } workers_t;
 
+struct ozookeeper_t;
 
 
-int workers_init (workers_t ** workers, ozookeeper_t * ozookeeper);
+int workers_init (workers_t ** workers, struct ozookeeper_t *ozookeeper);
 
 #endif

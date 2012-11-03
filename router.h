@@ -6,7 +6,6 @@
 #include "tree/tree.h"
 #include <czmq.h>
 #include"hash/khash.h"
-#include"aknowledgements.h"
 
 
 
@@ -16,6 +15,7 @@ struct _hkey_t
     uint64_t prefix;
     uint64_t suffix;
 };
+
 
 
 struct node_t
@@ -32,6 +32,8 @@ struct node_t
 };
 
 
+typedef struct router_t router_t;
+typedef struct node_t node_t;
 
 KHASH_MAP_INIT_STR (nodes_t, node_t *);
 
@@ -49,8 +51,18 @@ int cmp_hash_t (struct hash_t *first, struct hash_t *second);
 RB_HEAD (hash_rb_t, hash_t);
 RB_PROTOTYPE (hash_rb_t, hash_t, field, cmp_hash_t);
 
-typedef struct router_t router_t;
-typedef struct node_t node_t;
+struct router_t
+{
+    int type;			//1 is db 0 is worker
+    struct hash_rb_t hash_rb;
+    int repl;			//replication, used only be the db_routing
+    node_t *self;
+
+      khash_t (nodes_t) * nodes;
+};
+
+
+
 
 int router_init (router_t ** router, int type);
 
@@ -83,6 +95,9 @@ int router_dbroute (struct router_t *router, uint64_t key, char **rkey,
 //finds a node with its  key
 //returns null if not found
 node_t *router_fnode (struct router_t *router, char *key);
+
+
+#include"aknowledgements.h"
 
 //returns an array of events of a specific size
 //if this node already exist it creates events from the difference of their settings

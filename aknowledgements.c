@@ -46,9 +46,9 @@ cmp_interval_t (struct interval_t *first, struct interval_t *second)
 RB_GENERATE (intervals_t, interval_t, field, cmp_interval_t);
 
 int
-intervals_init (intervals_t ** intervas)
+intervals_init (intervals_t * intervals)
 {
-    RB_INIT (*intervals);
+    RB_INIT (intervals);
 }
 
 
@@ -57,23 +57,23 @@ interval_init (interval_t ** interval, struct _hkey_t *start,
 	       struct _hkey_t *end)
 {
     *interval = (interval_t *) malloc (sizeof (interval_t));
-    memcpy ((*interval)->start, start, sizeof (struct _hkey_t));
-    memcpy ((*interval)->end, end, sizeof (struct _hkey_t));
+    memcpy (&((*interval)->start), start, sizeof (struct _hkey_t));
+    memcpy (&((*interval)->end), end, sizeof (struct _hkey_t));
 
 }
 
 int
-interval_minit (interval_t ** action, zmsg_t * msg)
+interval_minit (interval_t ** interval, zmsg_t * msg)
 {
 
     *interval = (interval_t *) malloc (sizeof (interval_t));
 
     zframe_t *frame = zmsg_first (msg);
-    frame = zframe_next (msg);
-    frame = zframe_next (msg);
-    memcpy ((*interval)->start, zframe_data (frame), zframe_size (frame));
-    frame = zframe_next (msg);
-    memcpy ((*interval)->end, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    frame = zmsg_next (msg);
+    memcpy (&((*interval)->start), zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (&((*interval)->end), zframe_data (frame), zframe_size (frame));
 
 
 }
@@ -81,7 +81,8 @@ interval_minit (interval_t ** action, zmsg_t * msg)
 
 
 //check for the initial implementation(intervals_belong_h)
-int interval_belongs_h (interval_t * interval, struct _hkey_t *hkey)
+int
+interval_belongs_h (interval_t * interval, struct _hkey_t *hkey)
 {
 
 
@@ -92,7 +93,7 @@ int interval_belongs_h (interval_t * interval, struct _hkey_t *hkey)
 
 
     int side = 0;
-    if (cmp_hkey (&(interval.end), hkey) < 0) {
+    if (cmp_hkey (&(interval->end), hkey) < 0) {
 	side = 1;
     }
 
@@ -164,16 +165,16 @@ intervals_add (intervals_t * intervals, interval_t * interval)
     struct _hkey_t temp;
 
 
-    memcpy (temp, interval->end, sizeof (struct _hkey_t));
-    memcpy (interval->end, interval->start, sizeof (struct _hkey_t));
+    memcpy (&temp, &(interval->end), sizeof (struct _hkey_t));
+    memcpy (&(interval->end), &(interval->start), sizeof (struct _hkey_t));
 
     interval_above = RB_FIND (intervals_t, intervals, interval);
 
-    memcpy (interval->end, temp, sizeof (struct _hkey_t));
+    memcpy (&(interval->end), &temp, sizeof (struct _hkey_t));
 
     if (interval_above) {
 
-	memcpy (interval->start, interval_above->start,
+	memcpy (&(interval->start), &(interval_above->start),
 		sizeof (struct _hkey_t));
 	RB_REMOVE (intervals_t, intervals, interval_above);
 	free (interval_above);
@@ -182,21 +183,24 @@ intervals_add (intervals_t * intervals, interval_t * interval)
     interval_below = RB_NFIND (intervals_t, intervals, interval);
 
 //2 intervals should never overlap
-    assert (memcmp (interval_below->end, interval->end, sizeof (_hkey_t)) !=
-	    0);
+    assert (memcmp
+	    (&(interval_below->end), &(interval->end),
+	     sizeof (struct _hkey_t)) != 0);
 
 //in case the end of the interval is in the other side of the circle
     if (interval_below == NULL) {
 
 	interval_below = RB_MIN (intervals_t, intervals);
-	assert (memcmp (interval_below->end, interval->end, sizeof (_hkey_t))
+	assert (memcmp
+		(&(interval_below->end), &(interval->end),
+		 sizeof (struct _hkey_t))
 		!= 0);
     }
 
     if (interval_below) {
-	if (memcmp (interval_below->start, interval->end,
+	if (memcmp (&(interval_below->start), &(interval->end),
 		    sizeof (struct _hkey_t))) {
-	    memcpy (interval->end, interval_below->end,
+	    memcpy (&(interval->end), &(interval_below->end),
 		    sizeof (struct _hkey_t));
 	    RB_REMOVE (intervals_t, intervals, interval_below);
 	    free (interval_below);
@@ -266,12 +270,15 @@ intervals_contained (intervals_t * intervals, interval_t * interval)
 
 }
 
-`
+
 //returns true if an interval was removed
-    int
+int
 intervals_remove (intervals_t * intervals, interval_t * interval)
 {
-    interval_t *inside = interval_contained (intervals, interval);
+    interval_t *inside = intervals_contained (intervals, interval);
+    interval_t *up;
+    interval_t *down;
+
 
     if (inside) {
 
@@ -469,8 +476,9 @@ events_possible (zlist_t * events, intervals_t * intervals)
     event_t *iter = zlist_first (events);
     while (iter) {
 	if (iter->give) {
-	    memcpy (interval->start, iter->start, sizeof (struct _hkey_t));
-	    memcpy (interval->end, iter->end, sizeof (struct _hkey_t));
+	    memcpy (&(interval->start), &(iter->start),
+		    sizeof (struct _hkey_t));
+	    memcpy (&(interval->end), &(iter->end), sizeof (struct _hkey_t));
 
 	    if (interval_contained (intervals, interval)) {
 		return iter;
@@ -490,7 +498,7 @@ event_possible (event_t * event, intervals_t * intervals)
 {
 
     interval_t *interval;
-    interval_init (&interval, event->start event->end);
+    interval_init (&interval, &(event->start), &(event->end));
 
     if (event->give) {
 
@@ -548,11 +556,11 @@ action_minit (action_t ** action, zmsg_t * msg)
 
     zframe_t *frame = zmsg_first (msg);
     memcpy ((*action)->key, zframe_data (frame), zframe_size (frame));
-    frame = zframe_next (msg);
-    memcpy ((*action)->start, zframe_data (frame), zframe_size (frame));
-    frame = zframe_next (msg);
-    memcpy ((*action)->end, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (&((*action)->start), zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (&((*action)->end), zframe_data (frame), zframe_size (frame));
 
-    zmsg_destroy (msg);
+    zmsg_destroy (&msg);
 
 }

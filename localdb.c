@@ -145,7 +145,7 @@ localdb_get_interval (localdb_t * localdb)
 	return -1;
     }
     if (vallen == sizeof (int)) {
-	memcpy (&counter, result, sizeof (int));
+	memcpy (&interval, result, sizeof (int));
 	return interval;
     }
     else {

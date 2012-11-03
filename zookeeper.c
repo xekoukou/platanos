@@ -218,8 +218,8 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg)
 					   sizeof (unsigned int)));
 		    zmsg_push (msg_to_send,
 			       zframe_new (ozookeeper->workers->id[it],
-					   strlen (ozookeeper->
-						   workers->id[it])));
+					   strlen (ozookeeper->workers->
+						   id[it])));
 		    zmsg_send (&msg_to_send, ozookeeper->pub);
 
 		}
@@ -949,7 +949,8 @@ w_computers (zhandle_t * zh, int type,
 					     computers.data[iter],
 					     resources.data[siter]);
 				    oz_updater_free_key (&
-							 (ozookeeper->updater));
+							 (ozookeeper->
+							  updater));
 				    oz_updater_key (&(ozookeeper->updater),
 						    spath);
 				    sprintf (spath,
@@ -1022,8 +1023,8 @@ w_computers (zhandle_t * zh, int type,
 	    for (siter = 0; siter < size; siter++) {
 		if (array[siter] == 0) {
 		    deallocate_String_vector (&
-					      (ozookeeper->
-					       updater.resources[siter]));
+					      (ozookeeper->updater.
+					       resources[siter]));
 		}
 
 	    }
