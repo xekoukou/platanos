@@ -1,0 +1,36 @@
+cmake_minimum_required (VERSION 2.6)
+project (octopus)
+
+set(CMAKE_CXX_FLAGS "-g -Wall")
+add_executable(zookeeper_register zookeeper_register.c)
+
+target_link_libraries(zookeeper_register zookeeper_mt proc czmq)
+
+add_executable(zookeeper_unregister zookeeper_unregister.c)
+
+target_link_libraries(zookeeper_unregister zookeeper_mt proc czmq)
+
+add_executable(zookeeper_global_init zookeeper_global_init.c)
+
+target_link_libraries(zookeeper_global_init zookeeper_mt proc czmq)
+
+include_directories ("${PROJECT_SOURCE_DIR}/MurmurHash")
+add_subdirectory(MurmurHash)
+
+include_directories ("${PROJECT_SOURCE_DIR}/tree")
+
+include_directories ("${PROJECT_SOURCE_DIR}/hash")
+
+add_executable(node_exec 
+aknowledgements.c
+common.c
+config.c
+localdb.c
+main.c
+router.c
+sleep.c
+vertex.c
+worker.c
+worker_update.c
+zookeeper.c
+)
