@@ -1,0 +1,4 @@
+127.0.0.1:2181  -->zookeeper servers
+3000  --> timeout
+octopus -->octopus name
+c3po --> computer name
