@@ -4,6 +4,8 @@
 #include"router.h"
 #include"aknowledgements.h"
 #include"czmq.h"
+#include"MurmurHash/MurmurHash3.h"
+
 
 int
 cmp_hkey_t (struct _hkey_t *first, struct _hkey_t *second)
@@ -39,7 +41,7 @@ int
 cmp_interval_t (struct interval_t *first, struct interval_t *second)
 {
 
-    cmp_hkey (&(first->end), &(second->end));
+    cmp_hkey_t (&(first->end), &(second->end));
 
 }
 
@@ -93,7 +95,7 @@ interval_belongs_h (interval_t * interval, struct _hkey_t *hkey)
 
 
     int side = 0;
-    if (cmp_hkey (&(interval->end), hkey) < 0) {
+    if (cmp_hkey_t (&(interval->end), hkey) < 0) {
 	side = 1;
     }
 
@@ -102,11 +104,11 @@ interval_belongs_h (interval_t * interval, struct _hkey_t *hkey)
 	//check whether it is reversed
 	int reversed = 0;
 
-	if ((cmp_hkey (&(interval->start), &(interval->end)) > 0)) {
+	if ((cmp_hkey_t (&(interval->start), &(interval->end)) > 0)) {
 	    reversed = 1;
 	}
 	if (!reversed && !side) {
-	    if (cmp_hkey (&(search.end), &(interval->start)) > 0) {
+	    if (cmp_hkey_t (&(search.end), &(interval->start)) > 0) {
 		return 1;
 
 	    }
@@ -121,7 +123,7 @@ interval_belongs_h (interval_t * interval, struct _hkey_t *hkey)
 
 	}
 	if (reversed && side) {
-	    if (cmp_hkey (&(search.end), &(interval->start)) > 0) {
+	    if (cmp_hkey_t (&(search.end), &(interval->start)) > 0) {
 		return 1;
 
 	    }
@@ -145,7 +147,8 @@ interval_belongs (interval_t * interval, uint64_t key)
 
     struct _hkey_t hkey;
 
-    MurmurHash3_x64_128 ((void *) &key, sizeof (uint64_t), 0, (void *) &hkey);
+    MurmurHash3_x64_128 ((const void *) &key, (int) sizeof (uint64_t), 0,
+			 (void *) &hkey);
 
     return interval_belongs_h (interval, &hkey);
 
@@ -220,22 +223,22 @@ intervals_contained (intervals_t * intervals, interval_t * interval)
     int reversed = 0;
     int iter_reversed;
 
-    if ((cmp_hkey (&(interval->start), &(interval->end)) > 0)) {
+    if ((cmp_hkey_t (&(interval->start), &(interval->end)) > 0)) {
 	reversed = 1;
     }
 
     interval_t *iter;
     RB_FOREACH (iter, intervals_t, intervals) {
 	iter_reversed = 0;
-	if ((cmp_hkey (&(iter->start), &(iter->end)) > 0)) {
+	if ((cmp_hkey_t (&(iter->start), &(iter->end)) > 0)) {
 	    iter_reversed = 1;
 	}
 //4 cases
 
 	if ((!reversed && !iter_reversed) || (reversed && iter_reversed)) {
 
-	    if ((cmp_hkey (&(interval->start), &(iter->start)) >= 0)
-		&& (cmp_hkey (&(iter->end), &(interval->end)) >= 0)) {
+	    if ((cmp_hkey_t (&(interval->start), &(iter->start)) >= 0)
+		&& (cmp_hkey_t (&(iter->end), &(interval->end)) >= 0)) {
 		return iter;
 
 	    }
@@ -244,13 +247,13 @@ intervals_contained (intervals_t * intervals, interval_t * interval)
 	}
 	if ((!reversed && iter_reversed)) {
 
-	    if ((cmp_hkey (&(interval->end), &(iter->start)) >= 0)
-		&& (cmp_hkey (&(iter->start), &(interval->start)) <= 0)) {
+	    if ((cmp_hkey_t (&(interval->end), &(iter->start)) >= 0)
+		&& (cmp_hkey_t (&(iter->start), &(interval->start)) <= 0)) {
 		return iter;
 
 	    }
-	    if ((cmp_hkey (&(interval->end), &(iter->end)) <= 0)
-		&& (cmp_hkey (&(iter->end), &(interval->start)) >= 0)) {
+	    if ((cmp_hkey_t (&(interval->end), &(iter->end)) <= 0)
+		&& (cmp_hkey_t (&(iter->end), &(interval->start)) >= 0)) {
 		return iter;
 
 	    }
@@ -282,10 +285,10 @@ intervals_remove (intervals_t * intervals, interval_t * interval)
 
     if (inside) {
 
-	if (cmp_hkey (&(interval->start), &(inside->start)) != 0) {
+	if (cmp_hkey_t (&(interval->start), &(inside->start)) != 0) {
 	    interval_init (&up, &(inside->start), &(interval->start));
 	}
-	if (cmp_hkey (&(interval->end), &(inside->end)) != 0) {
+	if (cmp_hkey_t (&(interval->end), &(inside->end)) != 0) {
 	    interval_init (&down, &(interval->end), &(inside->end));
 	}
 
@@ -333,11 +336,11 @@ intervals_belongs_h (intervals_t * intervals, struct _hkey_t *hkey)
 	//check whether it is reversed
 	int reversed = 0;
 
-	if ((cmp_hkey (&(result->start), &(result->end)) > 0)) {
+	if ((cmp_hkey_t (&(result->start), &(result->end)) > 0)) {
 	    reversed = 1;
 	}
 	if (!reversed && !side) {
-	    if (cmp_hkey (&(search.end), &(result->start)) > 0) {
+	    if (cmp_hkey_t (&(search.end), &(result->start)) > 0) {
 		return 1;
 
 	    }
@@ -352,7 +355,7 @@ intervals_belongs_h (intervals_t * intervals, struct _hkey_t *hkey)
 
 	}
 	if (reversed && side) {
-	    if (cmp_hkey (&(search.end), &(result->start)) > 0) {
+	    if (cmp_hkey_t (&(search.end), &(result->start)) > 0) {
 		return 1;
 
 	    }
@@ -378,7 +381,8 @@ intervals_belongs (intervals_t * intervals, uint64_t key)
 
     struct _hkey_t hkey;
 
-    MurmurHash3_x64_128 ((void *) &key, sizeof (uint64_t), 0, (void *) &hkey);
+    MurmurHash3_x64_128 ((const void *) &key, sizeof (uint64_t), 0,
+			 (void *) &hkey);
 
     return intervals_belongs_h (intervals, &hkey);
 
@@ -401,10 +405,10 @@ cmp_ev_ac (event_t * event, action_t * action)
 	return 0;
     }
 
-    if (cmp_hkey (&(event->start), &(action->start)) != 0) {
+    if (cmp_hkey_t (&(event->start), &(action->start)) != 0) {
 	return 0;
     }
-    if (cmp_hkey (&(event->end), &(action->end)) != 0) {
+    if (cmp_hkey_t (&(event->end), &(action->end)) != 0) {
 	return 0;
     }
 
@@ -480,7 +484,7 @@ events_possible (zlist_t * events, intervals_t * intervals)
 		    sizeof (struct _hkey_t));
 	    memcpy (&(interval->end), &(iter->end), sizeof (struct _hkey_t));
 
-	    if (interval_contained (intervals, interval)) {
+	    if (intervals_contained (intervals, interval)) {
 		return iter;
 	    }
 
@@ -502,7 +506,7 @@ event_possible (event_t * event, intervals_t * intervals)
 
     if (event->give) {
 
-	if (interval_contained (intervals, interval)) {
+	if (intervals_contained (intervals, interval)) {
 	    return 1;
 	}
 

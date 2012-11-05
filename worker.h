@@ -1,6 +1,5 @@
 #include<czmq.h>
 #include"hash/khash.h"
-#include"btree/kbtree.h"
 #include"localdb.h"
 #include"vertex.h"
 #include"router.h"
@@ -27,7 +26,7 @@ typedef struct
     router_t *router;
     zlist_t *events;
     intervals_t *intervals;
-      khash_t (vertices) * tree;
+      khash_t (vertices) * hash;
     void *socket_nb;
     void *self_nb;
     void *socket_wb;
@@ -65,6 +64,7 @@ typedef struct
 struct ozookeeper_t;
 
 
-int workers_init (workers_t ** workers, struct ozookeeper_t *ozookeeper);
+int workers_init (workers_t ** workers, zctx_t * ctx,
+		  struct ozookeeper_t *ozookeeper);
 
 #endif

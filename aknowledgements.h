@@ -7,6 +7,7 @@
 #include "tree/tree.h"
 #include"router.h"
 #include"czmq.h"
+#include"MurmurHash/MurmurHash3.h"
 
 //TODO We dont need an rb tree here
 //but it works anyway

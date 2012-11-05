@@ -146,7 +146,7 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg)
 //but it is not of a great deal        
 	rc = zmq_poll (pollitems, 1, RESEND_INTERVAL);
 	assert (rc != -1);
-	if (pollitem[0].revents & ZMQ_POLLIN) {
+	if (pollitems[0].revents & ZMQ_POLLIN) {
 
 	    int new = 1;
 	    resp = zmsg_recv (ozookeeper->router);
@@ -243,7 +243,9 @@ int
 oz_updater_init (oz_updater_t * updater)
 {
     updater->id = 1;
-    allocate_String_vector (&(updater->computers), 0);
+    //allocate_String_vector (&(updater->computers));
+    updater->computers.count = 0;
+    updater->computers.data = 0;
 }
 
 // just creates a path
@@ -307,7 +309,7 @@ ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg)
 
 	rc = zmq_poll (pollitems, 1, RESEND_INTERVAL);
 	assert (rc != -1);
-	if (pollitem[0].revents & ZMQ_POLLIN) {
+	if (pollitems[0].revents & ZMQ_POLLIN) {
 
 
 
@@ -443,7 +445,7 @@ w_st_piece (zhandle_t * zh, int type,
     oconfig_octopus (ozookeeper->config, octopus);
     char *temp;
     int temp_size;
-    part_path (path, 2, &temp, &temp_size);
+    part_path ((const char *) path, 2, &temp, &temp_size);
     strncpy (resource, temp, temp_size);
     part_path (path, 4, &temp, &temp_size);
     strncpy (comp_name, temp, temp_size);
@@ -740,8 +742,8 @@ w_resources (zhandle_t * zh, int type,
 			 siter++) {
 			if (strcmp
 			    (resources.data[iter],
-			     ozookeeper->resources[position].data[siter]) ==
-			    0) {
+			     ozookeeper->updater.resources[position].
+			     data[siter]) == 0) {
 			    exists = 1;
 			}
 		    }
@@ -1049,7 +1051,7 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 {
 
     ozookeeper_t *ozookeeper = (ozookeeper_t *) data;
-    struct String_vector *computers = strings;
+    const struct String_vector *computers = strings;
 
     char octopus[1000];
     char comp_name[1000];

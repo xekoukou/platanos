@@ -1,4 +1,6 @@
+#include<czmq.h>
 #include<stdio.h>
+#include<zookeeper/zookeeper.h>
 #include"config.h"
 #include"zookeeper.h"
 #include"worker.h"
@@ -37,7 +39,7 @@ main ()
     ozookeeper_init (&ozookeeper, config, watcherctx, pub, router);
 
     workers_t *workers;
-    workers_init (&workers, ozookeeper);
+    workers_init (&workers, ctx, ozookeeper);
 
 
 }

@@ -4,7 +4,6 @@
 #include"worker.h"
 #include"vertex.h"
 #include"hash/khash.h"
-#include"btree/kbtree.h"
 
 
 
@@ -46,7 +45,7 @@ typedef struct
     zlist_t *events;
     zlist_t *actions;
     zlist_t *on_gives;
-    zlist_t *on_recieves;
+    zlist_t *on_receives;
     //used by on_gives scheduling
     int un_id;
     int64_t timeout;
@@ -68,10 +67,9 @@ int update_init (update_t ** update, void *dealer, router_t * router,
 		 balance_t * balance, compute_t * compute);
 
 int balance_init (balance_t ** balance, khash_t (vertices) * hash,
-		  void *router_bl, void *self_bl, intervals_t * intervals,
-		  zlist_t * events, zlist_t * actions);
+		  void *router_bl, void *self_bl, char *self_key);
 
-int on_give_init (on_give_t ** on_give, event_t * event);
+int on_give_init (on_give_t ** on_give, event_t * event, int un_id);
 
 int on_give_destroy (on_give_t * on_give);
 

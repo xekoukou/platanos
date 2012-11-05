@@ -1,12 +1,12 @@
-#ifndef _ROUTER_H_
-#define _ROUTER_H_
+#ifndef OCTOPUS_ROUTER_H_
+#define OCTOPUS_ROUTER_H_
 
 #include <stdint.h>
 #include <stddef.h>
 #include "tree/tree.h"
 #include <czmq.h>
 #include"hash/khash.h"
-
+#include"MurmurHash/MurmurHash3.h"
 
 
 

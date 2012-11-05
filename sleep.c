@@ -1,6 +1,11 @@
 #include"sleep.h"
 #include<czmq.h>
 #include<stdlib.h>
+#include"tree/tree.h"
+
+
+RB_GENERATE (smsg_rb_t, smsg_t, field, cmp_smsg_t);
+
 
 int
 cmp_smsg_t (struct smsg_t *first, struct smsg_t *second)

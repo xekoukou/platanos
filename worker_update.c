@@ -10,7 +10,7 @@
 
 int
 update_init (update_t ** update, void *dealer, router_t * router,
-	     balance_t * balance)
+	     balance_t * balance, compute_t * compute)
 {
     *update = (update_t *) malloc (sizeof (update_t));
     (*update)->id = 0;
@@ -41,7 +41,7 @@ on_give_destroy (on_give_t * on_give)
 {
     free (on_give->event);
     assert (on_give->unc_vertices != NULL);
-    zlist_destroy (on_give->unc_vertices);
+    zlist_destroy (&(on_give->unc_vertices));
     free (on_give);
 }
 
@@ -66,7 +66,7 @@ int
 on_receive_destroy (on_receive_t * on_receive)
 {
     assert (on_receive->m_counters != NULL);
-    zlist_destroy (on_receive->m_counters);
+    zlist_destroy (&(on_receive->m_counters));
     free (on_receive);
 }
 
@@ -83,12 +83,12 @@ balance_init (balance_t ** balance, khash_t (vertices) * hash,
     (*balance)->hash = hash;
     (*balance)->router_bl = router_bl;
     (*balance)->self_bl = self_bl;
-    intervals_init (&((*balance)->intervals));
+    intervals_init ((*balance)->intervals);
     (*balance)->events = zlist_new ();
     (*balance)->actions = zlist_new ();
     (*balance)->on_gives = zlist_new ();
     (*balance)->on_receives = zlist_new ();
-    (*balance)->id = 0;
+    (*balance)->un_id = 0;
     (*balance)->timeout = -1;
     (*balance)->pr_time = zclock_time ();
     (*balance)->self_key = self_key;
