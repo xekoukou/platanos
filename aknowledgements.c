@@ -41,20 +41,20 @@ int
 cmp_interval_t (struct interval_t *first, struct interval_t *second)
 {
 
-    cmp_hkey_t (&(first->end), &(second->end));
+    return cmp_hkey_t (&(first->end), &(second->end));
 
 }
 
 RB_GENERATE (intervals_t, interval_t, field, cmp_interval_t);
 
-int
+void
 intervals_init (intervals_t * intervals)
 {
     RB_INIT (intervals);
 }
 
 
-int
+void
 interval_init (interval_t ** interval, struct _hkey_t *start,
 	       struct _hkey_t *end)
 {
@@ -64,7 +64,7 @@ interval_init (interval_t ** interval, struct _hkey_t *start,
 
 }
 
-int
+void
 interval_minit (interval_t ** interval, zmsg_t * msg)
 {
 
@@ -159,7 +159,7 @@ interval_belongs (interval_t * interval, uint64_t key)
 
 
 
-int
+void
 intervals_add (intervals_t * intervals, interval_t * interval)
 {
 
@@ -433,7 +433,7 @@ events_search (zlist_t * events, action_t * action)
 
 }
 
-int
+void
 events_remove (zlist_t * events, node_t * node)
 {
 
@@ -552,7 +552,7 @@ actions_update (zlist_t * actions, event_t * event)
 }
 
 //action is only created by a received msg
-int
+void
 action_minit (action_t ** action, zmsg_t * msg)
 {
 

@@ -20,7 +20,7 @@ cmp_smsg_t (struct smsg_t *first, struct smsg_t *second)
 }
 
 
-int
+void
 sleep_init (sleep_t ** sleep)
 {
     *sleep = (sleep_t *) malloc (sizeof (sleep_t));
@@ -30,7 +30,7 @@ sleep_init (sleep_t ** sleep)
     (*sleep)->min = NULL;
 }
 
-int
+void
 sleep_add (sleep_t * sleep, zmsg_t * msg, int64_t delay, unsigned short wb)
 {
     struct smsg_t *smsg = (struct smsg_t *) malloc (sizeof (struct smsg_t));
@@ -63,9 +63,6 @@ sleep_add (sleep_t * sleep, zmsg_t * msg, int64_t delay, unsigned short wb)
 	    sleep->timeout = 0;
 	}
     }
-
-
-
 }
 
 

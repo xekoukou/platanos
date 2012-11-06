@@ -16,8 +16,8 @@ typedef struct
     char *id;
 } worker_t;
 
-int worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
-		 char *id);
+void worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
+		  char *id);
 
 
 
@@ -39,11 +39,11 @@ typedef struct
 } compute_t;			//the zookeeper handle used to set the worker online or get
 		   //get the interval 
 
-int compute_init (compute_t ** compute, khash_t (vertices) * hash,
-		  router_t * router, zlist_t * events,
-		  intervals_t * intervals, void *socket_nb, void *self_nb,
-		  void *socket_wb, void *self_wb, localdb_t * localdb,
-		  worker_t * worker);
+void compute_init (compute_t ** compute, khash_t (vertices) * hash,
+		   router_t * router, zlist_t * events,
+		   intervals_t * intervals, void *socket_nb, void *self_nb,
+		   void *socket_wb, void *self_wb, localdb_t * localdb,
+		   worker_t * worker);
 
 
 
@@ -64,7 +64,7 @@ typedef struct
 struct ozookeeper_t;
 
 
-int workers_init (workers_t ** workers, zctx_t * ctx,
-		  struct ozookeeper_t *ozookeeper);
+void workers_init (workers_t ** workers, zctx_t * ctx,
+		   struct ozookeeper_t *ozookeeper);
 
 #endif

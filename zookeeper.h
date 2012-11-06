@@ -40,34 +40,36 @@ typedef struct
 
 
 //initialize the ozookeeper object
-int ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
+void ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
 		     global_watcherctx_t * watcherctx, void *pub,
 		     void *router);
 
+int ozookeeper_not_corrupt(ozookeeper_t ** ozookeep);
 
-int ozookeeper_set_zhandle (ozookeeper_t * ozookeeper, zhandle_t * zh);
+void ozookeeper_init_workers(ozookeeper_t * ozookeeper, workers_t * workers);
 
-int ozookeeper_zhandle (ozookeeper_t * ozookeeper, zhandle_t ** zh);
+void ozookeeper_set_zhandle (ozookeeper_t * ozookeeper, zhandle_t * zh);
 
-int ozookeeper_destroy (ozookeeper_t * ozookeeper);
+void ozookeeper_zhandle (ozookeeper_t * ozookeeper, zhandle_t ** zh);
+
+void ozookeeper_destroy (ozookeeper_t * ozookeeper);
 
 void global_watcher (zhandle_t * zzh, int type, int state, const char *path,
 		     void *context);
 //initialize the watcherctx object
-int global_watcherctx_init (global_watcherctx_t ** watcherctx,
+void global_watcherctx_init (global_watcherctx_t ** watcherctx,
 			    oconfig_t * config);
 
-int global_watcherctx_destroy (global_watcherctx_t * watcherctx);
+void global_watcherctx_destroy (global_watcherctx_t * watcherctx);
 
 // doesnt allocate memory
-int oz_updater_init (oz_updater_t * updater);
+void oz_updater_init (oz_updater_t * updater);
 
-int oz_updater_destroy (oz_updater_t * updater);
+void oz_updater_destroy (oz_updater_t * updater);
 
-int oz_updater_key (oz_updater_t * updater, char *key);
+void oz_updater_key (oz_updater_t * updater, char *key);
 
-int oz_updater_free_key (oz_updater_t * updater);
+void oz_updater_free_key (oz_updater_t * updater);
 
-int oz_updater_destroy (oz_updater_t * updater);
 
 #endif

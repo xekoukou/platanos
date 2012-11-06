@@ -8,7 +8,7 @@
 
 
 //id is the address/id of the thread/node
-int
+void
 localdb_init (localdb_t ** localdb, char *id)
 {
     *localdb = (localdb_t *) malloc (sizeof (localdb_t));
@@ -42,14 +42,14 @@ localdb_init (localdb_t ** localdb, char *id)
 
 //needs a few seconds to close
 //put a sleep after it
-int
+void
 localdb_close (localdb_t * localdb)
 {
     leveldb_close (localdb->db);
 
 }
 
-int
+void
 localdb_incr_counter (localdb_t * localdb, unsigned long counter)
 {
 
@@ -97,14 +97,14 @@ localdb_get_counter (localdb_t * localdb)
 	return counter;
     }
     else {
-	printf ("\n%u", errptr);
+	printf ("\n%s", errptr);
 	exit (1);
 
     }
 
 }
 
-int
+void
 localdb_set_interval (localdb_t * localdb, int interval)
 {
 
@@ -149,7 +149,7 @@ localdb_get_interval (localdb_t * localdb)
 	return interval;
     }
     else {
-	printf ("\n%u", errptr);
+	printf ("\n%s", errptr);
 	exit (1);
     }
 }

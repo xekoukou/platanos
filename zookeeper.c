@@ -8,7 +8,7 @@
 
 #define RESEND_INTERVAL 1000
 
-int
+void
 global_watcherctx_init (global_watcherctx_t ** watcherctx, oconfig_t * config)
 {
     *watcherctx =
@@ -19,7 +19,7 @@ global_watcherctx_init (global_watcherctx_t ** watcherctx, oconfig_t * config)
 }
 
 //initialize the ozookeeper object
-int
+void
 ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
 		 global_watcherctx_t * watcherctx, void *pub, void *router)
 {
@@ -41,6 +41,11 @@ ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
 
     (*ozookeeper)->zh =
 	zookeeper_init (host, global_watcher, recv_timeout, 0, watcherctx, 0);
+    if((*ozookeeper)->zh==0){
+    printf("\nzookeeper client cannot be initialized");
+    exit(1);
+    }       
+
 
     if (ozookeeper_not_corrupt (ozookeeper) != 1) {
 	printf
@@ -65,8 +70,6 @@ ozookeeper_not_corrupt (ozookeeper_t ** ozookeep)
     struct Stat stat;
     char path[1000];
     char config[4][1000];
-    int db_bool;
-    int val_len;
 
     oconfig_octopus (ozookeeper->config, config[0]);
     oconfig_comp_name (ozookeeper->config, config[1]);
@@ -79,24 +82,25 @@ ozookeeper_not_corrupt (ozookeeper_t ** ozookeep)
     if (ZOK != zoo_exists (ozookeeper->zh, path, 0, &stat)) {
 	return 0;
     }
+    return 1;
 
 }
 
 
-int
+void
 ozookeeper_set_zhandle (ozookeeper_t * ozookeeper, zhandle_t * zh)
 {
     ozookeeper->zh = zh;
 }
 
-int
+void
 ozookeeper_zhandle (ozookeeper_t * ozookeeper, zhandle_t ** zh)
 {
     *zh = ozookeeper->zh;
 }
 
 
-int
+void
 ozookeeper_destroy (ozookeeper_t * ozookeeper)
 {
     zookeeper_close (ozookeeper->zh);
@@ -105,13 +109,13 @@ ozookeeper_destroy (ozookeeper_t * ozookeeper)
     free (ozookeeper);
 }
 
-int
+void
 global_watcherctx_destroy (global_watcherctx_t * watcherctx)
 {
     free (watcherctx);
 }
 
-int
+void
 ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg)
 {
     int rc;
@@ -232,14 +236,14 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg)
 }
 
 //init ozookeeper with the workers
-int
+void
 ozookeeper_init_workers (ozookeeper_t * ozookeeper, workers_t * workers)
 {
     ozookeeper->workers = workers;
 }
 
 // doesnt allocate memory
-int
+void
 oz_updater_init (oz_updater_t * updater)
 {
     updater->id = 1;
@@ -249,20 +253,20 @@ oz_updater_init (oz_updater_t * updater)
 }
 
 // just creates a path
-int
+void
 oz_updater_key (oz_updater_t * updater, char *key)
 {
     updater->key = (char *) malloc (strlen (key) + 1);
     strcpy (updater->key, key);
 }
 
-int
+void
 oz_updater_free_key (oz_updater_t * updater)
 {
     free (updater->key);
 }
 
-int
+void
 oz_updater_destroy (oz_updater_t * updater)
 {
     free (updater->key);
@@ -275,7 +279,7 @@ oz_updater_destroy (oz_updater_t * updater)
 }
 
 //one node update
-int
+void
 ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg)
 {
     int rc;
@@ -340,7 +344,7 @@ ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg)
 //st_piece is used to search the node in the router object 
 
 //IMPORTANT st_piece should not be changed when a node is offline
-int
+void
 ozookeeper_update_remove_node (ozookeeper_t * ozookeeper, char *key)
 {
     zmsg_t *msg = zmsg_new ();
@@ -351,7 +355,7 @@ ozookeeper_update_remove_node (ozookeeper_t * ozookeeper, char *key)
 
 //TODO check
 //this is done when a node goes online
-int
+void
 ozookeeper_update_add_node (ozookeeper_t * ozookeeper, char *key,
 			    unsigned long n_pieces, unsigned long st_piece,
 			    char *bind_point)
@@ -366,7 +370,7 @@ ozookeeper_update_add_node (ozookeeper_t * ozookeeper, char *key,
 }
 
 //this is done only at the start for a specific number of seconds
-int
+void
 ozookeeper_update_add_self (ozookeeper_t * ozookeeper, char *key,
 			    unsigned long n_pieces, unsigned long st_piece,
 			    char *bind_point)
@@ -382,7 +386,7 @@ ozookeeper_update_add_self (ozookeeper_t * ozookeeper, char *key,
 
 
 
-int
+void
 ozookeeper_update_st_piece (ozookeeper_t * ozookeeper, char *key,
 			    unsigned long st_piece)
 {
@@ -393,7 +397,7 @@ ozookeeper_update_st_piece (ozookeeper_t * ozookeeper, char *key,
     ozookeeper_update (ozookeeper, &msg);
 }
 
-int
+void
 ozookeeper_update_n_pieces (ozookeeper_t * ozookeeper, char *key,
 			    unsigned long n_pieces)
 {
@@ -405,7 +409,7 @@ ozookeeper_update_n_pieces (ozookeeper_t * ozookeeper, char *key,
 }
 
 //this is issued to tell the workers to go online
-int
+void
 ozookeeper_update_go_online (ozookeeper_t * ozookeeper)
 {
 
@@ -431,8 +435,6 @@ w_st_piece (zhandle_t * zh, int type,
 {
 
 
-    int iter;
-    int siter;
     char spath[1000];
 
     ozookeeper_t *ozookeeper = (ozookeeper_t *) watcherCtx;
@@ -504,8 +506,6 @@ w_n_pieces (zhandle_t * zh, int type,
 {
 
 
-    int iter;
-    int siter;
     char spath[1000];
 
     ozookeeper_t *ozookeeper = (ozookeeper_t *) watcherCtx;
@@ -577,8 +577,6 @@ void
 w_online (zhandle_t * zh, int type,
 	  int state, const char *path, void *watcherCtx)
 {
-    int iter;
-    int siter;
     char spath[1000];
 
     ozookeeper_t *ozookeeper = (ozookeeper_t *) watcherCtx;
@@ -720,7 +718,7 @@ w_resources (zhandle_t * zh, int type,
 //update resources
 //find its location
 //at least one computer should exist that has the same name
-		int position;
+		int position=-1;
 		for (iter = 0; iter < ozookeeper->updater.computers.count;
 		     iter++) {
 		    if (strcmp
@@ -730,6 +728,7 @@ w_resources (zhandle_t * zh, int type,
 			position = iter;
 		    }
 		}
+                assert(position!=-1);
 
 //i use this in case there is a reordering of the existing children
 		int *sort = (int *) malloc (sizeof (int) * resources.count);
@@ -1057,7 +1056,7 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
     char comp_name[1000];
     int iter;
     int siter;
-    char *path;
+    char path[1000];
     int result;
     int online = 0;
     int self = 0;
@@ -1197,7 +1196,7 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 
 //one time function that sets watches on the nodes
 //and gets configuration
-int
+void
 ozookeeper_getconfig (ozookeeper_t * ozookeeper)
 {
 //if we are in a session expired state or auth failure, global watcher will restart things
@@ -1206,7 +1205,6 @@ ozookeeper_getconfig (ozookeeper_t * ozookeeper)
 
 //get worker nodes of this computer
 
-    int iter;
     int result;
     char path[1000];
     char octopus[1000];
@@ -1221,7 +1219,8 @@ ozookeeper_getconfig (ozookeeper_t * ozookeeper)
 	zoo_awget_children (ozookeeper->zh, path, w_computers, ozookeeper,
 			    c_computers, ozookeeper);
     if (ZOK != result) {
-	return -1;
+	printf("\n Error, I cannot get the configuration from the zookeeper server");
+        exit(1);
     }
 
 }

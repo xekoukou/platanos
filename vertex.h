@@ -13,6 +13,7 @@ typedef struct
 
 KHASH_MAP_INIT_INT64 (vertices, vertex_t);
 
+void vertex_init (vertex_t ** vertex);
 
 
 #endif

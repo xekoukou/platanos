@@ -1,7 +1,7 @@
 #include"vertex.h"
 
 
-int
+void
 vertex_init (vertex_t ** vertex)
 {
     *vertex = (vertex_t *) malloc (sizeof (vertex_t));

@@ -27,10 +27,10 @@ typedef struct
 } sleep_t;
 
 
-int sleep_init (sleep_t ** sleep);
+void sleep_init (sleep_t ** sleep);
 
-int sleep_add (sleep_t * sleep, zmsg_t * msg, int64_t delay,
-	       unsigned short wb);
+void sleep_add (sleep_t * sleep, zmsg_t * msg, int64_t delay,
+		unsigned short wb);
 
 //returns null when there are no more msgs to give
 //dont give null msgs, it will brake it

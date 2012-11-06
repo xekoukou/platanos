@@ -11,10 +11,10 @@
 #include"aknowledgements.h"
 
 //result should be big enough
-int
+void
 node_piece (char *key, unsigned long pnumber, char *result)
 {
-    sprintf (result, "%s%u", key, pnumber);
+    sprintf (result, "%s%lu", key, pnumber);
 }
 
 
@@ -50,7 +50,7 @@ cmp_hash_t (struct hash_t *first, struct hash_t *second)
 }
 
 
-int
+void
 router_init (struct router_t **router, int type)
 {
 
@@ -66,13 +66,13 @@ router_init (struct router_t **router, int type)
 
 }
 
-int
+void
 router_destroy (struct router_t *router)
 {
 
     struct hash_t *hash;
 //deletion per node
-    while (hash = RB_MIN (hash_rb_t, &(router->hash_rb))) {
+    while ((hash = RB_MIN (hash_rb_t, &(router->hash_rb)))) {
 	router_delete (router, hash->node);
     }
 
@@ -87,28 +87,36 @@ router_add (struct router_t *router, node_t * node)
 {
 
     char key[1000];
+
+    struct hash_t *hash[node->n_pieces];
+
     int iter;
     for (iter = 0; iter < node->n_pieces; iter++) {
 	node_piece (node->key, iter + node->st_piece, key);
 
 
-	struct hash_t *hash =
-	    (struct hash_t *) malloc (sizeof (struct hash_t));
-	hash->node = node;
+	hash[iter] = (struct hash_t *) malloc (sizeof (struct hash_t));
+	hash[iter]->node = node;
 
 	MurmurHash3_x64_128 ((void *) key, strlen (key), 0,
-			     (void *) &(hash->hkey));
+			     (void *) &(hash[iter]->hkey));
 
-	if (RB_INSERT (hash_rb_t, &(router->hash_rb), hash) != NULL) {
-	    free (hash);
+	if (RB_INSERT (hash_rb_t, &(router->hash_rb), hash[iter]) != NULL) {
+	    //delete the previous hashes
+	    int siter;
+	    for (siter = 0; siter < iter; siter++) {
+		RB_INSERT (hash_rb_t, &(router->hash_rb), hash[siter]);
+		free (hash[siter]);
+	    }
 	    return 0;
 	}
-	nodes_put (router->nodes, node);
-	return 1;
     }
+    nodes_put (router->nodes, node);
+    return 1;
+
 }
 
-int
+void
 router_delete (struct router_t *router, node_t * node)
 {
 
@@ -161,13 +169,13 @@ router_route (struct router_t *router, uint64_t key)
 
 }
 
-int
+void
 router_set_repl (struct router_t *router, int repl)
 {
     router->repl = repl;
 }
 
-int
+void
 router_get_repl (struct router_t *router, int *repl)
 {
     *repl = router->repl;
@@ -175,7 +183,7 @@ router_get_repl (struct router_t *router, int *repl)
 
 
 //only used in db_routing
-int
+void
 node_set_alive (node_t * node, int alive)
 {
     node->alive = alive;
@@ -186,7 +194,7 @@ node_set_alive (node_t * node, int alive)
 //this will only return alive nodes
 
 //we grab the first repl number of nodes and return only the alive ones
-int
+void
 router_dbroute (struct router_t *router, uint64_t key, char **rkey,
 		int *nreturned)
 {
@@ -581,7 +589,7 @@ router_events (router_t * router, node_t * node, int removal)
 			    if (interval_belongs_h
 				(big_interval, &(hash[siter].hkey))) {
 				interval_t *small_interval;
-				interval_init (&big_interval,
+				interval_init (&small_interval,
 					       &(backward->hkey),
 					       &(hash[iter].hkey));
 				if (interval_belongs_h
@@ -675,14 +683,14 @@ router_fnode (struct router_t * router, char *key)
 
 
 
-int
+void
 nodes_init (khash_t (nodes_t) ** nodes)
 {
 
     *nodes = kh_init (nodes_t);
 }
 
-int
+void
 nodes_put (khash_t (nodes_t) * nodes, node_t * node)
 {
     int is_missing;
@@ -694,7 +702,7 @@ nodes_put (khash_t (nodes_t) * nodes, node_t * node)
 
 //deletes the entry if present
 //the node is deleted bu router_delete
-int
+void
 nodes_delete (khash_t (nodes_t) * nodes, char *key)
 {
     khiter_t k;
@@ -723,7 +731,7 @@ nodes_search (khash_t (nodes_t) * nodes, char *key)
 
 
 
-int
+void
 node_init (node_t ** node, char *key, unsigned long n_pieces,
 	   unsigned long st_piece, char *bind_point)
 {

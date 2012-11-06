@@ -2,6 +2,7 @@ cmake_minimum_required (VERSION 2.8)
 project (octopus)
 
 set(CMAKE_CXX_FLAGS "-g -Wall")
+set(CMAKE_C_FLAGS "-g -Wall")
 add_executable(zookeeper_register zookeeper_register.c)
 
 target_link_libraries(zookeeper_register zookeeper_mt proc )

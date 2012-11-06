@@ -17,16 +17,16 @@ typedef struct
 
 
 //id is the address/id of the thread/node
-int localdb_init (localdb_t ** localdb, char *id);
+void localdb_init (localdb_t ** localdb, char *id);
 
 //sleep a few seconds after
-int localdb_close (localdb_t * localdb);
+void localdb_close (localdb_t * localdb);
 
-int localdb_incr_counter (localdb_t * localdb, unsigned long counter);
+void localdb_incr_counter (localdb_t * localdb, unsigned long counter);
 
 unsigned long localdb_get_counter (localdb_t * localdb);
 
-int localdb_set_interval (localdb_t * localdb, int interval);
+void localdb_set_interval (localdb_t * localdb, int interval);
 
 int localdb_get_interval (localdb_t * localdb);
 

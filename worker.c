@@ -19,7 +19,7 @@
 #define CONFIRM_CHUNK    "\004"
 #define MISSED_CHUNKES    "\005"
 
-int
+void
 worker_send (zmsg_t * msg, unsigned short wb, compute_t * compute)
 {
     zframe_t *frame = zmsg_first (msg);
@@ -71,7 +71,6 @@ worker_new_interval (worker_t * worker, localdb_t * localdb)
 
 	char path[1000];
 	char octopus[1000];
-	char comp_name[1000];
 	int buffer;
 	int buffer_len = sizeof (int);
 
@@ -121,7 +120,7 @@ compute (zloop_t * loop, zmq_pollitem_t * item, void *arg)
 //if node adress equals yourself then it is a confirmation
 // the first 2 identify the kind of message
 
-int
+void
 worker_balance (balance_t * balance)
 {
 
@@ -137,7 +136,7 @@ worker_balance (balance_t * balance)
     zframe_t *key_frame = zmsg_next (msg);
     zframe_t *frame = key_frame;
 
-    if (strcmp (zframe_data (frame), balance->self_key) == 0) {
+    if (strcmp ((const char *) zframe_data (frame), balance->self_key) == 0) {
 // this is confirmation
 
 	//identify the on_give object
@@ -260,7 +259,7 @@ worker_balance (balance_t * balance)
 
 		    //send the missed pieces
 		    uint64_t diff = 0;
-		    while (frame = zmsg_next (msg)) {
+		    while ((frame = zmsg_next (msg))) {
 			uint64_t counter;
 			memcpy (&counter, zframe_data (frame),
 				sizeof (uint64_t));
@@ -324,7 +323,10 @@ worker_balance (balance_t * balance)
 
 	    on_receive_t *iter = zlist_first (balance->on_receives);
 	    while (iter) {
-		if ((strcmp (zframe_data (frame), iter->action->key) == 0) &&
+		if ((strcmp
+		     ((const char *) zframe_data (frame),
+		      iter->action->key) == 0)
+		    &&
 		    (memcmp
 		     (zframe_data (id_frame), &(iter->un_id),
 		      sizeof (int)) == 0)) {
@@ -363,9 +365,9 @@ worker_balance (balance_t * balance)
 //check whether any of the events can occur due to this action
 
 			    event_t *event;
-			    while (event =
-				   events_possible (balance->events,
-						    balance->intervals)) {
+			    while ((event =
+				    events_possible (balance->events,
+						     balance->intervals))) {
 //perform this event
 
 //update the intervals
@@ -562,7 +564,7 @@ worker_balance (balance_t * balance)
 }
 
 
-int
+void
 worker_balance_update (balance_t * balance)
 {
 
@@ -654,14 +656,12 @@ worker_balance_update (balance_t * balance)
 
 
 
-int
+void
 update_n_pieces (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
     unsigned long n_pieces;
-    unsigned long st_piece;
-    char bind_point[30];
 
     zframe_t *frame = zmsg_first (msg);
 
@@ -686,7 +686,7 @@ update_n_pieces (update_t * update, zmsg_t * msg)
     router_add (update->router, node);
 
     event_t *event;
-    while (event = zlist_pop (events)) {
+    while ((event = zlist_pop (events))) {
 //check if there is an action that this event describes
 	if (0 == actions_update (update->balance->actions, event)) {
 
@@ -743,14 +743,12 @@ update_n_pieces (update_t * update, zmsg_t * msg)
 
 
 
-int
+void
 update_st_piece (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
-    unsigned long n_pieces;
     unsigned long st_piece;
-    char bind_point[30];
 
     zframe_t *frame = zmsg_first (msg);
 
@@ -775,7 +773,7 @@ update_st_piece (update_t * update, zmsg_t * msg)
     router_add (update->router, node);
 
     event_t *event;
-    while (event = zlist_pop (events)) {
+    while ((event = zlist_pop (events))) {
 //check if there is an action that this event describes
 	if (0 == actions_update (update->balance->actions, event)) {
 
@@ -832,14 +830,11 @@ update_st_piece (update_t * update, zmsg_t * msg)
 }
 
 
-int
+void
 remove_node (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
-    unsigned long n_pieces;
-    unsigned long st_piece;
-    char bind_point[30];
 
     zframe_t *frame = zmsg_first (msg);
 
@@ -867,7 +862,7 @@ remove_node (update_t * update, zmsg_t * msg)
 
 
     event_t *event;
-    while (event = zlist_pop (events)) {
+    while ((event = zlist_pop (events))) {
 
 	assert (event->give = 0);
 //the only possible thing that could happen would be to add 
@@ -897,7 +892,7 @@ remove_node (update_t * update, zmsg_t * msg)
 
 
 
-int
+void
 add_node (update_t * update, zmsg_t * msg)
 {
     node_t *node;
@@ -930,7 +925,7 @@ add_node (update_t * update, zmsg_t * msg)
 	free (node);
     }
     event_t *event;
-    while (event = zlist_pop (events)) {
+    while ((event = zlist_pop (events))) {
 //check if there is an action that this event describes
 	if (0 == actions_update (update->balance->actions, event)) {
 
@@ -987,7 +982,7 @@ add_node (update_t * update, zmsg_t * msg)
 }
 
 
-int
+void
 add_self (update_t * update, zmsg_t * msg)
 {
     node_t *self;
@@ -1042,7 +1037,7 @@ add_self (update_t * update, zmsg_t * msg)
 //this sets the node up
 //the event of that action hasnt though come from zookeeper
 //it doesnt exist in the "view" of this node
-int
+void
 go_online (worker_t * worker)
 {
 
@@ -1136,13 +1131,13 @@ worker_update (update_t * update, void *sub)
 }
 
 
-int
+void
 worker_sleep (sleep_t * sleep, compute_t * compute)
 {
     zmsg_t *msg;
     unsigned short wb;
 
-    while (msg = sleep_awake (sleep, &wb)) {
+    while ((msg = sleep_awake (sleep, &wb))) {
 	worker_send (msg, wb, compute);
 
     }
@@ -1283,7 +1278,7 @@ worker_fn (void *arg, zctx_t * ctx, void *pipe)
 
 }
 
-int
+void
 compute_init (compute_t ** compute, khash_t (vertices) * hash,
 	      router_t * router, zlist_t * events, intervals_t * intervals,
 	      void *socket_nb, void *self_nb, void *socket_wb, void *self_wb,
@@ -1319,7 +1314,6 @@ compute_init (compute_t ** compute, khash_t (vertices) * hash,
 
     char path[1000];
     char octopus[1000];
-    char comp_name[1000];
     unsigned long buffer;
     int buffer_len = sizeof (unsigned long);
 
@@ -1340,7 +1334,7 @@ compute_init (compute_t ** compute, khash_t (vertices) * hash,
 
 
 
-int
+void
 worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config, char *id)
 {
 
@@ -1351,7 +1345,7 @@ worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config, char *id)
     (*worker)->config = config;
 }
 
-int
+void
 workers_init (workers_t ** workers, zctx_t * ctx, ozookeeper_t * ozookeeper)
 {
 

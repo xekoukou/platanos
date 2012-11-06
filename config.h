@@ -15,17 +15,17 @@ typedef struct
 
 } oconfig_t;
 
-int oconfig_init (oconfig_t ** config);
+void oconfig_init (oconfig_t ** config);
 
 //name of the octopus
-int oconfig_octopus (oconfig_t * config, char *octopus);
+void oconfig_octopus (oconfig_t * config, char *octopus);
 
-int oconfig_host (oconfig_t * config, char *host);
-int oconfig_destroy (oconfig_t * config);
-int oconfig_recv_timeout (oconfig_t * config, int *timeout);
+void oconfig_host (oconfig_t * config, char *host);
+void oconfig_destroy (oconfig_t * config);
+void oconfig_recv_timeout (oconfig_t * config, int *timeout);
 
 //unique computer name
-int oconfig_comp_name (oconfig_t * config, char *comp_name);
+void oconfig_comp_name (oconfig_t * config, char *comp_name);
 
 
 #endif

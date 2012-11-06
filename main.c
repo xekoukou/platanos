@@ -41,5 +41,5 @@ main ()
     workers_t *workers;
     workers_init (&workers, ctx, ozookeeper);
 
-
+    return 0;
 }

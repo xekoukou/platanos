@@ -5,7 +5,7 @@
 
 // the configuration file is always at the location that the program starts
 
-int
+void
 oconfig_init (oconfig_t ** config)
 {
 
@@ -17,7 +17,7 @@ oconfig_init (oconfig_t ** config)
     if (fconfig == NULL) {
 	printf
 	    ("\nconfig doesnt exist. Are you in the correnct directory? A config file must be created manually for every computer that is part of the octopus.. exiting");
-	return -1;
+	exit (1);
     }
 
     int line_position = 0;
@@ -36,33 +36,33 @@ oconfig_init (oconfig_t ** config)
 }
 
 
-int
+void
 oconfig_octopus (oconfig_t * config, char *octopus)
 {
     memcpy (octopus, config->line[2], 1000);
 }
 
 
-int
+void
 oconfig_host (oconfig_t * config, char *host)
 {
     memcpy (host, config->line[0], 1000);
 }
 
-int
+void
 oconfig_recv_timeout (oconfig_t * config, int *timeout)
 {
     *timeout = atoi (config->line[1]);
 }
 
 //computer name
-int
+void
 oconfig_comp_name (oconfig_t * config, char *comp_name)
 {
     memcpy (comp_name, config->line[3], 1000);
 }
 
-int
+void
 oconfig_destroy (oconfig_t * config)
 {
 

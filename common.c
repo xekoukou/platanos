@@ -12,6 +12,7 @@ last_path (const char *path)
 	    return &(path[iter + 1]);
 	}
     }
+    return NULL;
 
 }
 

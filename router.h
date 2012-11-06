@@ -64,9 +64,9 @@ struct router_t
 
 
 
-int router_init (router_t ** router, int type);
+void router_init (router_t ** router, int type);
 
-int router_destroy (router_t * router);
+void router_destroy (router_t * router);
 
 //I save the key with the null char but I compute the hash without the null
 //return 0 if the element already exists and thus the new node is not inserted
@@ -74,23 +74,23 @@ int router_destroy (router_t * router);
 int router_add (router_t * router, node_t * node);
 
 //first I need to find the exact same node I want to delete
-int router_delete (router_t * router, node_t * node);
+void router_delete (router_t * router, node_t * node);
 
 //returns the id adrress of the node
 //if there are no nodes, returns null
 char *router_route (router_t * router, uint64_t key);
 
-int router_set_repl (router_t * router, int repl);
+void router_set_repl (router_t * router, int repl);
 
-int router_get_repl (struct router_t *router, int *repl);
+void router_get_repl (struct router_t *router, int *repl);
 
 //rkey contains the addresses of the nodes
 //rkey should be big enough and should check repl before
 //this will only return alive nodes
 
 //we grab the first repl number of nodes and return only the alive ones
-int router_dbroute (struct router_t *router, uint64_t key, char **rkey,
-		    int *nreturned);
+void router_dbroute (struct router_t *router, uint64_t key, char **rkey,
+		     int *nreturned);
 
 //finds a node with its  key
 //returns null if not found
@@ -108,29 +108,29 @@ zlist_t *router_events (router_t * router, node_t * node, int removal);
 
 
 //result should be big enough
-int node_piece (char *key, unsigned long pnumber, char *result);
+void node_piece (char *key, unsigned long pnumber, char *result);
 
 
 
-int nodes_init (khash_t (nodes_t) ** nodes);
+void nodes_init (khash_t (nodes_t) ** nodes);
 
-int nodes_put (khash_t (nodes_t) * nodes, node_t * node);
+void nodes_put (khash_t (nodes_t) * nodes, node_t * node);
 
 //deletes the entry if present
 //the node is deleted bu router_delete
-int nodes_delete (khash_t (nodes_t) * nodes, char *key);
+void nodes_delete (khash_t (nodes_t) * nodes, char *key);
 
 //returns NULL if not found
 node_t *nodes_search (khash_t (nodes_t) * nodes, char *key);
 
 
-int node_init (node_t ** node, char *key, unsigned long n_pieces,
-	       unsigned long st_piece, char *bind_point);
+void node_init (node_t ** node, char *key, unsigned long n_pieces,
+		unsigned long st_piece, char *bind_point);
 
 node_t *node_dup (node_t * node);
 
 // only used in a db_routing 
-int node_set_alive (node_t * node, int alive);
+void node_set_alive (node_t * node, int alive);
 
 
 

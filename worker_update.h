@@ -63,21 +63,23 @@ typedef struct
     compute_t *compute;
 } update_t;
 
-int update_init (update_t ** update, void *dealer, router_t * router,
+void update_init (update_t ** update, void *dealer, router_t * router,
 		 balance_t * balance, compute_t * compute);
 
-int balance_init (balance_t ** balance, khash_t (vertices) * hash,
+void balance_init (balance_t ** balance, khash_t (vertices) * hash,
 		  void *router_bl, void *self_bl, char *self_key);
 
-int on_give_init (on_give_t ** on_give, event_t * event, int un_id);
+void balance_update (balance_t * balance, on_give_t * on_give);
 
-int on_give_destroy (on_give_t * on_give);
+void on_give_init (on_give_t ** on_give, event_t * event, int un_id);
 
-int on_receive_init (on_receive_t ** on_receive, zmsg_t * msg);
+void on_give_destroy (on_give_t * on_give);
+
+void on_receive_init (on_receive_t ** on_receive, zmsg_t * msg);
 
 //destroy this after you have inserted the action to the actions list
 //or removed the corresponding event
-int on_receive_destroy (on_receive_t * on_receive);
+void on_receive_destroy (on_receive_t * on_receive);
 
 
 #endif
