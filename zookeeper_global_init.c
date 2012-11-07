@@ -124,13 +124,13 @@ main ()
 	    return 1;
 	}
     }
-    
-        sprintf (path, "/%s/computers", octopus);
+
+    sprintf (path, "/%s/computers", octopus);
     result =
-        zoo_create (zh, path, NULL, -1, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
+	zoo_create (zh, path, NULL, -1, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
     if (result != ZOK) {
-        printf ("\nError");
-        return 1;
+	printf ("\nError");
+	return 1;
     }
 
 

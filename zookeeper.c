@@ -42,14 +42,15 @@ ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
     (*ozookeeper)->zh =
 	zookeeper_init (host, global_watcher, recv_timeout, 0, watcherctx, 0);
     if ((*ozookeeper)->zh == NULL) {
-	fprintf (stderr,"\nzookeeper client cannot be initialized");
+	fprintf (stderr, "\nzookeeper client cannot be initialized");
 	exit (1);
     }
 
 
     if (ozookeeper_not_corrupt (ozookeeper) != 1) {
 	fprintf
-	    (stderr,"\n local config and zookeeper config do not match,\n Have you registered at least one resource for this computer to zookeeper?\n exiting..");
+	    (stderr,
+	     "\n local config and zookeeper config do not match,\n Have you registered at least one resource for this computer to zookeeper?\n exiting..");
 	exit (1);
     }
 
@@ -223,8 +224,8 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg)
 					   sizeof (unsigned int)));
 		    zmsg_push (msg_to_send,
 			       zframe_new (ozookeeper->workers->id[it],
-					   strlen (ozookeeper->
-						   workers->id[it])));
+					   strlen (ozookeeper->workers->
+						   id[it])));
 		    zmsg_send (&msg_to_send, ozookeeper->pub);
 
 		}
@@ -465,8 +466,8 @@ w_st_piece (zhandle_t * zh, int type,
 //check if node is online TODO remove this by ensuring that watches exist only on online nodes
 
 	struct Stat stat;
-	sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online", octopus, comp_name,
-		 resource);
+	sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online", octopus,
+		 comp_name, resource);
 	if (ZOK ==
 	    (result =
 	     zoo_wexists (ozookeeper->zh, spath, w_online, ozookeeper,
@@ -474,29 +475,26 @@ w_st_piece (zhandle_t * zh, int type,
 	    online = 1;
 	}
 	else {
-	    if (result != ZNONODE) {
-		goto end;
-	    }
+	    assert (result == ZNONODE);
 	}
 	if (online) {
-	    int buffer_len=sizeof(unsigned long);
+	    int buffer_len = sizeof (unsigned long);
 	    unsigned long st_piece;
 
-	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/st_piece", octopus,
-		     comp_name, resource);
-	    if (ZOK !=
+	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/st_piece",
+		     octopus, comp_name, resource);
+	    result =
 		zoo_wget (ozookeeper->zh, spath, w_st_piece, ozookeeper,
-			  (char *) &st_piece, &buffer_len, &stat)) {
+			  (char *) &st_piece, &buffer_len, &stat);
 
-		goto end;
-	    }
+	    assert (result == ZOK);
+
 	    sprintf (spath, "%s%s", comp_name, resource);
 	    ozookeeper_update_st_piece (ozookeeper, spath, st_piece);
 
 
 	}
     }
-  end:;
 }
 
 
@@ -536,8 +534,8 @@ w_n_pieces (zhandle_t * zh, int type,
 //check if node is online TODO remove this by ensuring that watches exist only on online nodes
 
 	struct Stat stat;
-	sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online", octopus, comp_name,
-		 resource);
+	sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online", octopus,
+		 comp_name, resource);
 	if (ZOK ==
 	    (result =
 	     zoo_wexists (ozookeeper->zh, spath, w_online, ozookeeper,
@@ -545,23 +543,19 @@ w_n_pieces (zhandle_t * zh, int type,
 	    online = 1;
 	}
 	else {
-	    if (result != ZNONODE) {
-		goto end;
-	    }
+	    assert (result == ZNONODE);
 	}
 	if (online) {
-	    int buffer_len=sizeof(int);
+	    int buffer_len = sizeof (int);
 	    int n_pieces;
 
-	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/n_pieces", octopus,
-		     comp_name, resource);
-	    if (ZOK !=
+	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/n_pieces",
+		     octopus, comp_name, resource);
+	    result =
 		zoo_wget (ozookeeper->zh, spath, w_n_pieces, ozookeeper,
-			  (char *) &n_pieces, &buffer_len, &stat)) {
+			  (char *) &n_pieces, &buffer_len, &stat);
 
-		goto end;
-	    }
-
+	    assert (result == ZOK);
 
 	    sprintf (spath, "%s%s", comp_name, resource);
 	    ozookeeper_update_n_pieces (ozookeeper, spath, n_pieces);
@@ -569,7 +563,6 @@ w_n_pieces (zhandle_t * zh, int type,
 
 	}
     }
-  end:;
 }
 
 
@@ -607,8 +600,8 @@ w_online (zhandle_t * zh, int type,
 //check if this node is online
 
 	struct Stat stat;
-	sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online", octopus, comp_name,
-		 resource);
+	sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online", octopus,
+		 comp_name, resource);
 	if (ZOK ==
 	    (result =
 	     zoo_wexists (ozookeeper->zh, spath, w_online, ozookeeper,
@@ -616,9 +609,7 @@ w_online (zhandle_t * zh, int type,
 	    online = 1;
 	}
 	else {
-	    if (result != ZNONODE) {
-		goto end;
-	    }
+	    assert (result == ZNONODE);
 	}
 	int buffer_len;
 	unsigned long st_piece;
@@ -627,34 +618,33 @@ w_online (zhandle_t * zh, int type,
 
 
 	if (online) {
-            buffer_len=sizeof(int);
-	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/n_pieces", octopus,
-		     comp_name, resource);
-	    if (ZOK !=
+	    buffer_len = sizeof (int);
+	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/n_pieces",
+		     octopus, comp_name, resource);
+	    result =
 		zoo_wget (ozookeeper->zh, spath, w_n_pieces, ozookeeper,
-			  (char *) &n_pieces, &buffer_len, &stat)) {
+			  (char *) &n_pieces, &buffer_len, &stat);
 
-		goto end;
-	    }
-            buffer_len=sizeof(unsigned int);
-	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/st_piece", octopus,
-		     comp_name, resource);
-	    if (ZOK !=
+	    assert (ZOK == result);
+
+	    buffer_len = sizeof (unsigned int);
+	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/st_piece",
+		     octopus, comp_name, resource);
+	    result =
 		zoo_wget (ozookeeper->zh, spath, w_st_piece, ozookeeper,
-			  (char *) &st_piece, &buffer_len, &stat)) {
+			  (char *) &st_piece, &buffer_len, &stat);
 
-		goto end;
-	    }
-            
-            buffer_len=1000;
-	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/bind_point", octopus,
-		     comp_name, resource);
-	    if (ZOK !=
+	    assert (result == ZOK);
+
+	    buffer_len = 1000;
+	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/bind_point",
+		     octopus, comp_name, resource);
+	    result =
 		zoo_get (ozookeeper->zh, spath, 0, bind_point, &buffer_len,
-			 &stat)) {
+			 &stat);
 
-		goto end;
-	    }
+	    assert (result == ZOK);
+
 
 
 	    sprintf (spath, "%s%s", comp_name, resource);
@@ -673,7 +663,6 @@ w_online (zhandle_t * zh, int type,
 
 	}
     }
-  end:;
 }
 
 
@@ -715,134 +704,121 @@ w_resources (zhandle_t * zh, int type,
 
 	    struct String_vector resources;
 
-	    if (ZOK == zoo_wget_children (ozookeeper->zh, path,
-					  w_resources, ozookeeper,
-					  &resources)) {
+	    result = zoo_wget_children (ozookeeper->zh, path,
+					w_resources, ozookeeper, &resources);
+	    assert (result == ZOK);
 
 //update resources
 //find its location
 //at least one computer should exist that has the same name
-		int position = -1;
-		for (iter = 0; iter < ozookeeper->updater.computers.count;
-		     iter++) {
-		    if (strcmp
-			(ozookeeper->updater.computers.data[iter],
-			 last_path (path)) == 0) {
-			break;
-			position = iter;
-		    }
+	    int position = -1;
+	    for (iter = 0; iter < ozookeeper->updater.computers.count; iter++) {
+		if (strcmp
+		    (ozookeeper->updater.computers.data[iter],
+		     last_path (path)) == 0) {
+		    break;
+		    position = iter;
 		}
-		assert (position != -1);
+	    }
+	    assert (position != -1);
 
 //i use this in case there is a reordering of the existing children
-		int *sort = (int *) malloc (sizeof (int) * resources.count);
+	    int *sort = (int *) malloc (sizeof (int) * resources.count);
 //set watches to new computers
-		for (iter = 0; iter < resources.count; iter++) {
-		    int exists = 0;
-		    for (siter = 0;
-			 siter <
-			 ozookeeper->updater.resources[position].count;
-			 siter++) {
-			if (strcmp
-			    (resources.data[iter],
-			     ozookeeper->updater.
-			     resources[position].data[siter]) == 0) {
-			    exists = 1;
-			}
-		    }
-		    if (exists) {
-			sort[iter] = siter;
-		    }
-		    else {
-			sort[iter] = -1;
+	    for (iter = 0; iter < resources.count; iter++) {
+		int exists = 0;
+		for (siter = 0;
+		     siter <
+		     ozookeeper->updater.resources[position].count; siter++) {
+		    if (strcmp
+			(resources.data[iter],
+			 ozookeeper->updater.resources[position].
+			 data[siter]) == 0) {
+			exists = 1;
 		    }
 		}
+		if (exists) {
+		    sort[iter] = siter;
+		}
+		else {
+		    sort[iter] = -1;
+		}
+	    }
 
 
 
-		memcpy (&(ozookeeper->updater.resources[position]),
-			&resources, sizeof (struct String_vector));
+	    memcpy (&(ozookeeper->updater.resources[position]),
+		    &resources, sizeof (struct String_vector));
 
-		for (iter = 0; iter < resources.count; iter++) {
+	    for (iter = 0; iter < resources.count; iter++) {
 //only check the new resources
-		    if (sort[iter] == -1) {
+		if (sort[iter] == -1) {
 
-			int buffer_len;
-			unsigned long st_piece;
-			int n_pieces;
-			char bind_point[30];
-			struct Stat stat;
+		    int buffer_len;
+		    unsigned long st_piece;
+		    int n_pieces;
+		    char bind_point[30];
+		    struct Stat stat;
 
 //check if this node is online
-			sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online",
+		    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online",
+			     octopus, last_path (path), resources.data[iter]);
+		    if (ZOK ==
+			(result =
+			 zoo_wexists (ozookeeper->zh, spath, w_online,
+				      ozookeeper, &stat))) {
+			online = 1;
+		    }
+		    else {
+			assert (result == ZNONODE);
+		    }
+
+
+		    if (online) {
+
+			buffer_len = sizeof (int);
+			sprintf (spath,
+				 "/%s/computers/%s/worker_nodes/%s/n_pieces",
 				 octopus, last_path (path),
 				 resources.data[iter]);
-			if (ZOK ==
-			    (result =
-			     zoo_wexists (ozookeeper->zh, spath, w_online,
-					  ozookeeper, &stat))) {
-			    online = 1;
-			}
-			else {
-			    if (result != ZNONODE) {
-				break;
-			    }
-			}
+			result =
+			    zoo_wget (ozookeeper->zh, spath, w_n_pieces,
+				      ozookeeper, (char *) &n_pieces,
+				      &buffer_len, &stat);
 
+			assert (result == ZOK);
 
-			if (online) {
-			
-                            buffer_len=sizeof(int);
-                            sprintf (spath, "/%s/computers/%s/worker_nodes/%s/n_pieces",
-				     octopus, last_path (path),
-				     resources.data[iter]);
-			    if (ZOK !=
-				zoo_wget (ozookeeper->zh, spath, w_n_pieces,
-					  ozookeeper, (char *) &n_pieces,
-					  &buffer_len, &stat)) {
+			buffer_len = sizeof (unsigned long);
+			sprintf (spath,
+				 "/%s/computers/%s/worker_nodes/%s/st_piece",
+				 octopus, last_path (path),
+				 resources.data[iter]);
+			result =
+			    zoo_wget (ozookeeper->zh, spath, w_st_piece,
+				      ozookeeper, (char *) &st_piece,
+				      &buffer_len, &stat);
+			assert (result == ZOK);
 
-				break;
-			    }
-                            
-                            buffer_len=sizeof(unsigned long);
-			    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/st_piece",
-				     octopus, last_path (path),
-				     resources.data[iter]);
-			    if (ZOK !=
-				zoo_wget (ozookeeper->zh, spath, w_st_piece,
-					  ozookeeper, (char *) &st_piece,
-					  &buffer_len, &stat)) {
+			buffer_len = 1000;
+			sprintf (spath,
+				 "/%s/computers/%s/worker_nodes/%s/bind_point",
+				 octopus, last_path (path),
+				 resources.data[iter]);
+			result =
+			    zoo_get (ozookeeper->zh, spath, 0, bind_point,
+				     &buffer_len, &stat);
 
-				break;
-			    }
-                            buffer_len=1000;
-			    sprintf (spath,
-				     "/%s/computers/%s/worker_nodes/%s/bind_point",
-				     octopus, last_path (path),
-				     resources.data[iter]);
-			    if (ZOK !=
-				zoo_get (ozookeeper->zh, spath, 0, bind_point,
-					 &buffer_len, &stat)) {
+			assert (result == ZOK);
 
-				break;
-			    }
-
-
-			    sprintf (spath, "%s%s", last_path (path),
-				     resources.data[iter]);
-			    ozookeeper_update_add_node (ozookeeper, spath,
-							n_pieces, st_piece,
-							bind_point);
-			}
+			sprintf (spath, "%s%s", last_path (path),
+				 resources.data[iter]);
+			ozookeeper_update_add_node (ozookeeper, spath,
+						    n_pieces, st_piece,
+						    bind_point);
 		    }
 		}
-	    }			//TODO check the brackets are correct
-	    else {
-		fprintf
-		    (stderr,"\n The computer in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
-		exit (-1);
 	    }
-	}
+	}			//TODO check the brackets are correct
     }
 }
 
@@ -877,179 +853,160 @@ w_computers (zhandle_t * zh, int type,
 	struct String_vector computers;
 	struct String_vector resources;
 
-	sprintf (spath, "/%s", octopus);
-	if (ZOK == zoo_wget_children (ozookeeper->zh, spath,
-				      w_computers, ozookeeper, &computers)) {
+	sprintf (spath, "/%s/computers", octopus);
+	result = zoo_wget_children (ozookeeper->zh, spath,
+				    w_computers, ozookeeper, &computers);
+	assert (result == ZOK);
 
 //i use this in case there is a reordering of the existing children
-	    int *sort = (int *) malloc (sizeof (int) * computers.count);
+	int *sort = (int *) malloc (sizeof (int) * computers.count);
 //array to free the previous resources
 //TODO calloc puts things to zero?
-	    int size = ozookeeper->updater.computers.count;
-	    int *array = (int *) calloc (ozookeeper->updater.computers.count,
-					 sizeof (int)
-		);
+	int size = ozookeeper->updater.computers.count;
+	int *array = (int *) calloc (ozookeeper->updater.computers.count,
+				     sizeof (int)
+	    );
 
 //set watches to new computers
-	    for (iter = 0; iter < computers.count; iter++) {
-		int exists = 0;
-		for (siter = 0; siter < ozookeeper->updater.computers.count;
-		     siter++) {
-		    if (strcmp
-			(computers.data[iter],
-			 ozookeeper->updater.computers.data[siter]) == 0) {
-			exists = 1;
-		    }
-		}
-		if (exists) {
-		    sort[iter] = siter;
-		    array[siter] = 1;
-		}
-		else {
-		    sort[iter] = -1;
+	for (iter = 0; iter < computers.count; iter++) {
+	    int exists = 0;
+	    for (siter = 0; siter < ozookeeper->updater.computers.count;
+		 siter++) {
+		if (strcmp
+		    (computers.data[iter],
+		     ozookeeper->updater.computers.data[siter]) == 0) {
+		    exists = 1;
+		    break;
 		}
 	    }
+	    if (exists) {
+		sort[iter] = siter;
+		array[siter] = 1;
+	    }
+	    else {
+		sort[iter] = -1;
+	    }
+	}
 //set the new computer list
-	    memcpy (&(ozookeeper->updater.computers), &computers,
-		    sizeof (struct String_vector));
+	memcpy (&(ozookeeper->updater.computers), &computers,
+		sizeof (struct String_vector));
 //I allocate the new resources and set watches to new computer's resources
-	    struct String_vector *new_resources =
-		(struct String_vector *) malloc (sizeof (struct String_vector)
-						 * computers.count);
-	    for (iter = 0; iter < computers.count; iter++) {
-		if (sort[iter] == -1) {
+	struct String_vector *new_resources =
+	    (struct String_vector *) malloc (sizeof (struct String_vector)
+					     * computers.count);
+	for (iter = 0; iter < computers.count; iter++) {
+	    if (sort[iter] == -1) {
 
-		    sprintf (spath, "/%s/computers/%s", octopus, computers.data[iter]);
+		sprintf (spath, "/%s/computers/%s", octopus,
+			 computers.data[iter]);
 
-		    if (ZOK == zoo_wget_children (ozookeeper->zh, spath,
-						  w_resources, ozookeeper,
-						  &resources)) {
+		result = zoo_wget_children (ozookeeper->zh, spath,
+					    w_resources, ozookeeper,
+					    &resources);
+		assert (result == ZOK);
 
-			for (siter = 0; siter < resources.count; siter++) {
+		for (siter = 0; siter < resources.count; siter++) {
 
 
 
-			    int buffer_len;
-			    unsigned long st_piece;
-			    int n_pieces;
-			    char bind_point[30];
-			    struct Stat stat;
+		    int buffer_len;
+		    unsigned long st_piece;
+		    int n_pieces;
+		    char bind_point[30];
+		    struct Stat stat;
 
 //check if this node is online
-			    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online",
-				     octopus, computers.data[iter],
-				     resources.data[siter]);
-			    if (ZOK ==
-				(result =
-				 zoo_wexists (ozookeeper->zh, spath, w_online,
-					      ozookeeper, &stat))) {
-				online = 1;
-			    }
-			    else {
-				if (result != ZNONODE) {
-				    break;
-				}
-
-
-
-				if (online) {
-
-				    sprintf (spath, "%s%s",
-					     computers.data[iter],
-					     resources.data[siter]);
-				    oz_updater_free_key (&
-							 (ozookeeper->updater));
-				    oz_updater_key (&(ozookeeper->updater),
-						    spath);
-				    buffer_len=sizeof(int);
-                                    sprintf (spath,
-					     "/%s/computers/%s/worker_nodes/%s/n_pieces",
-					     octopus, computers.data[iter],
-					     resources.data[siter]);
-				    if (ZOK !=
-					zoo_wget (ozookeeper->zh, spath,
-						  w_n_pieces, ozookeeper,
-						  (char *) &n_pieces,
-						  &buffer_len, &stat)) {
-
-					break;
-				    }
-                                    buffer_len=sizeof(unsigned long);
-				    sprintf (spath,
-					     "/%s/computers/%s/worker_nodes/%s/st_piece",
-					     octopus, computers.data[iter],
-					     resources.data[siter]);
-				    if (ZOK !=
-					zoo_wget (ozookeeper->zh, spath,
-						  w_st_piece, ozookeeper,
-						  (char *) &st_piece,
-						  &buffer_len, &stat)) {
-
-					break;
-				    }
-                                    buffer_len=1000;
-				    sprintf (spath,
-					     "/%s/computers/%s/worker_nodes/%s/bind_point",
-					     octopus, computers.data[iter],
-					     resources.data[siter]);
-				    if (ZOK !=
-					zoo_get (ozookeeper->zh, spath, 0,
-						 bind_point, &buffer_len,
-						 &stat)) {
-
-					break;
-				    }
-				    sprintf (spath, "%s%s",
-					     computers.data[iter],
-					     resources.data[siter]);
-				    ozookeeper_update_add_node (ozookeeper,
-								spath,
-								n_pieces,
-								st_piece,
-								bind_point);
-				}
-			    }
-			}
-
-
-			memcpy (&(new_resources[iter]), &resources,
-				sizeof (struct String_vector));
-
+		    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online",
+			     octopus, computers.data[iter],
+			     resources.data[siter]);
+		    if (ZOK ==
+			(result =
+			 zoo_wexists (ozookeeper->zh, spath, w_online,
+				      ozookeeper, &stat))) {
+			online = 1;
 		    }
 		    else {
-			fprintf
-			    (stderr,"\n The computer in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
-			exit (-1);
+			assert (result == ZNONODE);
 		    }
 
+
+
+		    if (online) {
+
+			sprintf (spath, "%s%s",
+				 computers.data[iter], resources.data[siter]);
+			oz_updater_free_key (&(ozookeeper->updater));
+			oz_updater_key (&(ozookeeper->updater), spath);
+			buffer_len = sizeof (int);
+			sprintf (spath,
+				 "/%s/computers/%s/worker_nodes/%s/n_pieces",
+				 octopus, computers.data[iter],
+				 resources.data[siter]);
+			result =
+			    zoo_wget (ozookeeper->zh, spath,
+				      w_n_pieces, ozookeeper,
+				      (char *) &n_pieces, &buffer_len, &stat);
+
+			assert (result == ZOK);
+
+			buffer_len = sizeof (unsigned long);
+			sprintf (spath,
+				 "/%s/computers/%s/worker_nodes/%s/st_piece",
+				 octopus, computers.data[iter],
+				 resources.data[siter]);
+			result =
+			    zoo_wget (ozookeeper->zh, spath,
+				      w_st_piece, ozookeeper,
+				      (char *) &st_piece, &buffer_len, &stat);
+			assert (result == ZOK);
+
+			buffer_len = 1000;
+			sprintf (spath,
+				 "/%s/computers/%s/worker_nodes/%s/bind_point",
+				 octopus, computers.data[iter],
+				 resources.data[siter]);
+			result =
+			    zoo_get (ozookeeper->zh, spath, 0,
+				     bind_point, &buffer_len, &stat);
+
+			assert (result == ZOK);
+
+			sprintf (spath, "%s%s",
+				 computers.data[iter], resources.data[siter]);
+			ozookeeper_update_add_node (ozookeeper,
+						    spath,
+						    n_pieces,
+						    st_piece, bind_point);
+		    }
 		}
-		else {
-		    memcpy (&(new_resources[iter]),
-			    &(ozookeeper->updater.resources[sort[iter]]),
-			    sizeof (struct String_vector));
-		}
+
+
+		memcpy (&(new_resources[iter]), &resources,
+			sizeof (struct String_vector));
+
+
 	    }
+	    else {
+		memcpy (&(new_resources[iter]),
+			&(ozookeeper->updater.resources[sort[iter]]),
+			sizeof (struct String_vector));
+	    }
+	}
 //update the resources and free the previous ones
 
-	    for (siter = 0; siter < size; siter++) {
-		if (array[siter] == 0) {
-		    deallocate_String_vector (&
-					      (ozookeeper->
-					       updater.resources[siter]));
-		}
-
+	for (siter = 0; siter < size; siter++) {
+	    if (array[siter] == 0) {
+		deallocate_String_vector (&
+					  (ozookeeper->updater.
+					   resources[siter]));
 	    }
-	    free (ozookeeper->updater.resources);
-	    ozookeeper->updater.resources = new_resources;
-	    free (sort);
-	    free (array);
 
 	}
-	else {
-	    fprintf
-		(stderr,"\n The octopus in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
-	    exit (-1);
-	}
+	free (ozookeeper->updater.resources);
+	ozookeeper->updater.resources = new_resources;
+	free (sort);
+	free (array);
+
     }
 }
 
@@ -1074,135 +1031,120 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
     oconfig_comp_name (ozookeeper->config, comp_name);
 
 
-    if (ZOK == rc) {
+    assert (ZOK == rc);
 
-	memcpy (&(ozookeeper->updater.computers), computers,
+    memcpy (&(ozookeeper->updater.computers), computers,
+	    sizeof (struct String_vector));
+    ozookeeper->updater.resources =
+	(struct String_vector *) malloc (sizeof (struct String_vector) *
+					 computers->count);
+
+
+    for (siter = 0; siter < computers->count; siter++) {
+
+	struct String_vector resources;
+	sprintf (path, "/%s/computers/%s", octopus, computers->data[siter]);
+
+	result = zoo_wget_children (ozookeeper->zh, path,
+				    w_resources, ozookeeper, &resources);
+	assert (result == ZOK);
+
+
+	memcpy (&(ozookeeper->updater.resources[siter]), &resources,
 		sizeof (struct String_vector));
-	ozookeeper->updater.resources =
-	    (struct String_vector *) malloc (sizeof (struct String_vector) *
-					     computers->count);
 
-
-	for (siter = 0; siter < computers->count; siter++) {
-
-	    struct String_vector resources;
-	    sprintf (path, "/%s/computers/%s", octopus, computers->data[siter]);
-
-	    if (ZOK == zoo_wget_children (ozookeeper->zh, path,
-					  w_resources, ozookeeper,
-					  &resources)) {
-
-
-		memcpy (&(ozookeeper->updater.resources[siter]), &resources,
-			sizeof (struct String_vector));
-
-		for (iter = 0; iter < resources.count; iter++) {
+	for (iter = 0; iter < resources.count; iter++) {
 
 
 
-		    int buffer_len;
-		    unsigned long st_piece;
-		    int n_pieces;
-		    char bind_point[30];
-		    struct Stat stat;
-                    self=0;
+	    int buffer_len;
+	    unsigned long st_piece;
+	    int n_pieces;
+	    char bind_point[30];
+	    struct Stat stat;
+	    self = 0;
 
 //get data only from nodes that are online or are yourself
-		    if (strcmp (computers->data[iter], comp_name) == 0) {
-			self = 1;
-		    }
+	    if (strcmp (computers->data[iter], comp_name) == 0) {
+		self = 1;
+	    }
 //check if this node is online
-		    sprintf (path, "/%s/computers/%s/worker_nodes/%s/online",
-			     octopus, computers->data[siter],
-			     resources.data[iter]);
-		    if (ZOK ==
-			(result =
-			 zoo_wexists (ozookeeper->zh, path, w_online,
-				      ozookeeper, &stat))) {
-			online = 1;
-		    }
-		    else {
-			if (result != ZNONODE) {
-			    break;
-			}
-		    }
-
-		    if (self || online) {
-                        buffer_len=sizeof(int);
-			sprintf (path, "/%s/computers/%s/worker_nodes/%s/n_pieces",
-				 octopus, computers->data[siter],
-				 resources.data[iter]);
-			result=
-			    zoo_wget (ozookeeper->zh, path, w_n_pieces,
-				      ozookeeper, (char *) &n_pieces,
-				      &buffer_len, &stat);
-                        
-                        assert(result==ZOK); 
-
-		    
-			
-                        buffer_len=sizeof(unsigned long);
-			sprintf (path, "/%s/computers/%s/worker_nodes/%s/st_piece",
-				 octopus, computers->data[siter],
-				 resources.data[iter]);
-			result=
-			    zoo_wget (ozookeeper->zh, path, w_st_piece,
-				      ozookeeper, (char *) &st_piece,
-				      &buffer_len, &stat); 
-
-                        
-                        assert(result==ZOK); 
-
-                        buffer_len=1000;
-			sprintf (path,
-				 "/%s/computers/%s/worker_nodes/%s/bind_point",
-				 octopus, computers->data[siter],
-				 resources.data[iter]);
-			result=
-			    zoo_get (ozookeeper->zh, path, 0, bind_point,
-				     &buffer_len, &stat);
-
-                        assert(result==ZOK); 
-			   
-			
-
-		    }
-
-		    sprintf (path, "%s%s", computers->data[siter],
-			     resources.data[iter]);
-		    if (self) {
-			oz_updater_free_key (&(ozookeeper->updater));
-			oz_updater_key (&(ozookeeper->updater), path);
-			ozookeeper_update_add_self (ozookeeper, path,
-						    n_pieces, st_piece,
-						    bind_point);
-		    }
-//self cannot be online at this point anyway
-		    else {
-			if (online) {
-
-			    ozookeeper_update_add_node (ozookeeper, path,
-							n_pieces,
-							st_piece, bind_point);
-			}
-
-		    }
-
-		    //TODO check the brackets are correct
-		}
+	    sprintf (path, "/%s/computers/%s/worker_nodes/%s/online",
+		     octopus, computers->data[siter], resources.data[iter]);
+	    if (ZOK ==
+		(result =
+		 zoo_wexists (ozookeeper->zh, path, w_online,
+			      ozookeeper, &stat))) {
+		online = 1;
 	    }
 	    else {
-		fprintf
-		    (stderr,"\n The computer in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
-		exit (-1);
+		if (result != ZNONODE) {
+		    break;
+		}
 	    }
-	}
-    }
 
-    else {
-	fprintf
-	    (stderr,"\n The octopus in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
-	exit (-1);
+	    if (self || online) {
+		buffer_len = sizeof (int);
+		sprintf (path, "/%s/computers/%s/worker_nodes/%s/n_pieces",
+			 octopus, computers->data[siter],
+			 resources.data[iter]);
+		result =
+		    zoo_wget (ozookeeper->zh, path, w_n_pieces,
+			      ozookeeper, (char *) &n_pieces,
+			      &buffer_len, &stat);
+
+		assert (result == ZOK);
+
+
+
+		buffer_len = sizeof (unsigned long);
+		sprintf (path, "/%s/computers/%s/worker_nodes/%s/st_piece",
+			 octopus, computers->data[siter],
+			 resources.data[iter]);
+		result =
+		    zoo_wget (ozookeeper->zh, path, w_st_piece,
+			      ozookeeper, (char *) &st_piece,
+			      &buffer_len, &stat);
+
+
+		assert (result == ZOK);
+
+		buffer_len = 1000;
+		sprintf (path,
+			 "/%s/computers/%s/worker_nodes/%s/bind_point",
+			 octopus, computers->data[siter],
+			 resources.data[iter]);
+		result =
+		    zoo_get (ozookeeper->zh, path, 0, bind_point,
+			     &buffer_len, &stat);
+
+		assert (result == ZOK);
+
+
+
+	    }
+
+	    sprintf (path, "%s%s", computers->data[siter],
+		     resources.data[iter]);
+	    if (self) {
+		oz_updater_free_key (&(ozookeeper->updater));
+		oz_updater_key (&(ozookeeper->updater), path);
+		ozookeeper_update_add_self (ozookeeper, path,
+					    n_pieces, st_piece, bind_point);
+	    }
+//self cannot be online at this point anyway
+	    else {
+		if (online) {
+
+		    ozookeeper_update_add_node (ozookeeper, path,
+						n_pieces,
+						st_piece, bind_point);
+		}
+
+	    }
+
+	    //TODO check the brackets are correct
+	}
     }
 
     ozookeeper_update_go_online (ozookeeper);
@@ -1230,15 +1172,11 @@ ozookeeper_getconfig (ozookeeper_t * ozookeeper)
     oconfig_comp_name (ozookeeper->config, comp_name);
 
 //initialize self
-    sprintf (path, "/%s", octopus);
+    sprintf (path, "/%s/computers", octopus);
     result =
 	zoo_awget_children (ozookeeper->zh, path, w_computers, ozookeeper,
 			    c_computers, ozookeeper);
-    if (ZOK != result) {
-	fprintf
-	    (stderr,"\n Error, I cannot get the configuration from the zookeeper server");
-	exit (1);
-    }
+    assert (ZOK == result);
 
 }
 

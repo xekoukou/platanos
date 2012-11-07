@@ -48,8 +48,7 @@ int ozookeeper_not_corrupt (ozookeeper_t ** ozookeep);
 
 void ozookeeper_init_workers (ozookeeper_t * ozookeeper, workers_t * workers);
 
-void
-ozookeeper_getconfig (ozookeeper_t * ozookeeper);
+void ozookeeper_getconfig (ozookeeper_t * ozookeeper);
 
 void ozookeeper_set_zhandle (ozookeeper_t * ozookeeper, zhandle_t * zh);
 

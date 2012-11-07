@@ -740,8 +740,8 @@ update_n_pieces (update_t * update, zmsg_t * msg)
     }
     zlist_destroy (&events);
 
-   fprintf (stderr,"\nWorker with id: %s has updated its n_pieces to %d.",
-	    update->balance->self_key, n_pieces);
+    fprintf (stderr, "\nWorker with id: %s has updated its n_pieces to %d.",
+	     update->balance->self_key, n_pieces);
 }
 
 
@@ -831,8 +831,9 @@ update_st_piece (update_t * update, zmsg_t * msg)
     }
     zlist_destroy (&events);
 
-    fprintf (stderr,"\nWorker with id: %s has incremented its st_piece to %lu.",
-	    update->balance->self_key, st_piece);
+    fprintf (stderr,
+	     "\nWorker with id: %s has incremented its st_piece to %lu.",
+	     update->balance->self_key, st_piece);
 
 }
 
@@ -889,8 +890,8 @@ remove_node (update_t * update, zmsg_t * msg)
 
     zlist_destroy (&events);
 
-    fprintf (stderr,"\nWorker with id: %s has removed the node with id %s.",
-	    update->balance->self_key, key);
+    fprintf (stderr, "\nWorker with id: %s has removed the node with id %s.",
+	     update->balance->self_key, key);
 
 }
 
@@ -990,8 +991,8 @@ add_node (update_t * update, zmsg_t * msg)
     }
     zlist_destroy (&events);
 
-    fprintf (stderr,"\nWorker with id: %s has added the node with id %s.",
-	    update->balance->self_key, key);
+    fprintf (stderr, "\nWorker with id: %s has added the node with id %s.",
+	     update->balance->self_key, key);
 
 }
 
@@ -1045,8 +1046,8 @@ add_self (update_t * update, zmsg_t * msg)
 			  bind_point);
     assert (rc == 0);
 
-    fprintf (stderr,"\nWorker with id: %s has received its configuration",
-	    update->balance->self_key);
+    fprintf (stderr, "\nWorker with id: %s has received its configuration",
+	     update->balance->self_key);
 
 
 }
@@ -1065,8 +1066,8 @@ go_online (worker_t * worker)
     oconfig_octopus (worker->config, octopus);
     oconfig_comp_name (worker->config, comp_name);
 
-    sprintf (path, "/%s/computers/%s/worker_nodes/%s/online", octopus, comp_name,
-	     worker->res_name);
+    sprintf (path, "/%s/computers/%s/worker_nodes/%s/online", octopus,
+	     comp_name, worker->res_name);
 
     int result = zoo_create (worker->zh, path, NULL,
 			     -1, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL,
@@ -1086,7 +1087,7 @@ worker_update (update_t * update, void *sub)
 //check if it is a new update or an old one
     zmsg_t *msg = zmsg_recv (sub);
     zframe_t *sub_frame = zmsg_pop (msg);
-    zframe_destroy(&sub_frame);
+    zframe_destroy (&sub_frame);
     zframe_t *id = zmsg_pop (msg);
     if (memcmp (zframe_data (id), &(update->id), sizeof (unsigned int)) == 0) {
 //lazy pirate reconfirm update
@@ -1354,7 +1355,8 @@ compute_init (compute_t ** compute, khash_t (vertices) * hash,
 
 
 void
-worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,char *res_name, char *id)
+worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
+	     char *res_name, char *id)
 {
 
     *worker = (worker_t *) malloc (sizeof (worker_t));
@@ -1404,7 +1406,8 @@ workers_init (workers_t ** workers, zctx_t * ctx, ozookeeper_t * ozookeeper)
 		sprintf ((*workers)->id[iter], "%s%s", comp_name,
 			 worker_children.data[iter]);
 
-		worker_init (&worker, ozookeeper->zh, ozookeeper->config,worker_children.data[iter],
+		worker_init (&worker, ozookeeper->zh, ozookeeper->config,
+			     worker_children.data[iter],
 			     (*workers)->id[iter]);
 
 		(*workers)->pipe[iter] =
@@ -1412,11 +1415,11 @@ workers_init (workers_t ** workers, zctx_t * ctx, ozookeeper_t * ozookeeper)
 	    }
 	}
 	else {
-	    fprintf (stderr,"\n More workers than allowed.. error exiting");
+	    fprintf (stderr, "\n More workers than allowed.. error exiting");
 	    exit (1);
 	}
 	if (ZOK != result && ZNONODE != result) {
-	    fprintf (stderr,"\n Couldnt get the children.. error exiting");
+	    fprintf (stderr, "\n Couldnt get the children.. error exiting");
 	    exit (1);
 	}
 
@@ -1453,7 +1456,7 @@ workers_monitor (workers_t * workers)
 	    if (pollitems[i].revents & ZMQ_POLLIN) {
 		zmsg_t *msg = zmsg_recv (workers->pipe[i]);
 		if (!msg) {
-		    fprintf (stderr,"\n interrupt caught");
+		    fprintf (stderr, "\n interrupt caught");
 		    exit (1);
 		}
 	    }
