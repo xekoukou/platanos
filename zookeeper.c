@@ -41,15 +41,15 @@ ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
 
     (*ozookeeper)->zh =
 	zookeeper_init (host, global_watcher, recv_timeout, 0, watcherctx, 0);
-    if((*ozookeeper)->zh==0){
-    printf("\nzookeeper client cannot be initialized");
-    exit(1);
-    }       
+    if ((*ozookeeper)->zh == NULL) {
+	fprintf (stderr,"\nzookeeper client cannot be initialized");
+	exit (1);
+    }
 
 
     if (ozookeeper_not_corrupt (ozookeeper) != 1) {
-	printf
-	    ("\n local config and zookeeper config do not match,\n Have you registered at least one resource for this computer to zookeeper?\n exiting..");
+	fprintf
+	    (stderr,"\n local config and zookeeper config do not match,\n Have you registered at least one resource for this computer to zookeeper?\n exiting..");
 	exit (1);
     }
 
@@ -78,7 +78,7 @@ ozookeeper_not_corrupt (ozookeeper_t ** ozookeep)
     if (ZOK != zoo_exists (ozookeeper->zh, path, 0, &stat)) {
 	return 0;
     }
-    sprintf (path, "/%s/%s", config[0], config[1]);
+    sprintf (path, "/%s/computers/%s", config[0], config[1]);
     if (ZOK != zoo_exists (ozookeeper->zh, path, 0, &stat)) {
 	return 0;
     }
@@ -118,6 +118,7 @@ global_watcherctx_destroy (global_watcherctx_t * watcherctx)
 void
 ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg)
 {
+
     int rc;
     if (ozookeeper->updater.id > 1000000000) {
 	ozookeeper->updater.id = 1;
@@ -222,8 +223,8 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg)
 					   sizeof (unsigned int)));
 		    zmsg_push (msg_to_send,
 			       zframe_new (ozookeeper->workers->id[it],
-					   strlen (ozookeeper->workers->
-						   id[it])));
+					   strlen (ozookeeper->
+						   workers->id[it])));
 		    zmsg_send (&msg_to_send, ozookeeper->pub);
 
 		}
@@ -357,13 +358,13 @@ ozookeeper_update_remove_node (ozookeeper_t * ozookeeper, char *key)
 //this is done when a node goes online
 void
 ozookeeper_update_add_node (ozookeeper_t * ozookeeper, char *key,
-			    unsigned long n_pieces, unsigned long st_piece,
+			    int n_pieces, unsigned long st_piece,
 			    char *bind_point)
 {
     zmsg_t *msg = zmsg_new ();
     zmsg_add (msg, zframe_new ("add_node", strlen ("add_node") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
-    zmsg_add (msg, zframe_new (&n_pieces, sizeof (unsigned long)));
+    zmsg_add (msg, zframe_new (&n_pieces, sizeof (int)));
     zmsg_add (msg, zframe_new (&st_piece, sizeof (unsigned long)));
     zmsg_add (msg, zframe_new (bind_point, strlen (bind_point) + 1));
     ozookeeper_update (ozookeeper, &msg);
@@ -372,13 +373,13 @@ ozookeeper_update_add_node (ozookeeper_t * ozookeeper, char *key,
 //this is done only at the start for a specific number of seconds
 void
 ozookeeper_update_add_self (ozookeeper_t * ozookeeper, char *key,
-			    unsigned long n_pieces, unsigned long st_piece,
+			    int n_pieces, unsigned long st_piece,
 			    char *bind_point)
 {
     zmsg_t *msg = zmsg_new ();
     zmsg_add (msg, zframe_new ("add_self", strlen ("add_self") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
-    zmsg_add (msg, zframe_new (&n_pieces, sizeof (unsigned long)));
+    zmsg_add (msg, zframe_new (&n_pieces, sizeof (int)));
     zmsg_add (msg, zframe_new (&st_piece, sizeof (unsigned long)));
     zmsg_add (msg, zframe_new (bind_point, strlen (bind_point) + 1));
     ozookeeper_update_one (ozookeeper, &msg);
@@ -399,12 +400,12 @@ ozookeeper_update_st_piece (ozookeeper_t * ozookeeper, char *key,
 
 void
 ozookeeper_update_n_pieces (ozookeeper_t * ozookeeper, char *key,
-			    unsigned long n_pieces)
+			    int n_pieces)
 {
     zmsg_t *msg = zmsg_new ();
     zmsg_add (msg, zframe_new ("n_pieces", strlen ("n_pieces") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
-    zmsg_add (msg, zframe_new (&n_pieces, sizeof (unsigned long)));
+    zmsg_add (msg, zframe_new (&n_pieces, sizeof (int)));
     ozookeeper_update (ozookeeper, &msg);
 }
 
@@ -464,7 +465,7 @@ w_st_piece (zhandle_t * zh, int type,
 //check if node is online TODO remove this by ensuring that watches exist only on online nodes
 
 	struct Stat stat;
-	sprintf (spath, "/%s/%s/worker_nodes/%s/online", octopus, comp_name,
+	sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online", octopus, comp_name,
 		 resource);
 	if (ZOK ==
 	    (result =
@@ -478,10 +479,10 @@ w_st_piece (zhandle_t * zh, int type,
 	    }
 	}
 	if (online) {
-	    int buffer_len;
+	    int buffer_len=sizeof(unsigned long);
 	    unsigned long st_piece;
 
-	    sprintf (spath, "/%s/%s/worker_nodes/%s/st_piece", octopus,
+	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/st_piece", octopus,
 		     comp_name, resource);
 	    if (ZOK !=
 		zoo_wget (ozookeeper->zh, spath, w_st_piece, ozookeeper,
@@ -535,7 +536,7 @@ w_n_pieces (zhandle_t * zh, int type,
 //check if node is online TODO remove this by ensuring that watches exist only on online nodes
 
 	struct Stat stat;
-	sprintf (spath, "/%s/%s/worker_nodes/%s/online", octopus, comp_name,
+	sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online", octopus, comp_name,
 		 resource);
 	if (ZOK ==
 	    (result =
@@ -549,10 +550,10 @@ w_n_pieces (zhandle_t * zh, int type,
 	    }
 	}
 	if (online) {
-	    int buffer_len;
-	    unsigned long n_pieces;
+	    int buffer_len=sizeof(int);
+	    int n_pieces;
 
-	    sprintf (spath, "/%s/%s/worker_nodes/%s/n_pieces", octopus,
+	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/n_pieces", octopus,
 		     comp_name, resource);
 	    if (ZOK !=
 		zoo_wget (ozookeeper->zh, spath, w_n_pieces, ozookeeper,
@@ -606,7 +607,7 @@ w_online (zhandle_t * zh, int type,
 //check if this node is online
 
 	struct Stat stat;
-	sprintf (spath, "/%s/%s/worker_nodes/%s/online", octopus, comp_name,
+	sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online", octopus, comp_name,
 		 resource);
 	if (ZOK ==
 	    (result =
@@ -621,13 +622,13 @@ w_online (zhandle_t * zh, int type,
 	}
 	int buffer_len;
 	unsigned long st_piece;
-	unsigned long n_pieces;
+	int n_pieces;
 	char bind_point[30];
 
 
 	if (online) {
-
-	    sprintf (spath, "/%s/%s/worker_nodes/%s/n_pieces", octopus,
+            buffer_len=sizeof(int);
+	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/n_pieces", octopus,
 		     comp_name, resource);
 	    if (ZOK !=
 		zoo_wget (ozookeeper->zh, spath, w_n_pieces, ozookeeper,
@@ -635,7 +636,8 @@ w_online (zhandle_t * zh, int type,
 
 		goto end;
 	    }
-	    sprintf (spath, "/%s/%s/worker_nodes/%s/st_piece", octopus,
+            buffer_len=sizeof(unsigned int);
+	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/st_piece", octopus,
 		     comp_name, resource);
 	    if (ZOK !=
 		zoo_wget (ozookeeper->zh, spath, w_st_piece, ozookeeper,
@@ -643,7 +645,9 @@ w_online (zhandle_t * zh, int type,
 
 		goto end;
 	    }
-	    sprintf (spath, "/%s/%s/worker_nodes/%s/bind_point", octopus,
+            
+            buffer_len=1000;
+	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/bind_point", octopus,
 		     comp_name, resource);
 	    if (ZOK !=
 		zoo_get (ozookeeper->zh, spath, 0, bind_point, &buffer_len,
@@ -718,7 +722,7 @@ w_resources (zhandle_t * zh, int type,
 //update resources
 //find its location
 //at least one computer should exist that has the same name
-		int position=-1;
+		int position = -1;
 		for (iter = 0; iter < ozookeeper->updater.computers.count;
 		     iter++) {
 		    if (strcmp
@@ -728,7 +732,7 @@ w_resources (zhandle_t * zh, int type,
 			position = iter;
 		    }
 		}
-                assert(position!=-1);
+		assert (position != -1);
 
 //i use this in case there is a reordering of the existing children
 		int *sort = (int *) malloc (sizeof (int) * resources.count);
@@ -741,8 +745,8 @@ w_resources (zhandle_t * zh, int type,
 			 siter++) {
 			if (strcmp
 			    (resources.data[iter],
-			     ozookeeper->updater.resources[position].
-			     data[siter]) == 0) {
+			     ozookeeper->updater.
+			     resources[position].data[siter]) == 0) {
 			    exists = 1;
 			}
 		    }
@@ -765,12 +769,12 @@ w_resources (zhandle_t * zh, int type,
 
 			int buffer_len;
 			unsigned long st_piece;
-			unsigned long n_pieces;
+			int n_pieces;
 			char bind_point[30];
 			struct Stat stat;
 
 //check if this node is online
-			sprintf (spath, "/%s/%s/worker_nodes/%s/online",
+			sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online",
 				 octopus, last_path (path),
 				 resources.data[iter]);
 			if (ZOK ==
@@ -787,8 +791,9 @@ w_resources (zhandle_t * zh, int type,
 
 
 			if (online) {
-
-			    sprintf (spath, "/%s/%s/worker_nodes/%s/n_pieces",
+			
+                            buffer_len=sizeof(int);
+                            sprintf (spath, "/%s/computers/%s/worker_nodes/%s/n_pieces",
 				     octopus, last_path (path),
 				     resources.data[iter]);
 			    if (ZOK !=
@@ -798,7 +803,9 @@ w_resources (zhandle_t * zh, int type,
 
 				break;
 			    }
-			    sprintf (spath, "/%s/%s/worker_nodes/%s/st_piece",
+                            
+                            buffer_len=sizeof(unsigned long);
+			    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/st_piece",
 				     octopus, last_path (path),
 				     resources.data[iter]);
 			    if (ZOK !=
@@ -808,8 +815,9 @@ w_resources (zhandle_t * zh, int type,
 
 				break;
 			    }
+                            buffer_len=1000;
 			    sprintf (spath,
-				     "/%s/%s/worker_nodes/%s/bind_point",
+				     "/%s/computers/%s/worker_nodes/%s/bind_point",
 				     octopus, last_path (path),
 				     resources.data[iter]);
 			    if (ZOK !=
@@ -830,8 +838,8 @@ w_resources (zhandle_t * zh, int type,
 		}
 	    }			//TODO check the brackets are correct
 	    else {
-		printf
-		    ("\n The computer in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
+		fprintf
+		    (stderr,"\n The computer in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
 		exit (-1);
 	    }
 	}
@@ -911,7 +919,7 @@ w_computers (zhandle_t * zh, int type,
 	    for (iter = 0; iter < computers.count; iter++) {
 		if (sort[iter] == -1) {
 
-		    sprintf (spath, "/%s/%s", octopus, computers.data[iter]);
+		    sprintf (spath, "/%s/computers/%s", octopus, computers.data[iter]);
 
 		    if (ZOK == zoo_wget_children (ozookeeper->zh, spath,
 						  w_resources, ozookeeper,
@@ -923,12 +931,12 @@ w_computers (zhandle_t * zh, int type,
 
 			    int buffer_len;
 			    unsigned long st_piece;
-			    unsigned long n_pieces;
+			    int n_pieces;
 			    char bind_point[30];
 			    struct Stat stat;
 
 //check if this node is online
-			    sprintf (spath, "/%s/%s/worker_nodes/%s/online",
+			    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/online",
 				     octopus, computers.data[iter],
 				     resources.data[siter]);
 			    if (ZOK ==
@@ -950,12 +958,12 @@ w_computers (zhandle_t * zh, int type,
 					     computers.data[iter],
 					     resources.data[siter]);
 				    oz_updater_free_key (&
-							 (ozookeeper->
-							  updater));
+							 (ozookeeper->updater));
 				    oz_updater_key (&(ozookeeper->updater),
 						    spath);
-				    sprintf (spath,
-					     "/%s/%s/worker_nodes/%s/n_pieces",
+				    buffer_len=sizeof(int);
+                                    sprintf (spath,
+					     "/%s/computers/%s/worker_nodes/%s/n_pieces",
 					     octopus, computers.data[iter],
 					     resources.data[siter]);
 				    if (ZOK !=
@@ -966,8 +974,9 @@ w_computers (zhandle_t * zh, int type,
 
 					break;
 				    }
+                                    buffer_len=sizeof(unsigned long);
 				    sprintf (spath,
-					     "/%s/%s/worker_nodes/%s/st_piece",
+					     "/%s/computers/%s/worker_nodes/%s/st_piece",
 					     octopus, computers.data[iter],
 					     resources.data[siter]);
 				    if (ZOK !=
@@ -978,8 +987,9 @@ w_computers (zhandle_t * zh, int type,
 
 					break;
 				    }
+                                    buffer_len=1000;
 				    sprintf (spath,
-					     "/%s/%s/worker_nodes/%s/bind_point",
+					     "/%s/computers/%s/worker_nodes/%s/bind_point",
 					     octopus, computers.data[iter],
 					     resources.data[siter]);
 				    if (ZOK !=
@@ -1007,8 +1017,8 @@ w_computers (zhandle_t * zh, int type,
 
 		    }
 		    else {
-			printf
-			    ("\n The computer in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
+			fprintf
+			    (stderr,"\n The computer in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
 			exit (-1);
 		    }
 
@@ -1024,8 +1034,8 @@ w_computers (zhandle_t * zh, int type,
 	    for (siter = 0; siter < size; siter++) {
 		if (array[siter] == 0) {
 		    deallocate_String_vector (&
-					      (ozookeeper->updater.
-					       resources[siter]));
+					      (ozookeeper->
+					       updater.resources[siter]));
 		}
 
 	    }
@@ -1036,8 +1046,8 @@ w_computers (zhandle_t * zh, int type,
 
 	}
 	else {
-	    printf
-		("\n The octopus in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
+	    fprintf
+		(stderr,"\n The octopus in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
 	    exit (-1);
 	}
     }
@@ -1048,7 +1058,6 @@ w_computers (zhandle_t * zh, int type,
 void
 c_computers (int rc, const struct String_vector *strings, const void *data)
 {
-
     ozookeeper_t *ozookeeper = (ozookeeper_t *) data;
     const struct String_vector *computers = strings;
 
@@ -1077,7 +1086,7 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 	for (siter = 0; siter < computers->count; siter++) {
 
 	    struct String_vector resources;
-	    sprintf (path, "/%s/%s", octopus, computers->data[siter]);
+	    sprintf (path, "/%s/computers/%s", octopus, computers->data[siter]);
 
 	    if (ZOK == zoo_wget_children (ozookeeper->zh, path,
 					  w_resources, ozookeeper,
@@ -1093,17 +1102,17 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 
 		    int buffer_len;
 		    unsigned long st_piece;
-		    unsigned long n_pieces;
+		    int n_pieces;
 		    char bind_point[30];
 		    struct Stat stat;
+                    self=0;
 
 //get data only from nodes that are online or are yourself
 		    if (strcmp (computers->data[iter], comp_name) == 0) {
 			self = 1;
 		    }
-
 //check if this node is online
-		    sprintf (path, "/%s/%s/worker_nodes/%s/online",
+		    sprintf (path, "/%s/computers/%s/worker_nodes/%s/online",
 			     octopus, computers->data[siter],
 			     resources.data[iter]);
 		    if (ZOK ==
@@ -1119,37 +1128,43 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 		    }
 
 		    if (self || online) {
-
-			sprintf (path, "/%s/%s/worker_nodes/%s/n_pieces",
+                        buffer_len=sizeof(int);
+			sprintf (path, "/%s/computers/%s/worker_nodes/%s/n_pieces",
 				 octopus, computers->data[siter],
 				 resources.data[iter]);
-			if (ZOK !=
+			result=
 			    zoo_wget (ozookeeper->zh, path, w_n_pieces,
 				      ozookeeper, (char *) &n_pieces,
-				      &buffer_len, &stat)) {
+				      &buffer_len, &stat);
+                        
+                        assert(result==ZOK); 
 
-			    break;
-			}
-			sprintf (path, "/%s/%s/worker_nodes/%s/st_piece",
+		    
+			
+                        buffer_len=sizeof(unsigned long);
+			sprintf (path, "/%s/computers/%s/worker_nodes/%s/st_piece",
 				 octopus, computers->data[siter],
 				 resources.data[iter]);
-			if (ZOK !=
+			result=
 			    zoo_wget (ozookeeper->zh, path, w_st_piece,
 				      ozookeeper, (char *) &st_piece,
-				      &buffer_len, &stat)) {
+				      &buffer_len, &stat); 
 
-			    break;
-			}
+                        
+                        assert(result==ZOK); 
+
+                        buffer_len=1000;
 			sprintf (path,
-				 "/%s/%s/worker_nodes/%s/bind_point",
+				 "/%s/computers/%s/worker_nodes/%s/bind_point",
 				 octopus, computers->data[siter],
 				 resources.data[iter]);
-			if (ZOK !=
+			result=
 			    zoo_get (ozookeeper->zh, path, 0, bind_point,
-				     &buffer_len, &stat)) {
+				     &buffer_len, &stat);
 
-			    break;
-			}
+                        assert(result==ZOK); 
+			   
+			
 
 		    }
 
@@ -1162,6 +1177,7 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 						    n_pieces, st_piece,
 						    bind_point);
 		    }
+//self cannot be online at this point anyway
 		    else {
 			if (online) {
 
@@ -1176,16 +1192,16 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 		}
 	    }
 	    else {
-		printf
-		    ("\n The computer in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
+		fprintf
+		    (stderr,"\n The computer in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
 		exit (-1);
 	    }
 	}
     }
 
     else {
-	printf
-	    ("\n The octopus in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
+	fprintf
+	    (stderr,"\n The octopus in the local configuation doesnt exist(or unkown error) in the zookeeper, exiting..");
 	exit (-1);
     }
 
@@ -1219,8 +1235,9 @@ ozookeeper_getconfig (ozookeeper_t * ozookeeper)
 	zoo_awget_children (ozookeeper->zh, path, w_computers, ozookeeper,
 			    c_computers, ozookeeper);
     if (ZOK != result) {
-	printf("\n Error, I cannot get the configuration from the zookeeper server");
-        exit(1);
+	fprintf
+	    (stderr,"\n Error, I cannot get the configuration from the zookeeper server");
+	exit (1);
     }
 
 }

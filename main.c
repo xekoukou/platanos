@@ -41,5 +41,10 @@ main ()
     workers_t *workers;
     workers_init (&workers, ctx, ozookeeper);
 
+    ozookeeper_init_workers(ozookeeper,workers);
+
+    ozookeeper_getconfig(ozookeeper);
+
+    workers_monitor (workers);
     return 0;
 }

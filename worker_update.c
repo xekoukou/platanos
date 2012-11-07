@@ -83,7 +83,7 @@ balance_init (balance_t ** balance, khash_t (vertices) * hash,
     (*balance)->hash = hash;
     (*balance)->router_bl = router_bl;
     (*balance)->self_bl = self_bl;
-    intervals_init ((*balance)->intervals);
+    intervals_init (&((*balance)->intervals));
     (*balance)->events = zlist_new ();
     (*balance)->actions = zlist_new ();
     (*balance)->on_gives = zlist_new ();

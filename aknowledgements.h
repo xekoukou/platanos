@@ -51,7 +51,7 @@ typedef struct action_t action_t;
 typedef struct interval_t interval_t;
 typedef struct intervals_t intervals_t;
 
-void intervals_init (intervals_t * intervals);
+void intervals_init (intervals_t ** intervals);
 void
 interval_init (interval_t ** interval, struct _hkey_t *start,
 	       struct _hkey_t *end);

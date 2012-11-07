@@ -64,10 +64,10 @@ typedef struct
 } update_t;
 
 void update_init (update_t ** update, void *dealer, router_t * router,
-		 balance_t * balance, compute_t * compute);
+		  balance_t * balance, compute_t * compute);
 
 void balance_init (balance_t ** balance, khash_t (vertices) * hash,
-		  void *router_bl, void *self_bl, char *self_key);
+		   void *router_bl, void *self_bl, char *self_key);
 
 void balance_update (balance_t * balance, on_give_t * on_give);
 

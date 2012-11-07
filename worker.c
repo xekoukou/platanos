@@ -661,7 +661,7 @@ update_n_pieces (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
-    unsigned long n_pieces;
+    int n_pieces;
 
     zframe_t *frame = zmsg_first (msg);
 
@@ -739,6 +739,9 @@ update_n_pieces (update_t * update, zmsg_t * msg)
 	}
     }
     zlist_destroy (&events);
+
+   fprintf (stderr,"\nWorker with id: %s has updated its n_pieces to %d.",
+	    update->balance->self_key, n_pieces);
 }
 
 
@@ -827,6 +830,10 @@ update_st_piece (update_t * update, zmsg_t * msg)
 	}
     }
     zlist_destroy (&events);
+
+    fprintf (stderr,"\nWorker with id: %s has incremented its st_piece to %lu.",
+	    update->balance->self_key, st_piece);
+
 }
 
 
@@ -881,6 +888,9 @@ remove_node (update_t * update, zmsg_t * msg)
 
 
     zlist_destroy (&events);
+
+    fprintf (stderr,"\nWorker with id: %s has removed the node with id %s.",
+	    update->balance->self_key, key);
 
 }
 
@@ -979,6 +989,10 @@ add_node (update_t * update, zmsg_t * msg)
 	}
     }
     zlist_destroy (&events);
+
+    fprintf (stderr,"\nWorker with id: %s has added the node with id %s.",
+	    update->balance->self_key, key);
+
 }
 
 
@@ -1031,6 +1045,9 @@ add_self (update_t * update, zmsg_t * msg)
 			  bind_point);
     assert (rc == 0);
 
+    fprintf (stderr,"\nWorker with id: %s has received its configuration",
+	    update->balance->self_key);
+
 
 }
 
@@ -1046,10 +1063,10 @@ go_online (worker_t * worker)
     char comp_name[1000];
 
     oconfig_octopus (worker->config, octopus);
-    oconfig_octopus (worker->config, comp_name);
+    oconfig_comp_name (worker->config, comp_name);
 
-    sprintf (path, "/%s/%s/worker_nodes/%s/online", octopus, comp_name,
-	     worker->id);
+    sprintf (path, "/%s/computers/%s/worker_nodes/%s/online", octopus, comp_name,
+	     worker->res_name);
 
     int result = zoo_create (worker->zh, path, NULL,
 			     -1, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL,
@@ -1068,6 +1085,8 @@ worker_update (update_t * update, void *sub)
 
 //check if it is a new update or an old one
     zmsg_t *msg = zmsg_recv (sub);
+    zframe_t *sub_frame = zmsg_pop (msg);
+    zframe_destroy(&sub_frame);
     zframe_t *id = zmsg_pop (msg);
     if (memcmp (zframe_data (id), &(update->id), sizeof (unsigned int)) == 0) {
 //lazy pirate reconfirm update
@@ -1335,11 +1354,13 @@ compute_init (compute_t ** compute, khash_t (vertices) * hash,
 
 
 void
-worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config, char *id)
+worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,char *res_name, char *id)
 {
 
     *worker = (worker_t *) malloc (sizeof (worker_t));
     (*worker)->zh = zh;
+    (*worker)->res_name = (char *) malloc (strlen (res_name) + 1);
+    strcpy ((*worker)->res_name, res_name);
     (*worker)->id = (char *) malloc (strlen (id) + 1);
     strcpy ((*worker)->id, id);
     (*worker)->config = config;
@@ -1357,7 +1378,7 @@ workers_init (workers_t ** workers, zctx_t * ctx, ozookeeper_t * ozookeeper)
     oconfig_octopus (ozookeeper->config, octopus);
     oconfig_comp_name (ozookeeper->config, comp_name);
 
-    sprintf (path, "/%s/%s/worker_nodes", octopus, comp_name);
+    sprintf (path, "/%s/computers/%s/worker_nodes", octopus, comp_name);
     struct String_vector worker_children;
     result = zoo_get_children (ozookeeper->zh, path, 0, &worker_children);
 
@@ -1383,7 +1404,7 @@ workers_init (workers_t ** workers, zctx_t * ctx, ozookeeper_t * ozookeeper)
 		sprintf ((*workers)->id[iter], "%s%s", comp_name,
 			 worker_children.data[iter]);
 
-		worker_init (&worker, ozookeeper->zh, ozookeeper->config,
+		worker_init (&worker, ozookeeper->zh, ozookeeper->config,worker_children.data[iter],
 			     (*workers)->id[iter]);
 
 		(*workers)->pipe[iter] =
@@ -1391,18 +1412,53 @@ workers_init (workers_t ** workers, zctx_t * ctx, ozookeeper_t * ozookeeper)
 	    }
 	}
 	else {
-	    printf ("\n More workers than allowed.. error exiting");
+	    fprintf (stderr,"\n More workers than allowed.. error exiting");
 	    exit (1);
 	}
 	if (ZOK != result && ZNONODE != result) {
-	    printf ("\n Couldnt get the children.. error exiting");
+	    fprintf (stderr,"\n Couldnt get the children.. error exiting");
 	    exit (1);
 	}
 
+
+	deallocate_String_vector (&worker_children);
     }
 
 
 
 
-    deallocate_String_vector (&worker_children);
+}
+
+
+void
+workers_monitor (workers_t * workers)
+{
+
+    zmq_pollitem_t *pollitems =
+	(zmq_pollitem_t *) malloc (sizeof (zmq_pollitem_t) * workers->size);
+
+    int i;
+    for (i = 0; i < workers->size; i++) {
+	zmq_pollitem_t pollitem = { workers->pipe[i], 0, ZMQ_POLLIN };
+	memcpy (&(pollitems[i]), &pollitem, sizeof (zmq_pollitem_t));
+    }
+
+    int rc;
+    while (1) {
+	rc = zmq_poll (pollitems, workers->size, -1);
+	assert (rc != -1);
+
+	for (i = 0; i < workers->size; i++) {
+
+	    if (pollitems[i].revents & ZMQ_POLLIN) {
+		zmsg_t *msg = zmsg_recv (workers->pipe[i]);
+		if (!msg) {
+		    fprintf (stderr,"\n interrupt caught");
+		    exit (1);
+		}
+	    }
+
+
+	}
+    }
 }

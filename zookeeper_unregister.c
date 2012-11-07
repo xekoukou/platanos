@@ -129,7 +129,7 @@ main ()
     scanf ("%s", comp_name);
 
 
-    sprintf (path, "/%s/%s/worker_nodes", octopus, comp_name);
+    sprintf (path, "/%s/computers/%s/worker_nodes", octopus, comp_name);
     struct String_vector worker_children;
     result = zoo_get_children (zh, path, 0, &worker_children);
     if (ZOK != result) {
@@ -137,7 +137,7 @@ main ()
 	return 1;
     }
 
-    sprintf (path, "/%s/%s/db_nodes", octopus, comp_name);
+    sprintf (path, "/%s/computers/%s/db_nodes", octopus, comp_name);
     struct String_vector db_children;
     result = zoo_get_children (zh, path, 0, &db_children);
     if (ZOK != result) {
@@ -151,7 +151,7 @@ main ()
     scanf ("%s", res_name);
 
 
-    sprintf (path, "/%s/%s/%s/%s/n_pieces", octopus, comp_name, root,
+    sprintf (path, "/%s/computers/%s/%s/%s/n_pieces", octopus, comp_name, root,
 	     res_name);
     result = zoo_delete (zh, path, -1);
     if (ZOK != result && ZOK != ZNONODE) {
@@ -159,7 +159,7 @@ main ()
 	return 1;
     }
 
-    sprintf (path, "/%s/%s/%s/%s/st_piece", octopus, comp_name, root,
+    sprintf (path, "/%s/computers/%s/%s/%s/st_piece", octopus, comp_name, root,
 	     res_name);
     result = zoo_delete (zh, path, -1);
     if (ZOK != result && ZOK != ZNONODE) {
@@ -168,7 +168,7 @@ main ()
     }
 
 
-    sprintf (path, "/%s/%s/%s/%s/bind_point", octopus, comp_name, root,
+    sprintf (path, "/%s/computers/%s/%s/%s/bind_point", octopus, comp_name, root,
 	     res_name);
     result = zoo_delete (zh, path, -1);
     if (ZOK != result && ZOK != ZNONODE) {
@@ -177,7 +177,7 @@ main ()
     }
 
     if (db) {
-	sprintf (path, "/%s/%s/%s/%s/db_point", octopus, comp_name, root,
+	sprintf (path, "/%s/computers/%s/%s/%s/db_point", octopus, comp_name, root,
 		 res_name);
 	result = zoo_delete (zh, path, -1);
 	if (ZOK != result && ZOK != ZNONODE) {
@@ -188,7 +188,7 @@ main ()
 
     }
     else {
-	sprintf (path, "/%s/%s/%s/%s/interval", octopus, comp_name, root,
+	sprintf (path, "/%s/computers/%s/%s/%s/interval", octopus, comp_name, root,
 		 res_name);
 	result = zoo_delete (zh, path, -1);
 	if (ZOK != result && ZOK != ZNONODE) {
@@ -199,7 +199,7 @@ main ()
 
     }
 
-    sprintf (path, "/%s/%s/%s/%s", octopus, comp_name, root, res_name);
+    sprintf (path, "/%s/computers/%s/%s/%s", octopus, comp_name, root, res_name);
     result = zoo_delete (zh, path, -1);
     if (ZOK != result && ZOK != ZNONODE) {
 	printf ("\n Error.. cant remove res_name node, exiting");
@@ -212,21 +212,21 @@ main ()
 	printf
 	    ("\nThere are no more resources registered in this computer, deleting the computer node as well");
 
-	sprintf (path, "/%s/%s/resources/max_memory", octopus, comp_name);
+	sprintf (path, "/%s/computers/%s/resources/max_memory", octopus, comp_name);
 	result = zoo_delete (zh, path, -1);
 	if (ZOK != result && ZOK != ZNONODE) {
 	    printf ("\n Error.. exiting");
 	    return 1;
 	}
 
-	sprintf (path, "/%s/%s/resources/free_memory", octopus, comp_name);
+	sprintf (path, "/%s/computers/%s/resources/free_memory", octopus, comp_name);
 	result = zoo_delete (zh, path, -1);
 	if (ZOK != result && ZOK != ZNONODE) {
 	    printf ("\n Error.. exiting");
 	    return 1;
 	}
 
-	sprintf (path, "/%s/%s/resources", octopus, comp_name);
+	sprintf (path, "/%s/computers/%s/resources", octopus, comp_name);
 	result = zoo_delete (zh, path, -1);
 	if (ZOK != result && ZOK != ZNONODE) {
 	    printf ("\n Error.. exiting");
@@ -235,21 +235,21 @@ main ()
 
 
 
-	sprintf (path, "/%s/%s/worker_nodes", octopus, comp_name);
+	sprintf (path, "/%s/computers/%s/worker_nodes", octopus, comp_name);
 	result = zoo_delete (zh, path, -1);
 	if (ZOK != result && ZOK != ZNONODE) {
 	    printf ("\n Error.. exiting");
 	    return 1;
 	}
 
-	sprintf (path, "/%s/%s/db_nodes", octopus, comp_name);
+	sprintf (path, "/%s/computers/%s/db_nodes", octopus, comp_name);
 	result = zoo_delete (zh, path, -1);
 	if (ZOK != result && ZOK != ZNONODE) {
 	    printf ("\n Error.. exiting");
 	    return 1;
 	}
 
-	sprintf (path, "/%s/%s", octopus, comp_name);
+	sprintf (path, "/%s/computers/%s", octopus, comp_name);
 	result = zoo_delete (zh, path, -1);
 	if (ZOK != result && ZOK != ZNONODE) {
 	    printf ("\n Error.. exiting");

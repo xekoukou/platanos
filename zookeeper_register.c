@@ -143,7 +143,7 @@ main ()
     }
     int result;
     char path[1000];
-    sprintf (path, "/%s/%s", config[6], config[2]);
+    sprintf (path, "/%s/computers/%s", config[6], config[2]);
 
 
     result =
@@ -164,7 +164,7 @@ main ()
     if (result == ZOK && new_computer == 0) {
 	printf
 	    ("this computer_name doesnt already exist, reverting back and exiting..");
-	sprintf (path, "/%s/%s", config[6], config[2]);
+	sprintf (path, "/%s/computers/%s", config[6], config[2]);
 	if (ZOK == zoo_delete (zh, path, 1)) {
 	    return 0;
 	}
@@ -177,7 +177,7 @@ main ()
     if (new_computer) {
 
 	meminfo ();
-	sprintf (path, "/%s/%s/worker_nodes", config[6], config[2]);
+	sprintf (path, "/%s/computers/%s/worker_nodes", config[6], config[2]);
 	result =
 	    zoo_create (zh, path, NULL, -1, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
 
@@ -185,7 +185,7 @@ main ()
 	    printf ("\n Couldnt create the resources node, exiting..");
 	    return 1;
 	}
-	sprintf (path, "/%s/%s/db_nodes", config[6], config[2]);
+	sprintf (path, "/%s/computers/%s/db_nodes", config[6], config[2]);
 	result =
 	    zoo_create (zh, path, NULL, -1, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
 
@@ -194,7 +194,7 @@ main ()
 	    return 1;
 	}
 
-	sprintf (path, "/%s/%s/resources", config[6], config[2]);
+	sprintf (path, "/%s/computers/%s/resources", config[6], config[2]);
 	result =
 	    zoo_create (zh, path, NULL, -1, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
 
@@ -202,7 +202,7 @@ main ()
 	    printf ("\n Couldnt create the resources node, exiting..");
 	    return 1;
 	}
-	sprintf (path, "/%s/%s/resources/max_memory", config[6], config[2]);
+	sprintf (path, "/%s/computers/%s/resources/max_memory", config[6], config[2]);
 	result =
 	    zoo_create (zh, path, (const char *) &kb_main_total,
 			sizeof (unsigned long), &ZOO_OPEN_ACL_UNSAFE, 0, NULL,
@@ -213,7 +213,7 @@ main ()
 	    return 1;
 	}
 
-	sprintf (path, "/%s/%s/resources/free_memory", config[6], config[2]);
+	sprintf (path, "/%s/computers/%s/resources/free_memory", config[6], config[2]);
 	result =
 	    zoo_create (zh, path, NULL, -1, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
 
@@ -227,7 +227,7 @@ main ()
 
 // the resource name
 
-    sprintf (path, "/%s/%s/%s/%s", config[6], config[2], root, config[3]);
+    sprintf (path, "/%s/computers/%s/%s/%s", config[6], config[2], root, config[3]);
     result =
 	zoo_create (zh, path, NULL, -1, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
 
@@ -239,14 +239,14 @@ main ()
     else {
 	if (ZOK == result) {
 	    int n_pieces = atoi (config[4]);
-	    sprintf (path, "/%s/%s/%s/%s/n_pieces", config[6], config[2],
+	    sprintf (path, "/%s/computers/%s/%s/%s/n_pieces", config[6], config[2],
 		     root, config[3]);
 	    result =
 		zoo_create (zh, path, (char *) &n_pieces, sizeof (int),
 			    &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
 	    if (ZOK == result) {
 		unsigned long zero = 0;
-		sprintf (path, "/%s/%s/%s/%s/st_piece", config[6], config[2],
+		sprintf (path, "/%s/computers/%s/%s/%s/st_piece", config[6], config[2],
 			 root, config[3]);
 		result =
 		    zoo_create (zh, path, (const char *) &zero,
@@ -254,7 +254,7 @@ main ()
 				0, NULL, 0);
 
 		if (ZOK == result) {
-		    sprintf (path, "/%s/%s/%s/%s/bind_point", config[6],
+		    sprintf (path, "/%s/computers/%s/%s/%s/bind_point", config[6],
 			     config[2], root, config[3]);
 		    result =
 			zoo_create (zh, path, config[5], strlen (config[5]),
@@ -264,7 +264,7 @@ main ()
 		    }
 		    else {
 			if (ZOK == result) {
-			    sprintf (path, "/%s/%s/%s/%s/db_point", config[6],
+			    sprintf (path, "/%s/computers/%s/%s/%s/db_point", config[6],
 				     config[2], root, config[3]);
 			    result =
 				zoo_create (zh, path, config[7],

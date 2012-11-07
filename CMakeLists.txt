@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.8)
 project (octopus)
 
 set(CMAKE_CXX_FLAGS "-g -Wall")
-set(CMAKE_C_FLAGS "-g -Wall")
+set(CMAKE_C_FLAGS "-DTHREADED -g -Wall")
 add_executable(zookeeper_register zookeeper_register.c)
 
 target_link_libraries(zookeeper_register zookeeper_mt proc )
@@ -14,6 +14,11 @@ target_link_libraries(zookeeper_unregister zookeeper_mt proc )
 add_executable(zookeeper_global_init zookeeper_global_init.c)
 
 target_link_libraries(zookeeper_global_init zookeeper_mt proc )
+
+add_executable(zookeeper_control zookeeper_control.c)
+
+target_link_libraries(zookeeper_control zookeeper_mt proc )
+
 
 add_subdirectory(MurmurHash)
 

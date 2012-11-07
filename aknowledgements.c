@@ -48,9 +48,10 @@ cmp_interval_t (struct interval_t *first, struct interval_t *second)
 RB_GENERATE (intervals_t, interval_t, field, cmp_interval_t);
 
 void
-intervals_init (intervals_t * intervals)
+intervals_init (intervals_t ** intervals)
 {
-    RB_INIT (intervals);
+    *intervals = (intervals_t *) malloc (sizeof (intervals_t));
+    RB_INIT (*intervals);
 }
 
 

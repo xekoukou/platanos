@@ -13,10 +13,11 @@ typedef struct
 {
     zhandle_t *zh;
     oconfig_t *config;
-    char *id;
+    char *id; //comp_name +res_name
+    char *res_name;
 } worker_t;
 
-void worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
+void worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,char *res_name,
 		  char *id);
 
 
@@ -66,5 +67,8 @@ struct ozookeeper_t;
 
 void workers_init (workers_t ** workers, zctx_t * ctx,
 		   struct ozookeeper_t *ozookeeper);
+
+void workers_monitor (workers_t * workers);
+
 
 #endif
