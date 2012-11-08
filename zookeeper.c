@@ -252,6 +252,7 @@ oz_updater_init (oz_updater_t * updater)
     //allocate_String_vector (&(updater->computers));
     updater->computers.count = 0;
     updater->computers.data = 0;
+    updater->key = NULL;
 }
 
 // just creates a path
@@ -265,7 +266,9 @@ oz_updater_key (oz_updater_t * updater, char *key)
 void
 oz_updater_free_key (oz_updater_t * updater)
 {
-    free (updater->key);
+    if (updater->key != NULL) {
+	free (updater->key);
+    }
 }
 
 void
@@ -360,14 +363,17 @@ ozookeeper_update_remove_node (ozookeeper_t * ozookeeper, char *key)
 void
 ozookeeper_update_add_node (ozookeeper_t * ozookeeper, char *key,
 			    int n_pieces, unsigned long st_piece,
-			    char *bind_point)
+			    char *bind_point_nb, char *bind_point_wb,
+			    char *bind_point_bl)
 {
     zmsg_t *msg = zmsg_new ();
     zmsg_add (msg, zframe_new ("add_node", strlen ("add_node") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
     zmsg_add (msg, zframe_new (&n_pieces, sizeof (int)));
     zmsg_add (msg, zframe_new (&st_piece, sizeof (unsigned long)));
-    zmsg_add (msg, zframe_new (bind_point, strlen (bind_point) + 1));
+    zmsg_add (msg, zframe_new (bind_point_nb, strlen (bind_point_nb) + 1));
+    zmsg_add (msg, zframe_new (bind_point_wb, strlen (bind_point_wb) + 1));
+    zmsg_add (msg, zframe_new (bind_point_bl, strlen (bind_point_bl) + 1));
     ozookeeper_update (ozookeeper, &msg);
 }
 
@@ -375,14 +381,18 @@ ozookeeper_update_add_node (ozookeeper_t * ozookeeper, char *key,
 void
 ozookeeper_update_add_self (ozookeeper_t * ozookeeper, char *key,
 			    int n_pieces, unsigned long st_piece,
-			    char *bind_point)
+			    char *bind_point_nb, char *bind_point_wb,
+			    char *bind_point_bl)
 {
     zmsg_t *msg = zmsg_new ();
     zmsg_add (msg, zframe_new ("add_self", strlen ("add_self") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
     zmsg_add (msg, zframe_new (&n_pieces, sizeof (int)));
     zmsg_add (msg, zframe_new (&st_piece, sizeof (unsigned long)));
-    zmsg_add (msg, zframe_new (bind_point, strlen (bind_point) + 1));
+    zmsg_add (msg, zframe_new (bind_point_nb, strlen (bind_point_nb) + 1));
+    zmsg_add (msg, zframe_new (bind_point_wb, strlen (bind_point_wb) + 1));
+    zmsg_add (msg, zframe_new (bind_point_bl, strlen (bind_point_bl) + 1));
+
     ozookeeper_update_one (ozookeeper, &msg);
 }
 
@@ -447,12 +457,12 @@ w_st_piece (zhandle_t * zh, int type,
     int online = 0;
 
     oconfig_octopus (ozookeeper->config, octopus);
-    char *temp;
+    char **temp;
     int temp_size;
-    part_path ((const char *) path, 2, &temp, &temp_size);
-    strncpy (resource, temp, temp_size);
-    part_path (path, 4, &temp, &temp_size);
-    strncpy (comp_name, temp, temp_size);
+    part_path ((const char *) path, 2, temp, &temp_size);
+    strncpy (resource, *temp, temp_size);
+    part_path (path, 4, temp, &temp_size);
+    strncpy (comp_name, *temp, temp_size);
 
     if (type == ZOO_SESSION_EVENT
 	&& (state == ZOO_EXPIRED_SESSION_STATE
@@ -515,12 +525,12 @@ w_n_pieces (zhandle_t * zh, int type,
     int online = 0;
 
     oconfig_octopus (ozookeeper->config, octopus);
-    char *temp;
+    char **temp;
     int temp_size;
-    part_path (path, 2, &temp, &temp_size);
-    strncpy (resource, temp, temp_size);
-    part_path (path, 4, &temp, &temp_size);
-    strncpy (comp_name, temp, temp_size);
+    part_path (path, 2, temp, &temp_size);
+    strncpy (resource, *temp, temp_size);
+    part_path (path, 4, temp, &temp_size);
+    strncpy (comp_name, *temp, temp_size);
 
     if (type == ZOO_SESSION_EVENT
 	&& (state == ZOO_EXPIRED_SESSION_STATE
@@ -581,12 +591,12 @@ w_online (zhandle_t * zh, int type,
     int online = 0;
 
     oconfig_octopus (ozookeeper->config, octopus);
-    char *temp;
+    char **temp;
     int temp_size;
-    part_path (path, 2, &temp, &temp_size);
-    strncpy (resource, temp, temp_size);
-    part_path (path, 4, &temp, &temp_size);
-    strncpy (comp_name, temp, temp_size);
+    part_path (path, 2, temp, &temp_size);
+    strncpy (resource, *temp, temp_size);
+    part_path (path, 4, temp, &temp_size);
+    strncpy (comp_name, *temp, temp_size);
 
     if (type == ZOO_SESSION_EVENT
 	&& (state == ZOO_EXPIRED_SESSION_STATE
@@ -614,7 +624,9 @@ w_online (zhandle_t * zh, int type,
 	int buffer_len;
 	unsigned long st_piece;
 	int n_pieces;
-	char bind_point[30];
+	char bind_point_nb[50];
+	char bind_point_wb[50];
+	char bind_point_bl[50];
 
 
 	if (online) {
@@ -627,7 +639,7 @@ w_online (zhandle_t * zh, int type,
 
 	    assert (ZOK == result);
 
-	    buffer_len = sizeof (unsigned int);
+	    buffer_len = sizeof (unsigned long);
 	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/st_piece",
 		     octopus, comp_name, resource);
 	    result =
@@ -637,19 +649,38 @@ w_online (zhandle_t * zh, int type,
 	    assert (result == ZOK);
 
 	    buffer_len = 1000;
-	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/bind_point",
+	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/bind_point_nb",
 		     octopus, comp_name, resource);
 	    result =
-		zoo_get (ozookeeper->zh, spath, 0, bind_point, &buffer_len,
+		zoo_get (ozookeeper->zh, spath, 0, bind_point_nb, &buffer_len,
+			 &stat);
+
+	    assert (result == ZOK);
+
+	    buffer_len = 1000;
+	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/bind_point_wb",
+		     octopus, comp_name, resource);
+	    result =
+		zoo_get (ozookeeper->zh, spath, 0, bind_point_wb, &buffer_len,
+			 &stat);
+
+	    assert (result == ZOK);
+	    buffer_len = 1000;
+	    sprintf (spath, "/%s/computers/%s/worker_nodes/%s/bind_point_bl",
+		     octopus, comp_name, resource);
+	    result =
+		zoo_get (ozookeeper->zh, spath, 0, bind_point_bl, &buffer_len,
 			 &stat);
 
 	    assert (result == ZOK);
 
 
 
+
 	    sprintf (spath, "%s%s", comp_name, resource);
 	    ozookeeper_update_add_node (ozookeeper, spath, n_pieces, st_piece,
-					bind_point);
+					bind_point_nb, bind_point_wb,
+					bind_point_bl);
 	}
 	else {
 //if offline delete node if not already deleted
@@ -757,7 +788,9 @@ w_resources (zhandle_t * zh, int type,
 		    int buffer_len;
 		    unsigned long st_piece;
 		    int n_pieces;
-		    char bind_point[30];
+		    char bind_point_nb[50];
+		    char bind_point_wb[50];
+		    char bind_point_bl[50];
 		    struct Stat stat;
 
 //check if this node is online
@@ -801,20 +834,44 @@ w_resources (zhandle_t * zh, int type,
 
 			buffer_len = 1000;
 			sprintf (spath,
-				 "/%s/computers/%s/worker_nodes/%s/bind_point",
+				 "/%s/computers/%s/worker_nodes/%s/bind_point_nb",
 				 octopus, last_path (path),
 				 resources.data[iter]);
 			result =
-			    zoo_get (ozookeeper->zh, spath, 0, bind_point,
+			    zoo_get (ozookeeper->zh, spath, 0, bind_point_nb,
 				     &buffer_len, &stat);
 
 			assert (result == ZOK);
+
+			buffer_len = 1000;
+			sprintf (spath,
+				 "/%s/computers/%s/worker_nodes/%s/bind_point_wb",
+				 octopus, last_path (path),
+				 resources.data[iter]);
+			result =
+			    zoo_get (ozookeeper->zh, spath, 0, bind_point_wb,
+				     &buffer_len, &stat);
+
+			assert (result == ZOK);
+			buffer_len = 1000;
+			sprintf (spath,
+				 "/%s/computers/%s/worker_nodes/%s/bind_point_bl",
+				 octopus, last_path (path),
+				 resources.data[iter]);
+			result =
+			    zoo_get (ozookeeper->zh, spath, 0, bind_point_bl,
+				     &buffer_len, &stat);
+
+			assert (result == ZOK);
+
 
 			sprintf (spath, "%s%s", last_path (path),
 				 resources.data[iter]);
 			ozookeeper_update_add_node (ozookeeper, spath,
 						    n_pieces, st_piece,
-						    bind_point);
+						    bind_point_nb,
+						    bind_point_wb,
+						    bind_point_bl);
 		    }
 		}
 	    }
@@ -912,7 +969,9 @@ w_computers (zhandle_t * zh, int type,
 		    int buffer_len;
 		    unsigned long st_piece;
 		    int n_pieces;
-		    char bind_point[30];
+		    char bind_point_nb[50];
+		    char bind_point_wb[50];
+		    char bind_point_bl[50];
 		    struct Stat stat;
 
 //check if this node is online
@@ -962,21 +1021,45 @@ w_computers (zhandle_t * zh, int type,
 
 			buffer_len = 1000;
 			sprintf (spath,
-				 "/%s/computers/%s/worker_nodes/%s/bind_point",
+				 "/%s/computers/%s/worker_nodes/%s/bind_point_nb",
 				 octopus, computers.data[iter],
 				 resources.data[siter]);
 			result =
 			    zoo_get (ozookeeper->zh, spath, 0,
-				     bind_point, &buffer_len, &stat);
+				     bind_point_nb, &buffer_len, &stat);
 
 			assert (result == ZOK);
+
+			buffer_len = 1000;
+			sprintf (spath,
+				 "/%s/computers/%s/worker_nodes/%s/bind_point_wb",
+				 octopus, computers.data[iter],
+				 resources.data[siter]);
+			result =
+			    zoo_get (ozookeeper->zh, spath, 0,
+				     bind_point_wb, &buffer_len, &stat);
+
+			assert (result == ZOK);
+			buffer_len = 1000;
+			sprintf (spath,
+				 "/%s/computers/%s/worker_nodes/%s/bind_point_bl",
+				 octopus, computers.data[iter],
+				 resources.data[siter]);
+			result =
+			    zoo_get (ozookeeper->zh, spath, 0,
+				     bind_point_bl, &buffer_len, &stat);
+
+			assert (result == ZOK);
+
 
 			sprintf (spath, "%s%s",
 				 computers.data[iter], resources.data[siter]);
 			ozookeeper_update_add_node (ozookeeper,
 						    spath,
 						    n_pieces,
-						    st_piece, bind_point);
+						    st_piece, bind_point_nb,
+						    bind_point_wb,
+						    bind_point_bl);
 		    }
 		}
 
@@ -1043,7 +1126,8 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
     for (siter = 0; siter < computers->count; siter++) {
 
 	struct String_vector resources;
-	sprintf (path, "/%s/computers/%s", octopus, computers->data[siter]);
+	sprintf (path, "/%s/computers/%s/worker_nodes", octopus,
+		 computers->data[siter]);
 
 	result = zoo_wget_children (ozookeeper->zh, path,
 				    w_resources, ozookeeper, &resources);
@@ -1060,12 +1144,14 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 	    int buffer_len;
 	    unsigned long st_piece;
 	    int n_pieces;
-	    char bind_point[30];
+	    char bind_point_nb[50];
+	    char bind_point_wb[50];
+	    char bind_point_bl[50];
 	    struct Stat stat;
 	    self = 0;
 
 //get data only from nodes that are online or are yourself
-	    if (strcmp (computers->data[iter], comp_name) == 0) {
+	    if (strcmp (computers->data[siter], comp_name) == 0) {
 		self = 1;
 	    }
 //check if this node is online
@@ -1111,11 +1197,32 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 
 		buffer_len = 1000;
 		sprintf (path,
-			 "/%s/computers/%s/worker_nodes/%s/bind_point",
+			 "/%s/computers/%s/worker_nodes/%s/bind_point_nb",
 			 octopus, computers->data[siter],
 			 resources.data[iter]);
 		result =
-		    zoo_get (ozookeeper->zh, path, 0, bind_point,
+		    zoo_get (ozookeeper->zh, path, 0, bind_point_nb,
+			     &buffer_len, &stat);
+
+		assert (result == ZOK);
+
+		buffer_len = 1000;
+		sprintf (path,
+			 "/%s/computers/%s/worker_nodes/%s/bind_point_wb",
+			 octopus, computers->data[siter],
+			 resources.data[iter]);
+		result =
+		    zoo_get (ozookeeper->zh, path, 0, bind_point_wb,
+			     &buffer_len, &stat);
+
+		assert (result == ZOK);
+		buffer_len = 1000;
+		sprintf (path,
+			 "/%s/computers/%s/worker_nodes/%s/bind_point_bl",
+			 octopus, computers->data[siter],
+			 resources.data[iter]);
+		result =
+		    zoo_get (ozookeeper->zh, path, 0, bind_point_bl,
 			     &buffer_len, &stat);
 
 		assert (result == ZOK);
@@ -1130,7 +1237,8 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 		oz_updater_free_key (&(ozookeeper->updater));
 		oz_updater_key (&(ozookeeper->updater), path);
 		ozookeeper_update_add_self (ozookeeper, path,
-					    n_pieces, st_piece, bind_point);
+					    n_pieces, st_piece, bind_point_nb,
+					    bind_point_wb, bind_point_bl);
 	    }
 //self cannot be online at this point anyway
 	    else {
@@ -1138,7 +1246,8 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 
 		    ozookeeper_update_add_node (ozookeeper, path,
 						n_pieces,
-						st_piece, bind_point);
+						st_piece, bind_point_nb,
+						bind_point_wb, bind_point_bl);
 		}
 
 	    }

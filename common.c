@@ -23,7 +23,7 @@ part_path (const char *path, int location, const char **start, int *siz)
 {
 
     int st = strlen (path) - 1;
-    int end = -1;
+    int end = strlen (path);
     int en = 0;
 
     int size = strlen (path);
@@ -41,5 +41,5 @@ part_path (const char *path, int location, const char **start, int *siz)
     }
 
     *start = &(path[st + 1]);
-    *siz = st - end - 1;
+    *siz = -st + end - 1;
 }

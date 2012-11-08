@@ -380,7 +380,7 @@ router_events (router_t * router, node_t * node, int removal)
 		remove[iter - 1] = 0;
 
 
-		iter++;
+		iter--;
 
 
 	    }
@@ -732,15 +732,18 @@ nodes_search (khash_t (nodes_t) * nodes, char *key)
 
 
 void
-node_init (node_t ** node, char *key, unsigned long n_pieces,
-	   unsigned long st_piece, char *bind_point)
+node_init (node_t ** node, char *key, int n_pieces,
+	   unsigned long st_piece, char *bind_point_nb, char *bind_point_wb,
+	   char *bind_point_bl)
 {
 
     *node = (node_t *) malloc (sizeof (node_t));
     strcpy ((*node)->key, key);
     (*node)->n_pieces = n_pieces;
     (*node)->st_piece = st_piece;
-    strcpy ((*node)->bind_point, bind_point);
+    strcpy ((*node)->bind_point_nb, bind_point_nb);
+    strcpy ((*node)->bind_point_wb, bind_point_wb);
+    strcpy ((*node)->bind_point_bl, bind_point_bl);
 
 }
 

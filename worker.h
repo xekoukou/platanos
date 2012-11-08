@@ -13,12 +13,12 @@ typedef struct
 {
     zhandle_t *zh;
     oconfig_t *config;
-    char *id; //comp_name +res_name
+    char *id;			//comp_name +res_name
     char *res_name;
 } worker_t;
 
-void worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,char *res_name,
-		  char *id);
+void worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
+		  char *res_name, char *id);
 
 
 

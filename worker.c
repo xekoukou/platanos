@@ -672,7 +672,7 @@ update_n_pieces (update_t * update, zmsg_t * msg)
     zmsg_destroy (&msg);
     node_t *prev_node;
     node = node_dup (prev_node = nodes_search (update->router->nodes, key));
-
+    assert(prev_node!=NULL);
     node->n_pieces = n_pieces;
 
 //obtain the new events
@@ -762,7 +762,7 @@ update_st_piece (update_t * update, zmsg_t * msg)
     zmsg_destroy (&msg);
     node_t *prev_node;
     node = node_dup (prev_node = nodes_search (update->router->nodes, key));
-
+    assert(prev_node!=NULL);
     node->st_piece = st_piece;
 
 //obtain the new events
@@ -908,9 +908,11 @@ add_node (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
-    unsigned long n_pieces;
+    int n_pieces;
     unsigned long st_piece;
-    char bind_point[30];
+    char bind_point_nb[50];
+    char bind_point_wb[50];
+    char bind_point_bl[50];
 
     zframe_t *frame = zmsg_first (msg);
 
@@ -920,11 +922,17 @@ add_node (update_t * update, zmsg_t * msg)
     frame = zmsg_next (msg);
     memcpy (&st_piece, zframe_data (frame), zframe_size (frame));
     frame = zmsg_next (msg);
-    memcpy (bind_point, zframe_data (frame), zframe_size (frame));
+    memcpy (bind_point_nb, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (bind_point_wb, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (bind_point_bl, zframe_data (frame), zframe_size (frame));
+
 
     zmsg_destroy (&msg);
 
-    node_init (&node, key, n_pieces, st_piece, bind_point);
+    node_init (&node, key, n_pieces, st_piece, bind_point_nb, bind_point_wb,
+	       bind_point_bl);
 
 //obtain the new events
     zlist_t *events;
@@ -1004,7 +1012,11 @@ add_self (update_t * update, zmsg_t * msg)
     char key[100];
     unsigned long n_pieces;
     unsigned long st_piece;
-    char bind_point[30];
+    char bind_point_nb[50];
+    char bind_point_wb[50];
+    char bind_point_bl[50];
+
+
 
     zframe_t *frame = zmsg_first (msg);
 
@@ -1014,11 +1026,16 @@ add_self (update_t * update, zmsg_t * msg)
     frame = zmsg_next (msg);
     memcpy (&st_piece, zframe_data (frame), zframe_size (frame));
     frame = zmsg_next (msg);
-    memcpy (bind_point, zframe_data (frame), zframe_size (frame));
+    memcpy (bind_point_nb, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (bind_point_wb, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (bind_point_bl, zframe_data (frame), zframe_size (frame));
 
     zmsg_destroy (&msg);
 
-    node_init (&self, key, n_pieces, st_piece, bind_point);
+    node_init (&self, key, n_pieces, st_piece, bind_point_nb, bind_point_wb,
+	       bind_point_bl);
 
 //update router
     update->router->self = self;
@@ -1027,23 +1044,17 @@ add_self (update_t * update, zmsg_t * msg)
 
 //bind sockets
     int rc;
-    rc = zsocket_bind (update->compute->self_nb, "tcp://%s:40002",
-		       bind_point);
-    assert (rc == 40002);
-    rc = zsocket_bind (update->compute->self_wb, "tcp://%s:40003",
-		       bind_point);
-    assert (rc == 40003);
-    rc = zsocket_connect (update->compute->socket_nb, "tcp://%s:40002",
-			  bind_point);
+    rc = zsocket_bind (update->compute->self_nb, "%s", bind_point_nb);
+    assert (rc != -1);
+    rc = zsocket_bind (update->compute->self_wb, "%s", bind_point_wb);
+    assert (rc != -1);
+    rc = zsocket_connect (update->compute->socket_nb, "%s", bind_point_nb);
     assert (rc == 0);
-    rc = zsocket_connect (update->compute->socket_wb, "tcp://%s:40003",
-			  bind_point);
+    rc = zsocket_connect (update->compute->socket_wb, "%s", bind_point_wb);
     assert (rc == 0);
-    rc = zsocket_bind (update->balance->self_bl, "tcp://%s:40004",
-		       bind_point);
-    assert (rc == 40004);
-    rc = zsocket_connect (update->balance->router_bl, "tcp://%s:40004",
-			  bind_point);
+    rc = zsocket_bind (update->balance->self_bl, "%s", bind_point_bl);
+    assert (rc != -1);
+    rc = zsocket_connect (update->balance->router_bl, "%s", bind_point_bl);
     assert (rc == 0);
 
     fprintf (stderr, "\nWorker with id: %s has received its configuration",
@@ -1184,10 +1195,10 @@ worker_fn (void *arg, zctx_t * ctx, void *pipe)
     zmq_setsockopt (sub, ZMQ_SUBSCRIBE, "all", strlen ("all") + 1);
 
 
-    rc = zsocket_connect (sub, "tcp://127.0.0.1:40000");
+    rc = zsocket_connect (sub, "ipc:///tmp/publisher");
     assert (rc == 0);
 
-    rc = zsocket_connect (dealer, "tcp://127.0.0.1:40001");
+    rc = zsocket_connect (dealer, "ipc:///tmp/router");
     assert (rc == 0);
 
 

@@ -3,6 +3,7 @@
 #include<stdio.h>
 #include<string.h>
 #include<proc/sysinfo.h>
+#include<czmq.h>
 
 
 #define _LL_CAST_ (long long)
@@ -127,7 +128,7 @@ main ()
     scanf ("%s", config[4]);
 
 //ip could be dynamic, or the computer might change location
-    printf ("\nThe bind_point(ip:port) to connect to:");
+    printf ("\nThe bind_point(ip) to connect to(without port):");
 
     scanf ("%s", config[5]);
 
@@ -256,13 +257,84 @@ main ()
 			sizeof (unsigned long), &ZOO_OPEN_ACL_UNSAFE, 0, NULL,
 			0);
 
+
 	assert (ZOK == result);
-	sprintf (path, "/%s/computers/%s/%s/%s/bind_point", config[6],
-		 config[2], root, config[3]);
-	result =
-	    zoo_create (zh, path, config[5], strlen (config[5]),
-			&ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
+
+
+	zctx_t *ctx = zctx_new ();
+	void *router = zsocket_new (ctx, ZMQ_ROUTER);
+	int port;
+	char bind_search[1000];
+	sprintf (bind_search, "tcp://%s:*", config[5]);
+	char bind_location[1000];
+	if (db) {
+	    while (-1 == (port = zsocket_bind (router, bind_search))) {
+	    }
+	    sprintf (bind_location, "tcp://%s:%d", config[5], port);
+
+	    sprintf (path, "/%s/computers/%s/%s/%s/bind_point", config[6],
+		     config[2], root, config[3]);
+	    result =
+		zoo_create (zh, path, bind_location,
+			    strlen (bind_location) + 1, &ZOO_OPEN_ACL_UNSAFE,
+			    0, NULL, 0);
+
+
+	    assert (ZOK == result);
+
+
+	}
+	else {
+
+
+	    while (-1 == (port = zsocket_bind (router, bind_search))) {
+	    }
+	    sprintf (bind_location, "tcp://%s:%d", config[5], port);
+	    sprintf (path, "/%s/computers/%s/%s/%s/bind_point_nb", config[6],
+		     config[2], root, config[3]);
+	    result =
+		zoo_create (zh, path, bind_location,
+			    strlen (bind_location) + 1, &ZOO_OPEN_ACL_UNSAFE,
+			    0, NULL, 0);
+
+
+	    assert (ZOK == result);
+
+
+	    while (-1 == (port = zsocket_bind (router, bind_search))) {
+	    }
+	    sprintf (bind_location, "tcp://%s:%d", config[5], port);
+	    sprintf (path, "/%s/computers/%s/%s/%s/bind_point_wb", config[6],
+		     config[2], root, config[3]);
+	    result =
+		zoo_create (zh, path, bind_location,
+			    strlen (bind_location) + 1, &ZOO_OPEN_ACL_UNSAFE,
+			    0, NULL, 0);
+
+
+	    assert (ZOK == result);
+
+
+
+	    while (-1 == (port = zsocket_bind (router, bind_search))) {
+	    }
+	    sprintf (bind_location, "tcp://%s:%d", config[5], port);
+	    sprintf (path, "/%s/computers/%s/%s/%s/bind_point_bl", config[6],
+		     config[2], root, config[3]);
+	    result =
+		zoo_create (zh, path, bind_location,
+			    strlen (bind_location) + 1, &ZOO_OPEN_ACL_UNSAFE,
+			    0, NULL, 0);
+
+
+	    assert (ZOK == result);
+
+
+	}
+
 	if (db == 0) {
+
+
 
 	}
 	else {

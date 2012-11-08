@@ -20,11 +20,9 @@ main ()
 
     int rc;
 
-    rc = zsocket_bind (pub, "tcp://127.0.0.1:40000");
-    assert (rc == 40000);
+    zsocket_bind (pub, "ipc:///tmp/publisher");
 
-    rc = zsocket_bind (router, "tcp://127.0.0.1:40001");
-    assert (rc == 40001);
+    zsocket_bind (router, "ipc:///tmp/router");
 
 
 

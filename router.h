@@ -21,14 +21,17 @@ struct _hkey_t
 struct node_t
 {
     unsigned long st_piece;
-    unsigned long n_pieces;
+    int n_pieces;
     char key[100];		//key is the routing_address or the subscription subject that we will accept from this node.
     int alive;			//this is only used in a db_routing, all worker nodes received 
     //are assumed alive. The reason for this is that db nodes need 
     //to remain the same for each vertex despite the failures
     // so that the vertex can know which db to fix in case of failures
 
-    char bind_point[30];
+    char bind_point_nb[50];	//this is used by db only
+    char bind_point_wb[50];
+    char bind_point_bl[50];
+
 };
 
 
@@ -124,8 +127,9 @@ void nodes_delete (khash_t (nodes_t) * nodes, char *key);
 node_t *nodes_search (khash_t (nodes_t) * nodes, char *key);
 
 
-void node_init (node_t ** node, char *key, unsigned long n_pieces,
-		unsigned long st_piece, char *bind_point);
+void node_init (node_t ** node, char *key, int n_pieces,
+		unsigned long st_piece, char *bind_point_nb,
+		char *bind_point_wb, char *bind_point_bl);
 
 node_t *node_dup (node_t * node);
 

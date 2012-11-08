@@ -169,13 +169,48 @@ main ()
 	return 1;
     }
 
+    if (db) {
+	sprintf (path, "/%s/computers/%s/%s/%s/bind_point", octopus,
+		 comp_name, root, res_name);
+	result = zoo_delete (zh, path, -1);
+	if (ZOK != result && ZOK != ZNONODE) {
+	    printf ("\n Error.. cant remove bind+point, exiting");
+	    return 1;
+	}
+    }
+    else {
 
-    sprintf (path, "/%s/computers/%s/%s/%s/bind_point", octopus, comp_name,
-	     root, res_name);
-    result = zoo_delete (zh, path, -1);
-    if (ZOK != result && ZOK != ZNONODE) {
-	printf ("\n Error.. cant remove bind+point, exiting");
-	return 1;
+	sprintf (path, "/%s/computers/%s/%s/%s/bind_point_nb", octopus,
+		 comp_name, root, res_name);
+	result = zoo_delete (zh, path, -1);
+	if (ZOK != result && ZOK != ZNONODE) {
+	    printf ("\n Error.. cant remove bind+point, exiting");
+	    return 1;
+	}
+
+
+
+	sprintf (path, "/%s/computers/%s/%s/%s/bind_point_wb", octopus,
+		 comp_name, root, res_name);
+	result = zoo_delete (zh, path, -1);
+	if (ZOK != result && ZOK != ZNONODE) {
+	    printf ("\n Error.. cant remove bind+point, exiting");
+	    return 1;
+	}
+
+
+	sprintf (path, "/%s/computers/%s/%s/%s/bind_point_bl", octopus,
+		 comp_name, root, res_name);
+	result = zoo_delete (zh, path, -1);
+	if (ZOK != result && ZOK != ZNONODE) {
+	    printf ("\n Error.. cant remove bind+point, exiting");
+	    return 1;
+	}
+
+
+
+
+
     }
 
     if (db) {
