@@ -672,7 +672,7 @@ update_n_pieces (update_t * update, zmsg_t * msg)
     zmsg_destroy (&msg);
     node_t *prev_node;
     node = node_dup (prev_node = nodes_search (update->router->nodes, key));
-    assert(prev_node!=NULL);
+    assert (prev_node != NULL);
     node->n_pieces = n_pieces;
 
 //obtain the new events
@@ -762,7 +762,7 @@ update_st_piece (update_t * update, zmsg_t * msg)
     zmsg_destroy (&msg);
     node_t *prev_node;
     node = node_dup (prev_node = nodes_search (update->router->nodes, key));
-    assert(prev_node!=NULL);
+    assert (prev_node != NULL);
     node->st_piece = st_piece;
 
 //obtain the new events
@@ -832,8 +832,8 @@ update_st_piece (update_t * update, zmsg_t * msg)
     zlist_destroy (&events);
 
     fprintf (stderr,
-	     "\nWorker with id: %s has incremented its st_piece to %lu.",
-	     update->balance->self_key, st_piece);
+	     "\nWorker with id: %s has incremented the st_piece of the worker with id:%s to: %lu.",
+	     update->balance->self_key, node->key, st_piece);
 
 }
 
@@ -1195,10 +1195,10 @@ worker_fn (void *arg, zctx_t * ctx, void *pipe)
     zmq_setsockopt (sub, ZMQ_SUBSCRIBE, "all", strlen ("all") + 1);
 
 
-    rc = zsocket_connect (sub, "ipc:///tmp/publisher");
+    rc = zsocket_connect (sub, "ipc:///tmp/w_publisher");
     assert (rc == 0);
 
-    rc = zsocket_connect (dealer, "ipc:///tmp/router");
+    rc = zsocket_connect (dealer, "ipc:///tmp/w_router");
     assert (rc == 0);
 
 

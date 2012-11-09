@@ -16,33 +16,29 @@ typedef struct
 //these are used to find the changes that happened to the children
     struct String_vector computers;
     struct String_vector *resources;
+    int **online;		//this is used tocheck whether a previous watch event has set a resource
+//offline (used by w_st_piece ,w_n_pieces)
 } oz_updater_t;
 
 struct ozookeeper_t
 {
     zhandle_t *zh;
     oconfig_t *config;
-    void *pub;
-    void *router;
+    void *w_pub;
+    void *w_router;
+    void *db_pub;
+    void *db_router;
     oz_updater_t updater;
     workers_t *workers;
 };
 
 typedef struct ozookeeper_t ozookeeper_t;
 
-typedef struct
-{
-    ozookeeper_t *ozookeeper;
-    int retries;
-    int max_retries;
-    oconfig_t *config;
-} global_watcherctx_t;
 
 
 //initialize the ozookeeper object
 void ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
-		      global_watcherctx_t * watcherctx, void *pub,
-		      void *router);
+		      void *pub, void *router);
 
 int ozookeeper_not_corrupt (ozookeeper_t ** ozookeep);
 
@@ -73,5 +69,7 @@ void oz_updater_key (oz_updater_t * updater, char *key);
 
 void oz_updater_free_key (oz_updater_t * updater);
 
-
+void
+oz_updater_search (oz_updater_t * updater, char *comp_name, char *res_name,
+		   int *m, int *n);
 #endif

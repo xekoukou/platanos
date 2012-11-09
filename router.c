@@ -409,7 +409,7 @@ router_events (router_t * router, node_t * node, int removal)
 	    remove[iter - 1] = 1;
 
 
-	    iter++;
+	    iter--;
 
 
 	}
