@@ -50,10 +50,7 @@ main ()
 
     ozookeeper_getconfig (ozookeeper);
 
-
-    while (1) {
-        zclock_sleep(1);
-	}
+    pthread_join (workers->pthread[0], NULL);
 
     return 0;
 }

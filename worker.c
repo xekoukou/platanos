@@ -1420,6 +1420,9 @@ workers_init (workers_t ** workers, ozookeeper_t * ozookeeper)
 	(*workers)->size = worker_children.count;
 	(*workers)->id =
 	    (char **) malloc (sizeof (char *) * (worker_children.count));
+	(*workers)->pthread =
+	    (pthread_t *) malloc (sizeof (pthread_t) * worker_children.count);
+
 //create the threads
 
 	int iter;
@@ -1429,6 +1432,7 @@ workers_init (workers_t ** workers, ozookeeper_t * ozookeeper)
 		(*workers)->id[iter] =
 		    (char *) malloc (strlen (worker_children.data[iter]) + 1 +
 				     strlen (comp_name));
+
 		sprintf ((*workers)->id[iter], "%s%s", comp_name,
 			 worker_children.data[iter]);
 
@@ -1436,7 +1440,8 @@ workers_init (workers_t ** workers, ozookeeper_t * ozookeeper)
 			     comp_name, worker_children.data[iter]
 		    );
 
-		zthread_new (&worker_fn, worker);
+		pthread_create (&((*workers)->pthread[iter]), NULL, worker_fn,
+				worker);
 	    }
 	}
 	else {

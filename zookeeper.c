@@ -151,7 +151,7 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 	//TODO the timeout is not the correct
 //but it is not of a great deal        
 	rc = zmq_poll (pollitems, 1, RESEND_INTERVAL);
-	assert (rc == 0);
+	assert (rc != -1);
 	if (pollitems[0].revents & ZMQ_POLLIN) {
 
 	    int new = 1;
@@ -227,8 +227,8 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 					   sizeof (unsigned int)));
 		    zmsg_push (msg_to_send,
 			       zframe_new (ozookeeper->workers->id[it],
-					   strlen (ozookeeper->workers->
-						   id[it])));
+					   strlen (ozookeeper->
+						   workers->id[it])));
 		    zmsg_send (&msg_to_send, pub);
 
 		}
@@ -1055,8 +1055,8 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
 		     ozookeeper->updater.resources[position].count; siter++) {
 		    if (strcmp
 			(resources.data[iter],
-			 ozookeeper->updater.resources[position].
-			 data[siter]) == 0) {
+			 ozookeeper->updater.
+			 resources[position].data[siter]) == 0) {
 			exists = 1;
 		    }
 		}
@@ -1071,8 +1071,8 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
 		    if (db) {
 			sprintf (path, "%s%s",
 				 ozookeeper->updater.computers.data[position],
-				 ozookeeper->updater.resources[position].
-				 data[siter]);
+				 ozookeeper->updater.
+				 resources[position].data[siter]);
 			ozookeeper_update_delete_node (ozookeeper, spath);
 
 		    }

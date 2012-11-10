@@ -58,6 +58,7 @@ void *worker_fn (void *arg);
 
 typedef struct
 {
+    pthread_t *pthread;
     char **id;			//has null at the end
     int size;
 } workers_t;
