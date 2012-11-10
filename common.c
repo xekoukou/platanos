@@ -22,8 +22,8 @@ void
 part_path (const char *path, int location, const char **start, int *siz)
 {
 
-    int st = strlen (path) - 1;
-    int end = strlen (path);
+    int st = strlen (path);
+    int end;
     int en = 0;
 
     int size = strlen (path);

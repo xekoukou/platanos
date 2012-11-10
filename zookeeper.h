@@ -37,8 +37,10 @@ typedef struct ozookeeper_t ozookeeper_t;
 
 
 //initialize the ozookeeper object
-void ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
-		      void *pub, void *router);
+void
+ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
+		 void *w_pub, void *w_router, void *db_pub, void *db_router);
+
 
 int ozookeeper_not_corrupt (ozookeeper_t ** ozookeep);
 
@@ -54,11 +56,6 @@ void ozookeeper_destroy (ozookeeper_t * ozookeeper);
 
 void global_watcher (zhandle_t * zzh, int type, int state, const char *path,
 		     void *context);
-//initialize the watcherctx object
-void global_watcherctx_init (global_watcherctx_t ** watcherctx,
-			     oconfig_t * config);
-
-void global_watcherctx_destroy (global_watcherctx_t * watcherctx);
 
 // doesnt allocate memory
 void oz_updater_init (oz_updater_t * updater);

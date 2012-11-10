@@ -1195,10 +1195,10 @@ worker_fn (void *arg, zctx_t * ctx, void *pipe)
     zmq_setsockopt (sub, ZMQ_SUBSCRIBE, "all", strlen ("all") + 1);
 
 
-    rc = zsocket_connect (sub, "ipc:///tmp/w_publisher");
+    rc = zsocket_connect (sub, "tcp://127.0.0.1:49152");
     assert (rc == 0);
 
-    rc = zsocket_connect (dealer, "ipc:///tmp/w_router");
+    rc = zsocket_connect (dealer, "tcp://127.0.0.1:49153");
     assert (rc == 0);
 
 
@@ -1367,15 +1367,18 @@ compute_init (compute_t ** compute, khash_t (vertices) * hash,
 
 void
 worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
-	     char *res_name, char *id)
+	     char *comp_name, char *res_name)
 {
 
     *worker = (worker_t *) malloc (sizeof (worker_t));
     (*worker)->zh = zh;
     (*worker)->res_name = (char *) malloc (strlen (res_name) + 1);
     strcpy ((*worker)->res_name, res_name);
-    (*worker)->id = (char *) malloc (strlen (id) + 1);
-    strcpy ((*worker)->id, id);
+    (*worker)->comp_name = (char *) malloc (strlen (comp_name) + 1);
+    strcpy ((*worker)->comp_name, comp_name);
+    (*worker)->id =
+	(char *) malloc (strlen (comp_name) + strlen (res_name) + 1);
+    sprintf ((*worker)->id, "%s%s", comp_name, res_name);
     (*worker)->config = config;
 }
 
@@ -1418,8 +1421,8 @@ workers_init (workers_t ** workers, zctx_t * ctx, ozookeeper_t * ozookeeper)
 			 worker_children.data[iter]);
 
 		worker_init (&worker, ozookeeper->zh, ozookeeper->config,
-			     worker_children.data[iter],
-			     (*workers)->id[iter]);
+			     comp_name, worker_children.data[iter]
+		    );
 
 		(*workers)->pipe[iter] =
 		    zthread_fork (ctx, &worker_fn, worker);

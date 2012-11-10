@@ -15,10 +15,11 @@ typedef struct
     oconfig_t *config;
     char *id;			//comp_name +res_name
     char *res_name;
+    char *comp_name;
 } worker_t;
 
 void worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
-		  char *res_name, char *id);
+		  char *comp_name, char *res_name);
 
 
 

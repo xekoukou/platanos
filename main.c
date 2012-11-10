@@ -19,23 +19,25 @@ main ()
     void *db_router = zsocket_new (ctx, ZMQ_ROUTER);
 
 
-//bind to the apropriate location
-
-    int rc;
-
-    zsocket_bind (w_pub, "ipc:///tmp/w_publisher");
-
-    zsocket_bind (w_router, "ipc:///tmp/w_router");
-
-    zsocket_bind (db_pub, "ipc:///tmp/db_publisher");
-
-    zsocket_bind (db_router, "ipc:///tmp/db_router");
-
-
-
 //Open the configuration file
     oconfig_t *config;
     oconfig_init (&config);
+
+
+//bind to the apropriate location
+    int rc;
+
+    rc = zsocket_bind (w_pub, "tcp://127.0.0.1:49152");
+    assert (rc == 49152);
+    rc = zsocket_bind (w_router, "tcp://127.0.0.1:49153");
+    assert (rc == 49153);
+    rc = zsocket_bind (db_pub, "tcp://127.0.0.1:49154");
+    assert (rc == 49154);
+    rc = zsocket_bind (db_router, "tcp://127.0.0.1:49155");
+    assert (rc == 49155);
+
+
+
 
     ozookeeper_t *ozookeeper;
 

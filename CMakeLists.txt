@@ -3,7 +3,7 @@ project (octopus)
 
 set(CMAKE_CXX_FLAGS "-g -Wall")
 set(CMAKE_C_FLAGS "-DTHREADED -g -Wall")
-add_executable(zookeeper_register zookeeper_register.c)
+add_executable(zookeeper_register zookeeper_register.c config.c)
 
 target_link_libraries(zookeeper_register zookeeper_mt proc czmq)
 

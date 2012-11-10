@@ -4,6 +4,7 @@
 #include<string.h>
 #include<proc/sysinfo.h>
 #include<czmq.h>
+#include"config.h"
 
 
 #define _LL_CAST_ (long long)
@@ -85,11 +86,12 @@ int
 main ()
 {
 
+    oconfig_t *fconfig;
+    oconfig_init (&fconfig);
 
     char config[8][1000];
 
-    printf ("\nWhat is the name of the octopus?");
-    scanf ("%s", config[6]);
+    oconfig_octopus (fconfig, config[6]);
 
 
     int db;
@@ -101,16 +103,12 @@ main ()
 	scanf ("%s", config[7]);
     }
 
-    printf
-	("\nPlease, provide the connecting points (ip:port,ip:port) to the zookeeper ensemple");
 
-    scanf ("%s", config[0]);
+    oconfig_host (fconfig, config[0]);
 
 
-    printf
-	("A unique computer name, common across all resources and configs of this computer:");
 
-    scanf ("%s", config[2]);
+    oconfig_comp_name (fconfig, config[2]);
 
     printf
 	("\nIs this computer name new or has it already been initialized by other resources? 1 or 0)");
@@ -268,8 +266,7 @@ main ()
 	sprintf (bind_search, "tcp://%s:*", config[5]);
 	char bind_location[1000];
 	if (db) {
-	    while (-1 == (port = zsocket_bind (router, bind_search))) {
-	    }
+	    port = oconfig_incr_port (fconfig);
 	    sprintf (bind_location, "tcp://%s:%d", config[5], port);
 
 	    sprintf (path, "/%s/computers/%s/%s/%s/bind_point", config[6],
@@ -287,8 +284,7 @@ main ()
 	else {
 
 
-	    while (-1 == (port = zsocket_bind (router, bind_search))) {
-	    }
+	    port = oconfig_incr_port (fconfig);
 	    sprintf (bind_location, "tcp://%s:%d", config[5], port);
 	    sprintf (path, "/%s/computers/%s/%s/%s/bind_point_nb", config[6],
 		     config[2], root, config[3]);
@@ -301,8 +297,7 @@ main ()
 	    assert (ZOK == result);
 
 
-	    while (-1 == (port = zsocket_bind (router, bind_search))) {
-	    }
+	    port = oconfig_incr_port (fconfig);
 	    sprintf (bind_location, "tcp://%s:%d", config[5], port);
 	    sprintf (path, "/%s/computers/%s/%s/%s/bind_point_wb", config[6],
 		     config[2], root, config[3]);
@@ -316,8 +311,7 @@ main ()
 
 
 
-	    while (-1 == (port = zsocket_bind (router, bind_search))) {
-	    }
+	    port = oconfig_incr_port (fconfig);
 	    sprintf (bind_location, "tcp://%s:%d", config[5], port);
 	    sprintf (path, "/%s/computers/%s/%s/%s/bind_point_bl", config[6],
 		     config[2], root, config[3]);

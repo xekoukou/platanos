@@ -2,3 +2,4 @@
 3000  --> timeout
 octopus -->octopus name
 c3po --> computer name
+50000 --> an increasing number that tells the zookeeper_register which ports are free

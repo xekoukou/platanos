@@ -27,5 +27,6 @@ void oconfig_recv_timeout (oconfig_t * config, int *timeout);
 //unique computer name
 void oconfig_comp_name (oconfig_t * config, char *comp_name);
 
+int oconfig_incr_port (oconfig_t * config);
 
 #endif
