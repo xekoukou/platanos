@@ -54,7 +54,6 @@ main ()
     while (1) {
         zclock_sleep(1);
 	}
-    }
 
     return 0;
 }
