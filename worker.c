@@ -125,6 +125,10 @@ worker_balance (balance_t * balance)
 {
 
     zmsg_t *msg = zmsg_recv (balance->self_bl);
+    if (!msg) {
+	exit (1);
+    }
+
     zmsg_t *responce;
 
     zframe_t *address = zmsg_unwrap (msg);
@@ -1103,6 +1107,10 @@ worker_update (update_t * update, void *sub)
 
 //check if it is a new update or an old one
     zmsg_t *msg = zmsg_recv (sub);
+    if (!msg) {
+	exit (1);
+    }
+
     fprintf (stderr, "\nworker_update:I have received a sub msg");
     zframe_t *sub_frame = zmsg_pop (msg);
     zframe_destroy (&sub_frame);

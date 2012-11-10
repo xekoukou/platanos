@@ -156,6 +156,10 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 
 	    int new = 1;
 	    resp = zmsg_recv (router);
+
+	    if (!resp) {
+		exit (1);
+	    }
 	    fprintf (stderr,
 		     "\nzookeeper_update: I have received a confirmation msg");
 
@@ -373,6 +377,10 @@ ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 		     "\nzookeeper_update_one: I have received a confirmation msg");
 
 	    zmsg_t *resp = zmsg_recv (router);
+	    if (!resp) {
+		exit (1);
+	    }
+
 	    zframe_t *address = zmsg_unwrap (resp);
 	    zframe_t *frame = zmsg_first (resp);
 	    //if correct id and address is correct then break
