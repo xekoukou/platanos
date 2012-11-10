@@ -52,11 +52,7 @@ main ()
 
 
     while (1) {
-	char stop[100];
-	fscanf (stdin, "%s", stop);
-	if (strcmp (stop, "stop") == 0) {
-//clean things better
-	    exit (1);
+        zclock_sleep(1);
 	}
     }
 
