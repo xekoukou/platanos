@@ -931,6 +931,9 @@ add_node (update_t * update, zmsg_t * msg)
 
     zmsg_destroy (&msg);
 
+    fprintf (stderr, "\nworker_add_node\nkey:%s\nn_pieces:%d\nst_piece:%lu",
+	     key, n_pieces, st_piece);
+
     node_init (&node, key, n_pieces, st_piece, bind_point_nb, bind_point_wb,
 	       bind_point_bl);
 
@@ -1010,7 +1013,7 @@ add_self (update_t * update, zmsg_t * msg)
 {
     node_t *self;
     char key[100];
-    unsigned long n_pieces;
+    int n_pieces;
     unsigned long st_piece;
     char bind_point_nb[50];
     char bind_point_wb[50];
@@ -1033,6 +1036,9 @@ add_self (update_t * update, zmsg_t * msg)
     memcpy (bind_point_bl, zframe_data (frame), zframe_size (frame));
 
     zmsg_destroy (&msg);
+
+    fprintf (stderr, "\nworker_add_self\nkey:%s\nn_pieces:%d\nst_piece:%lu",
+	     key, n_pieces, st_piece);
 
     node_init (&self, key, n_pieces, st_piece, bind_point_nb, bind_point_wb,
 	       bind_point_bl);
@@ -1097,6 +1103,7 @@ worker_update (update_t * update, void *sub)
 
 //check if it is a new update or an old one
     zmsg_t *msg = zmsg_recv (sub);
+    fprintf (stderr, "\nworker_update:I have received a sub msg");
     zframe_t *sub_frame = zmsg_pop (msg);
     zframe_destroy (&sub_frame);
     zframe_t *id = zmsg_pop (msg);
@@ -1104,6 +1111,9 @@ worker_update (update_t * update, void *sub)
 //lazy pirate reconfirm update
 	zframe_send (&id, update->dealer, 0);
 	zmsg_destroy (&msg);
+	fprintf (stderr,
+		 "\nworker_update:It was a previous update, resending confirmation");
+
     }
     else {
 	zframe_t *frame = zmsg_pop (msg);
@@ -1156,6 +1166,9 @@ worker_update (update_t * update, void *sub)
 
 
 	zframe_send (&id, update->dealer, 0);
+	fprintf (stderr,
+		 "\nworker_update:I have sent confirmation to sub msg");
+
     }
 
     return 0;
@@ -1178,9 +1191,10 @@ worker_sleep (sleep_t * sleep, compute_t * compute)
 
 
 
-void
-worker_fn (void *arg, zctx_t * ctx, void *pipe)
+void *
+worker_fn (void *arg)
 {
+    zctx_t *ctx = zctx_new ();
 
     worker_t *worker = (worker_t *) arg;
 
@@ -1383,7 +1397,7 @@ worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
 }
 
 void
-workers_init (workers_t ** workers, zctx_t * ctx, ozookeeper_t * ozookeeper)
+workers_init (workers_t ** workers, ozookeeper_t * ozookeeper)
 {
 
     int result;
@@ -1404,8 +1418,6 @@ workers_init (workers_t ** workers, zctx_t * ctx, ozookeeper_t * ozookeeper)
 //mallocing
 	*workers = (workers_t *) malloc (sizeof (workers_t));
 	(*workers)->size = worker_children.count;
-	(*workers)->pipe =
-	    (void **) malloc (sizeof (void *) * (worker_children.count));
 	(*workers)->id =
 	    (char **) malloc (sizeof (char *) * (worker_children.count));
 //create the threads
@@ -1424,8 +1436,7 @@ workers_init (workers_t ** workers, zctx_t * ctx, ozookeeper_t * ozookeeper)
 			     comp_name, worker_children.data[iter]
 		    );
 
-		(*workers)->pipe[iter] =
-		    zthread_fork (ctx, &worker_fn, worker);
+		zthread_new (&worker_fn, worker);
 	    }
 	}
 	else {
@@ -1444,38 +1455,4 @@ workers_init (workers_t ** workers, zctx_t * ctx, ozookeeper_t * ozookeeper)
 
 
 
-}
-
-
-void
-workers_monitor (workers_t * workers)
-{
-
-    zmq_pollitem_t *pollitems =
-	(zmq_pollitem_t *) malloc (sizeof (zmq_pollitem_t) * workers->size);
-
-    int i;
-    for (i = 0; i < workers->size; i++) {
-	zmq_pollitem_t pollitem = { workers->pipe[i], 0, ZMQ_POLLIN };
-	memcpy (&(pollitems[i]), &pollitem, sizeof (zmq_pollitem_t));
-    }
-
-    int rc;
-    while (1) {
-	rc = zmq_poll (pollitems, workers->size, -1);
-	assert (rc != -1);
-
-	for (i = 0; i < workers->size; i++) {
-
-	    if (pollitems[i].revents & ZMQ_POLLIN) {
-		zmsg_t *msg = zmsg_recv (workers->pipe[i]);
-		if (!msg) {
-		    fprintf (stderr, "\n interrupt caught");
-		    exit (1);
-		}
-	    }
-
-
-	}
-    }
 }

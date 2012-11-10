@@ -54,11 +54,10 @@ void compute_init (compute_t ** compute, khash_t (vertices) * hash,
 //it is used in the sub and dealer socket (subscription, identity)
 //max 1000 workers per computer
 //worker ids are from 0 till size-1
-void worker_fn (void *arg, zctx_t * ctx, void *pipe);
+void *worker_fn (void *arg);
 
 typedef struct
 {
-    void **pipe;
     char **id;			//has null at the end
     int size;
 } workers_t;
@@ -66,8 +65,7 @@ typedef struct
 struct ozookeeper_t;
 
 
-void workers_init (workers_t ** workers, zctx_t * ctx,
-		   struct ozookeeper_t *ozookeeper);
+void workers_init (workers_t ** workers, struct ozookeeper_t *ozookeeper);
 
 void workers_monitor (workers_t * workers);
 

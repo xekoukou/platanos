@@ -44,12 +44,21 @@ main ()
     ozookeeper_init (&ozookeeper, config, w_pub, w_router, db_pub, db_router);
 
     workers_t *workers;
-    workers_init (&workers, ctx, ozookeeper);
+    workers_init (&workers, ozookeeper);
 
     ozookeeper_init_workers (ozookeeper, workers);
 
     ozookeeper_getconfig (ozookeeper);
 
-    workers_monitor (workers);
+
+    while (1) {
+	char stop[100];
+	fscanf (stdin, "%s", stop);
+	if (strcmp (stop, "stop") == 0) {
+//clean things better
+	    exit (1);
+	}
+    }
+
     return 0;
 }

@@ -103,7 +103,7 @@ oconfig_incr_port (oconfig_t * config)
     port++;
 
     sprintf (temp, "%d", port);
-   strcpy (config->line[4],temp);
+    strcpy (config->line[4], temp);
 
     int rc = fputs (temp, fconfig);
     assert (rc > 0);
