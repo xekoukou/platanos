@@ -4,6 +4,7 @@
 #include"config.h"
 #include"zookeeper.h"
 #include"worker.h"
+#include"db.h"
 
 
 
@@ -45,8 +46,11 @@ main ()
 
     workers_t *workers;
     workers_init (&workers, ozookeeper);
+    dbs_t *dbs;
+    dbs_init (&dbs, ozookeeper);
 
     ozookeeper_init_workers (ozookeeper, workers);
+    ozookeeper_init_dbs (ozookeeper, dbs);
 
     ozookeeper_getconfig (ozookeeper);
 

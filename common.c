@@ -19,7 +19,7 @@ last_path (const char *path)
 // the result , ie start doesnt have a null at the end
 //location 1 means first from the last
 void
-part_path (const char *path, int location, const char **start, int *siz)
+part_path (char *path, int location,  char **start, int *siz)
 {
 
     int st = strlen (path);

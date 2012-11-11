@@ -1291,9 +1291,9 @@ worker_fn (void *arg)
 							   ZMQ_POLLIN},
     {self_nb, 0, ZMQ_POLLIN}
     };
+    fprintf (stderr, "\nworker with id:%s ready.", worker->id);
 //main loop
     while (1) {
-
 //finding the minimum timeout
 	int64_t timeout = balance->timeout;
 	if ((sleep->timeout > 0 && sleep->timeout < balance->timeout)

@@ -39,6 +39,7 @@ router.c
 sleep.c
 vertex.c
 worker.c
+db.c
 worker_update.c
 zookeeper.c
 main.c
