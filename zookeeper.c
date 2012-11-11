@@ -738,10 +738,13 @@ w_online (zhandle_t * zh, int type,
     int temp_size;
     part_path (path, 2, &temp, &temp_size);
     strncpy (res_name, temp, temp_size);
+    res_name[temp_size]='\0';
     part_path (path, 3, &temp, &temp_size);
     strncpy (kind, temp, temp_size);
+    kind[temp_size]='\0';
     part_path (path, 4, &temp, &temp_size);
     strncpy (comp_name, temp, temp_size);
+    comp_name[temp_size]='\0';
 
     if (strcmp (kind, "worker_nodes") == 0) {
 	db = 0;
@@ -810,10 +813,13 @@ w_st_piece (zhandle_t * zh, int type,
     int temp_size;
     part_path ((const char *) path, 2, &temp, &temp_size);
     strncpy (res_name, temp, temp_size);
+    res_name[temp_size]='\0';
     part_path (path, 3, &temp, &temp_size);
     strncpy (kind, temp, temp_size);
+    kind[temp_size]='\0';
     part_path (path, 4, &temp, &temp_size);
     strncpy (comp_name, temp, temp_size);
+    comp_name[temp_size]='\0';
 
 
     if (strcmp (kind, "worker_nodes") == 0) {
@@ -920,10 +926,13 @@ w_n_pieces (zhandle_t * zh, int type,
     int temp_size;
     part_path ((const char *) path, 2, &temp, &temp_size);
     strncpy (res_name, temp, temp_size);
+    res_name[temp_size]='\0';
     part_path (path, 3, &temp, &temp_size);
     strncpy (kind, temp, temp_size);
+    kind[temp_size]='\0';
     part_path (path, 4, &temp, &temp_size);
     strncpy (comp_name, temp, temp_size);
+    comp_name[temp_size]='\0';
 
 
     if (strcmp (kind, "worker_nodes") == 0) {
@@ -1044,8 +1053,10 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
     int temp_size;
     part_path (path, 2, &temp, &temp_size);
     strncpy (comp_name, temp, temp_size);
+    comp_name[temp_size]='\0';
     part_path (path, 1, &temp, &temp_size);
     strncpy (kind, temp, temp_size);
+    kind[temp_size]='\0';
 
     if (strcmp (kind, "worker_nodes") == 0) {
 	db = 0;
