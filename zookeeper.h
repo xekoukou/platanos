@@ -35,6 +35,7 @@ struct ozookeeper_t
     void *db_router;
     oz_updater_t updater;
     workers_t *workers;
+    dbs_t *dbs;
 };
 
 typedef struct ozookeeper_t ozookeeper_t;

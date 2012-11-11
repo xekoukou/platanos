@@ -104,20 +104,27 @@ ozookeeper_destroy (ozookeeper_t * ozookeeper)
     free (ozookeeper);
 }
 
-
+//TODO referencing dbs_t as workers_t
 void
 ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 {
     void *pub;
     void *router;
+
+    workers_t *thread_list;
     if (db) {
 	pub = ozookeeper->db_pub;
 	router = ozookeeper->db_router;
+	thread_list = ozookeeper->workers;
     }
     else {
 	pub = ozookeeper->w_pub;
 	router = ozookeeper->w_router;
+	thread_list = (workers_t *) ozookeeper->dbs;
     }
+
+
+
 
     int rc;
     if (ozookeeper->updater.id > 1000000000) {
@@ -197,7 +204,8 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 
 	}
 
-	if (zlist_size (ok_list) == ozookeeper->workers->size) {
+
+	if (zlist_size (ok_list) == thread_list->size) {
 //destroy things
 	    iter = zlist_first (ok_list);
 	    while (iter) {
@@ -213,13 +221,13 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 	    time = zclock_time ();
 
 	    int it;
-	    for (it = 0; it < ozookeeper->workers->size; it++) {
+	    for (it = 0; it < thread_list->size; it++) {
 		int exists = 0;
 		iter = zlist_first (ok_list);
 		while (iter) {
 		    if (memcmp
-			(zframe_data (address), ozookeeper->workers->id[it],
-			 strlen (ozookeeper->workers->id[it])) == 0) {
+			(zframe_data (address), thread_list->id[it],
+			 strlen (thread_list->id[it])) == 0) {
 			exists = 1;
 			break;
 		    }
@@ -231,9 +239,8 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 			       zframe_new (&(ozookeeper->updater.id),
 					   sizeof (unsigned int)));
 		    zmsg_push (msg_to_send,
-			       zframe_new (ozookeeper->workers->id[it],
-					   strlen (ozookeeper->workers->
-						   id[it])));
+			       zframe_new (thread_list->id[it],
+					   strlen (thread_list->id[it])));
 		    zmsg_send (&msg_to_send, pub);
 
 		}
@@ -1346,13 +1353,13 @@ computers (ozookeeper_t * ozookeeper, int start)
     for (siter = 0; siter < size; siter++) {
 	if (array[siter] == 0) {
 	    deallocate_String_vector (&
-				      (ozookeeper->
-				       updater.w_resources[siter]));
+				      (ozookeeper->updater.
+				       w_resources[siter]));
 	    free (ozookeeper->updater.w_online[siter]);
 
 	    deallocate_String_vector (&
-				      (ozookeeper->
-				       updater.db_resources[siter]));
+				      (ozookeeper->updater.
+				       db_resources[siter]));
 	    free (ozookeeper->updater.db_online[siter]);
 
 	}
