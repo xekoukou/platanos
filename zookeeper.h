@@ -51,8 +51,7 @@ int ozookeeper_not_corrupt (ozookeeper_t ** ozookeep);
 
 void ozookeeper_init_workers (ozookeeper_t * ozookeeper, workers_t * workers);
 
-void
-ozookeeper_init_dbs (ozookeeper_t * ozookeeper, dbs_t * dbs);
+void ozookeeper_init_dbs (ozookeeper_t * ozookeeper, dbs_t * dbs);
 
 void ozookeeper_getconfig (ozookeeper_t * ozookeeper);
 

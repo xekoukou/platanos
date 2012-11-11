@@ -232,8 +232,8 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 					   sizeof (unsigned int)));
 		    zmsg_push (msg_to_send,
 			       zframe_new (ozookeeper->workers->id[it],
-					   strlen (ozookeeper->
-						   workers->id[it])));
+					   strlen (ozookeeper->workers->
+						   id[it])));
 		    zmsg_send (&msg_to_send, pub);
 
 		}
@@ -1030,7 +1030,7 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
 
     char *temp;
     int temp_size;
-    part_path ( path, 2, &temp, &temp_size);
+    part_path (path, 2, &temp, &temp_size);
     strncpy (comp_name, temp, temp_size);
     part_path (path, 1, &temp, &temp_size);
     strncpy (kind, temp, temp_size);
@@ -1165,8 +1165,8 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
 	    if (old_online[position] != NULL) {
 		free (old_online);
 	    }
-	    old_online[position]= online_vector;
-		    
+	    old_online[position] = online_vector;
+
 
 	    fprintf (stderr, "\ndb:%d new resources for computer %s", db,
 		     comp_name);
@@ -1346,13 +1346,13 @@ computers (ozookeeper_t * ozookeeper, int start)
     for (siter = 0; siter < size; siter++) {
 	if (array[siter] == 0) {
 	    deallocate_String_vector (&
-				      (ozookeeper->updater.
-				       w_resources[siter]));
+				      (ozookeeper->
+				       updater.w_resources[siter]));
 	    free (ozookeeper->updater.w_online[siter]);
 
 	    deallocate_String_vector (&
-				      (ozookeeper->updater.
-				       db_resources[siter]));
+				      (ozookeeper->
+				       updater.db_resources[siter]));
 	    free (ozookeeper->updater.db_online[siter]);
 
 	}

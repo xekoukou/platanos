@@ -7,7 +7,7 @@
 typedef struct
 {
     pthread_t *pthread;
-    char **id;                  //has null at the end
+    char **id;			//has null at the end
     int size;
 } dbs_t;
 
