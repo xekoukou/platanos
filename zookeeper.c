@@ -115,12 +115,12 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
     if (db) {
 	pub = ozookeeper->db_pub;
 	router = ozookeeper->db_router;
-	thread_list = ozookeeper->workers;
+	thread_list = (workers_t *) ozookeeper->dbs;
     }
     else {
 	pub = ozookeeper->w_pub;
 	router = ozookeeper->w_router;
-	thread_list = (workers_t *) ozookeeper->dbs;
+	thread_list = ozookeeper->workers;
     }
 
 
@@ -546,6 +546,8 @@ void
 ozookeeper_update_go_online (ozookeeper_t * ozookeeper, int db)
 {
 
+fprintf(stderr,"\ndb:%d zookeeper_go_online: I am asking the threads to go online",db);
+
     zmsg_t *msg = zmsg_new ();
     zmsg_add (msg, zframe_new ("go_online", strlen ("go_online") + 1));
     ozookeeper_update (ozookeeper, &msg, db);
@@ -658,6 +660,8 @@ online (ozookeeper_t * ozookeeper, int db, int online, int self,
     }
 
     sprintf (path, "%s%s", comp_name, res_name);
+
+
     if (self) {
 	assert (online == 1);
 	oz_updater_free_key (&(ozookeeper->updater));
@@ -668,7 +672,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int self,
 				    bind_point_bl);
 
 
-    }
+    }else{
 
 //update its status on the updater object
     int m;
@@ -708,6 +712,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int self,
 
 	}
     }
+}
 
 }
 

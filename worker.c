@@ -1095,6 +1095,8 @@ go_online (worker_t * worker)
 			     0);
     assert (result == ZOK);
 
+    fprintf(stderr,"\nWorker with id: %s has gone online",worker->id);
+
 
 }
 
