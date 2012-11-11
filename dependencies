@@ -1,3 +1,5 @@
 libproc-dev
 zeromq
-etc
+zookeeper_mt
+czmq
+leveldb
