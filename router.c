@@ -298,9 +298,7 @@ router_dbroute (struct router_t *router, uint64_t key, char **rkey,
 zlist_t *
 router_events (router_t * router, node_t * node, int removal)
 {
-    event_t *event = NULL;
     zlist_t *solution = zlist_new ();
-    int sizee = 0;
     node_t *exists;
     int doesnt_exist = 1;
 
@@ -438,15 +436,20 @@ router_events (router_t * router, node_t * node, int removal)
 //
 //
 //
+
+
     int iter;
     for (iter = 0; iter < size; iter++) {
 	if (remove[iter] != 2) {
-	    int siter = 0;
-	    struct hash_t *forward;
-	    struct hash_t *backward;
 
-//if exists true, forward or backward cannot be one of the removed hashes
-//make it faster
+	    struct hash_t *forward = NULL;	//the first forward hash that is not the to be changed
+	    struct hash_t *ask = NULL;	//the greatest added hash till the forward hash or NULL
+	    struct hash_t *limit = NULL;	//the greatest removed hash till the forward hash with a lower limit the backward hash or NULL
+	    struct hash_t *backward = NULL;	//the smallest hash that is not to be changed
+
+
+//forward cannot be one of the removed hashes
+
 	    forward = &(hash[iter]);
 	    forward = RB_NFIND (hash_rb_t, &(router->hash_rb), forward);
 	    while (1) {
@@ -457,6 +460,11 @@ router_events (router_t * router, node_t * node, int removal)
 		int triter;
 		for (triter = 0; triter < size; triter++) {
 		    if (cmp_hash_t (&(hash[triter]), forward) == 0) {
+			assert (remove[triter] != 1);
+			limit = &(hash[triter]);
+
+			remove[triter] = 2;
+
 			br = 0;
 			break;
 		    }
@@ -466,6 +474,8 @@ router_events (router_t * router, node_t * node, int removal)
 		}
 		forward = RB_NEXT (hash_rb_t, &(router->hash_rb), forward);
 	    }
+
+
 	    //we cross the "river"
 	    if (forward == NULL) {
 		forward = RB_MIN (hash_rb_t, &(router->hash_rb));
@@ -478,10 +488,19 @@ router_events (router_t * router, node_t * node, int removal)
 		    int triter;
 		    for (triter = 0; triter < size; triter++) {
 			if (cmp_hash_t (&(hash[triter]), forward) == 0) {
+
+			    assert (remove[triter] != 1);
+			    limit = &(hash[triter]);
+
+
+			    remove[triter] = 2;
+
 			    br = 0;
 			    break;
 			}
 		    }
+
+
 		    if (br) {
 			break;
 		    }
@@ -489,33 +508,11 @@ router_events (router_t * router, node_t * node, int removal)
 			RB_NEXT (hash_rb_t, &(router->hash_rb), forward);
 
 		}
-
-		backward = RB_MAX (hash_rb_t, &(router->hash_rb));
-		while (1) {
-		    int br = 1;
-		    //the case where there are no nodes at all
-		    if (backward == NULL) {
-			break;
-		    }
-		    int triter;
-		    for (triter = 0; triter < size; triter++) {
-			if (cmp_hash_t (&(hash[triter]), backward) == 0) {
-			    br = 0;
-			    break;
-			}
-		    }
-		    if (br) {
-			break;
-		    }
-		    //this needs cleaning, it will always lead to backward being NULL
-		    backward =
-			RB_PREV (hash_rb_t, &(router->hash_rb), backward);
-
-		}
-
-
 	    }
-	    else {
+
+	    if (forward != NULL) {
+
+		//there is no NPREV in the library so we use the forward result
 
 		backward = RB_PREV (hash_rb_t, &(router->hash_rb), forward);
 		while (1) {
@@ -526,6 +523,13 @@ router_events (router_t * router, node_t * node, int removal)
 		    int triter;
 		    for (triter = 0; triter < size; triter++) {
 			if (cmp_hash_t (&(hash[triter]), backward) == 0) {
+			    assert (remove[triter] != 1);
+			    if (!limit) {
+				limit = &(hash[triter]);
+
+			    }
+			    remove[triter] = 2;
+
 			    br = 0;
 			    break;
 			}
@@ -542,16 +546,25 @@ router_events (router_t * router, node_t * node, int removal)
 		    backward = RB_MAX (hash_rb_t, &(router->hash_rb));
 		    while (1) {
 			int br = 1;
-			if (backward == NULL) {
-			    break;
-			}
+			assert (backward != NULL);
+
+
 			int triter;
 			for (triter = 0; triter < size; triter++) {
 			    if (cmp_hash_t (&(hash[triter]), backward) == 0) {
+				assert (remove[triter] != 1);
+				if (!limit) {
+				    limit = &(hash[triter]);
+
+				}
+				remove[triter] = 2;
+
 				br = 0;
 				break;
 			    }
 			}
+
+
 			if (br) {
 			    break;
 			}
@@ -562,125 +575,161 @@ router_events (router_t * router, node_t * node, int removal)
 
 
 		}
-	    }
-
-//case where there is no other node  except possibly itself
-//forward and backward are NULL
-	    if (forward == NULL) {
-// only one event
-		sizee = 1;
-		event = malloc (sizeof (event_t));
-
-		event->give = 0;
-		event->start.prefix = 0;
-		event->start.suffix = 0;
-
-		event->end.prefix = 0xFFFFFFFFFFFFFFFF;
-		event->end.suffix = 0xFFFFFFFFFFFFFFFF;
-		zlist_append (solution, event);
-		return solution;
-	    }
-	    else {
-//remove non-relevant cases
-		if (forward->node != router->self && exists != router->self) {
-
-//this wont be necessary
-//as we already made the pass
-		    remove[iter] = 2;
-		}
-		else {
 
 
-// point out new hashes that are contained in this interval
-//hash[iter] is the end point
-//backward is the start point
-//check also the interval belong implementation
+		//find the rest of the hashes that are inside the interval forward<-backward
+		//disable them while also finding the ask hash
 
-		    for (siter = 0; siter < size; siter++) {
-			if (remove[siter] != 2) {
-			    interval_t *big_interval;
-			    interval_init (&big_interval, &(backward->hkey),
-					   &(forward->hkey));
+
+		interval_t *big_interval;
+		interval_init (&big_interval, &(backward->hkey),
+			       &(forward->hkey));
+		interval_t *small_interval = NULL;
+
+//using the small interval to prove whether a hash is bigger or smaller to another hash according to the orientation
+                 int siter;
+		for (siter = 0; siter < size; siter++) {
+		    if (remove[siter] == 1) {
+			if (small_interval == NULL) {
+//happens only at the beggining
+			    interval_init (&small_interval,
+					   &(backward->hkey),
+					   &(hash[siter].hkey));
+
+			    ask = &(hash[siter]);
+			}
+			else {
+
 			    if (interval_belongs_h
 				(big_interval, &(hash[siter].hkey))) {
-				interval_t *small_interval;
-				interval_init (&small_interval,
-					       &(backward->hkey),
-					       &(hash[iter].hkey));
 				if (interval_belongs_h
 				    (small_interval, &(hash[siter].hkey))) {
+
+
 				    remove[siter] = 2;
 
 				}
 				else {
-				    memcpy (&(hash[iter]), &(hash[siter]),
-					    sizeof (struct hash_t));
+				    free (small_interval);
+				    interval_init (&small_interval,
+						   &(backward->hkey),
+						   &(hash[siter].hkey));
+
+
+
+				    ask = &(hash[siter]);
 				    remove[siter] = 2;
 				}
-				free (small_interval);
-
 			    }
-
-			    free (big_interval);
-			}
-
-		    }
-		    assert (remove[iter] != 2);
-		    sizee++;
-
-//remove the case where the transfer is between itself
-		    if (exists) {
-			if (exists == router->self && exists == forward->node) {
-			    remove[iter] = 2;
-			    break;
 			}
 		    }
+		}
+
+		if (!small_interval) {
+		    free (small_interval);
+		}
+		free (big_interval);
+
+		int ask_greater_limit = 1;
+
+		if (!ask) {
+
+		    interval_t *interval;
+		    interval_init (&interval, &(backward->hkey),
+				   &(limit->hkey));
 
 
-//create the event 
-		    event = malloc (sizeof (event_t));
-		    event->start = backward->hkey;
-		    event->end = hash[iter].hkey;
+		    if (interval_belongs_h (interval,  &(ask->hkey))) {
 
-
-		    if ((remove[iter] == 1 && forward->node == router->self)) {
-
-			event->give = 0;
-
-
+			ask_greater_limit = 0;
 		    }
-		    else {
-			if (exists) {
-			    if ((remove[iter] == 0 && exists == router->self)) {
+                free(interval);
+		}
 
-				event->give = 0;
-			    }
-			    else {
+		event_t *event;
 
-				event->give = 1;
+		if (!ask || !ask_greater_limit) {
 
-			    }
+//it gives
+		    if (strcmp (forward->node->key, router->self->key) != 0) {
+			if (ask) {
+			    event_init (&event, ask->hkey, limit->hkey, 1,
+					forward->node->key);
+
 			}
 			else {
 
-			    event->give = 1;
+			    event_init (&event, backward->hkey, limit->hkey,
+					1, forward->node->key);
+
 			}
 		    }
 
+		}
+		else {
+
+//it receives
+		    if (strcmp (forward->node->key, router->self->key) != 0) {
+
+			event_init (&event, limit->hkey, ask->hkey, 0,
+				    forward->node->key);
+
+		    }
+		}
+
+		if (event) {
 		    zlist_append (solution, event);
-		    remove[iter] = 2;
+
+		}
+
+
+
+
+
+
+	    }			//forward NULL
+	    else {
+
+
+
+		if (!exists) {
+
+		    event_t *event;
+		    struct _hkey_t start;
+		    struct _hkey_t end;
+
+
+		    start.prefix = 0;
+		    start.suffix = 0;
+
+		    end.prefix = 0xFFFFFFFFFFFFFFFF;
+		    end.suffix = 0xFFFFFFFFFFFFFFFF;
+
+		    event_init (&event, start, end, 0, NULL);
+
+		    zlist_append (solution, event);
+		    return solution;
 
 
 		}
+
+
+
+
+		free (hash);
+		free (remove);
+
+		return solution;
+
+
 	    }
 	}
     }
-
-
     free (hash);
     free (remove);
 
     return solution;
+
 
 }
 
@@ -748,8 +797,8 @@ nodes_search (khash_t (nodes_t) * nodes, char *key)
 
 void
 node_init (node_t ** node, char *key, int n_pieces,
-	   unsigned long st_piece, char *bind_point_nb, char *bind_point_wb,
-	   char *bind_point_bl)
+	   unsigned long st_piece, char *bind_point_nb,
+	   char *bind_point_wb, char *bind_point_bl)
 {
 
     *node = malloc (sizeof (node_t));

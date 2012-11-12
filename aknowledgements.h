@@ -55,6 +55,10 @@ struct interval_t
 RB_HEAD (intervals_t, interval_t);
 RB_PROTOTYPE (intervals_t, interval_t, field, cmp_interval_t);
 
+//the key is the key of the node that will take part in the event /action
+//there is only the exception for the first node that will go online
+//its first event will have NULL as key
+
 struct event_t
 {
     struct _hkey_t start;
@@ -103,6 +107,9 @@ int intervals_belongs_h (intervals_t * intervals, struct _hkey_t *hkey);
 
 //return true if it belongs to one of the intervals
 int intervals_belongs (intervals_t * intervals, uint64_t key);
+
+void event_init (event_t ** event, struct _hkey_t start, struct _hkey_t end,
+		 int give, char *key);
 
 event_t *events_search (zlist_t * events, action_t * action);
 

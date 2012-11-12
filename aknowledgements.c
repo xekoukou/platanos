@@ -445,6 +445,18 @@ cmp_ev_ac (event_t * event, action_t * action)
     return 1;
 }
 
+void
+event_init (event_t ** event, struct _hkey_t start, struct _hkey_t end,
+	    int give, char *key)
+{
+    *event = malloc (sizeof (event_t));
+    (*event)->give = give;
+    memcpy (&((*event)->start), &start, sizeof (struct _hkey_t));
+    memcpy (&((*event)->end), &end, sizeof (struct _hkey_t));
+    strcpy ((*event)->key, key);
+
+}
+
 event_t *
 events_search (zlist_t * events, action_t * action)
 {
@@ -464,7 +476,10 @@ events_remove (zlist_t * events, node_t * node)
 {
 
     event_t *iter = zlist_first (events);
+
     while (iter) {
+	fprintf (stderr, "\nevents_remove:iter->key :%s", iter->key);
+
 	if (strcmp (node->key, iter->key) == 0) {
 	    zlist_remove (events, iter);
 	    free (iter);

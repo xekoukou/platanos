@@ -3,3 +3,4 @@ zeromq
 zookeeper_mt
 czmq
 leveldb
+libgoogle-perftools-dev

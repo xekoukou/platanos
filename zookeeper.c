@@ -511,6 +511,7 @@ ozookeeper_update_add_node (ozookeeper_t * ozookeeper, int db, char *key,
     fprintf (stderr,
 	     "\nzookeeper_add_node\nkey:%s\nn_pieces:%d\nst_piece:%lu", key,
 	     n_pieces, st_piece);
+    zclock_sleep (1000);
     ozookeeper_update (ozookeeper, &msg, db);
 }
 
@@ -1392,13 +1393,13 @@ computers (ozookeeper_t * ozookeeper, int start)
     for (siter = 0; siter < size; siter++) {
 	if (array[siter] == 0) {
 	    deallocate_String_vector (&
-				      (ozookeeper->
-				       updater.w_resources[siter]));
+				      (ozookeeper->updater.
+				       w_resources[siter]));
 	    free (ozookeeper->updater.w_online[siter]);
 
 	    deallocate_String_vector (&
-				      (ozookeeper->
-				       updater.db_resources[siter]));
+				      (ozookeeper->updater.
+				       db_resources[siter]));
 	    free (ozookeeper->updater.db_online[siter]);
 
 	}
