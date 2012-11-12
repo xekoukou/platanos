@@ -27,6 +27,7 @@
 #include"common.h"
 #include"worker.h"
 #include"db.h"
+#include<stdlib.h>
 
 #define RESEND_INTERVAL 1000
 
@@ -37,7 +38,7 @@ ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
 		 void *w_pub, void *w_router, void *db_pub, void *db_router)
 {
 
-    *ozookeeper = (ozookeeper_t *) malloc (sizeof (ozookeeper_t));
+    *ozookeeper = malloc (sizeof (ozookeeper_t));
 
     (*ozookeeper)->config = config;
     (*ozookeeper)->w_pub = w_pub;
@@ -308,7 +309,7 @@ oz_updater_init (oz_updater_t * updater)
 void
 oz_updater_key (oz_updater_t * updater, char *key)
 {
-    updater->key = (char *) malloc (strlen (key) + 1);
+    updater->key = malloc (strlen (key) + 1);
     strcpy (updater->key, key);
 }
 
@@ -567,7 +568,9 @@ void
 ozookeeper_update_go_online (ozookeeper_t * ozookeeper, int db)
 {
 
-fprintf(stderr,"\ndb:%d zookeeper_go_online: I am asking the threads to go online",db);
+    fprintf (stderr,
+	     "\ndb:%d zookeeper_go_online: I am asking the threads to go online",
+	     db);
 
     zmsg_t *msg = zmsg_new ();
     zmsg_add (msg, zframe_new ("go_online", strlen ("go_online") + 1));
@@ -693,47 +696,48 @@ online (ozookeeper_t * ozookeeper, int db, int online, int self,
 				    bind_point_bl);
 
 
-    }else{
-
-//update its status on the updater object
-    int m;
-    int n;
-    oz_updater_search (&(ozookeeper->updater), db, comp_name, res_name, &m,
-		       &n);
-    assert (m != -1);
-    assert (n != -1);
-
-
-    if (online) {
-
-	ozookeeper_update_add_node (ozookeeper, db, path, n_pieces,
-				    st_piece, bind_point_nb,
-				    bind_point_wb, bind_point_bl);
-
-	if (db) {
-	    ozookeeper->updater.db_online[m][n] = 1;
-	}
-	else {
-	    ozookeeper->updater.w_online[m][n] = 1;
-	}
     }
     else {
-//this is the case where it was previously online but now it is offline
-	if (db) {
-	    if (ozookeeper->updater.db_online[m][n] == 1) {
-		ozookeeper->updater.db_online[m][n] = 0;
-		ozookeeper_update_remove_node (ozookeeper, db, path);
+
+//update its status on the updater object
+	int m;
+	int n;
+	oz_updater_search (&(ozookeeper->updater), db, comp_name, res_name,
+			   &m, &n);
+	assert (m != -1);
+	assert (n != -1);
+
+
+	if (online) {
+
+	    ozookeeper_update_add_node (ozookeeper, db, path, n_pieces,
+					st_piece, bind_point_nb,
+					bind_point_wb, bind_point_bl);
+
+	    if (db) {
+		ozookeeper->updater.db_online[m][n] = 1;
+	    }
+	    else {
+		ozookeeper->updater.w_online[m][n] = 1;
 	    }
 	}
 	else {
-	    if (ozookeeper->updater.w_online[m][n] == 1) {
-		ozookeeper->updater.w_online[m][n] = 0;
-		ozookeeper_update_remove_node (ozookeeper, db, path);
+//this is the case where it was previously online but now it is offline
+	    if (db) {
+		if (ozookeeper->updater.db_online[m][n] == 1) {
+		    ozookeeper->updater.db_online[m][n] = 0;
+		    ozookeeper_update_remove_node (ozookeeper, db, path);
+		}
 	    }
+	    else {
+		if (ozookeeper->updater.w_online[m][n] == 1) {
+		    ozookeeper->updater.w_online[m][n] = 0;
+		    ozookeeper_update_remove_node (ozookeeper, db, path);
+		}
 
+	    }
 	}
     }
-}
 
 }
 
@@ -759,13 +763,13 @@ w_online (zhandle_t * zh, int type,
     int temp_size;
     part_path (path, 2, &temp, &temp_size);
     strncpy (res_name, temp, temp_size);
-    res_name[temp_size]='\0';
+    res_name[temp_size] = '\0';
     part_path (path, 3, &temp, &temp_size);
     strncpy (kind, temp, temp_size);
-    kind[temp_size]='\0';
+    kind[temp_size] = '\0';
     part_path (path, 4, &temp, &temp_size);
     strncpy (comp_name, temp, temp_size);
-    comp_name[temp_size]='\0';
+    comp_name[temp_size] = '\0';
 
     if (strcmp (kind, "worker_nodes") == 0) {
 	db = 0;
@@ -834,13 +838,13 @@ w_st_piece (zhandle_t * zh, int type,
     int temp_size;
     part_path ((const char *) path, 2, &temp, &temp_size);
     strncpy (res_name, temp, temp_size);
-    res_name[temp_size]='\0';
+    res_name[temp_size] = '\0';
     part_path (path, 3, &temp, &temp_size);
     strncpy (kind, temp, temp_size);
-    kind[temp_size]='\0';
+    kind[temp_size] = '\0';
     part_path (path, 4, &temp, &temp_size);
     strncpy (comp_name, temp, temp_size);
-    comp_name[temp_size]='\0';
+    comp_name[temp_size] = '\0';
 
 
     if (strcmp (kind, "worker_nodes") == 0) {
@@ -947,13 +951,13 @@ w_n_pieces (zhandle_t * zh, int type,
     int temp_size;
     part_path ((const char *) path, 2, &temp, &temp_size);
     strncpy (res_name, temp, temp_size);
-    res_name[temp_size]='\0';
+    res_name[temp_size] = '\0';
     part_path (path, 3, &temp, &temp_size);
     strncpy (kind, temp, temp_size);
-    kind[temp_size]='\0';
+    kind[temp_size] = '\0';
     part_path (path, 4, &temp, &temp_size);
     strncpy (comp_name, temp, temp_size);
-    comp_name[temp_size]='\0';
+    comp_name[temp_size] = '\0';
 
 
     if (strcmp (kind, "worker_nodes") == 0) {
@@ -1074,10 +1078,10 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
     int temp_size;
     part_path (path, 2, &temp, &temp_size);
     strncpy (comp_name, temp, temp_size);
-    comp_name[temp_size]='\0';
+    comp_name[temp_size] = '\0';
     part_path (path, 1, &temp, &temp_size);
     strncpy (kind, temp, temp_size);
-    kind[temp_size]='\0';
+    kind[temp_size] = '\0';
 
     if (strcmp (kind, "worker_nodes") == 0) {
 	db = 0;
@@ -1170,7 +1174,7 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
 
 
 //i use this in case there is a reordering of the existing children
-	    int *sort = (int *) malloc (sizeof (int) * resources.count);
+	    int *sort = malloc (sizeof (int) * resources.count);
 //update the online vector
 	    int *online_vector =
 		(int *) calloc (resources.count, sizeof (int));
@@ -1302,7 +1306,7 @@ computers (ozookeeper_t * ozookeeper, int start)
     assert (result == ZOK);
 
 //i use this in case there is a reordering of the existing children
-    int *sort = (int *) malloc (sizeof (int) * computers.count);
+    int *sort = malloc (sizeof (int) * computers.count);
 //array to free the previous resources
 //TODO calloc puts things to zero?
     int size = ozookeeper->updater.computers.count;
@@ -1339,18 +1343,16 @@ computers (ozookeeper_t * ozookeeper, int start)
 
 //I allocate the new resources and set watches to new computer's resources
     struct String_vector *new_w_resources =
-	(struct String_vector *) malloc (sizeof (struct String_vector)
-					 * computers.count);
+	malloc (sizeof (struct String_vector)
+		* computers.count);
 
-    int **new_w_online_matrix =
-	(int **) malloc (sizeof (int *) * computers.count);
+    int **new_w_online_matrix = malloc (sizeof (int *) * computers.count);
 
     struct String_vector *new_db_resources =
-	(struct String_vector *) malloc (sizeof (struct String_vector)
-					 * computers.count);
+	malloc (sizeof (struct String_vector)
+		* computers.count);
 
-    int **new_db_online_matrix =
-	(int **) malloc (sizeof (int *) * computers.count);
+    int **new_db_online_matrix = malloc (sizeof (int *) * computers.count);
 
 
 //obtain the previous data
@@ -1390,13 +1392,13 @@ computers (ozookeeper_t * ozookeeper, int start)
     for (siter = 0; siter < size; siter++) {
 	if (array[siter] == 0) {
 	    deallocate_String_vector (&
-				      (ozookeeper->updater.
-				       w_resources[siter]));
+				      (ozookeeper->
+				       updater.w_resources[siter]));
 	    free (ozookeeper->updater.w_online[siter]);
 
 	    deallocate_String_vector (&
-				      (ozookeeper->updater.
-				       db_resources[siter]));
+				      (ozookeeper->
+				       updater.db_resources[siter]));
 	    free (ozookeeper->updater.db_online[siter]);
 
 	}
@@ -1404,6 +1406,9 @@ computers (ozookeeper_t * ozookeeper, int start)
     }
     if (ozookeeper->updater.w_resources != NULL) {
 	free (ozookeeper->updater.w_resources);
+	assert (ozookeeper->updater.w_online != NULL);
+	assert (ozookeeper->updater.db_resources != NULL);
+	assert (ozookeeper->updater.db_online != NULL);
 	free (ozookeeper->updater.w_online);
 
 	free (ozookeeper->updater.db_resources);

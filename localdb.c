@@ -34,7 +34,7 @@
 void
 localdb_init (localdb_t ** localdb, char *id)
 {
-    *localdb = (localdb_t *) malloc (sizeof (localdb_t));
+    *localdb = malloc (sizeof (localdb_t));
 
     char *errptr = NULL;
 

@@ -21,12 +21,14 @@
 
 #include"db.h"
 #include"zookeeper.h"
-
+#include<stdlib.h>
 
 void
 dbs_init (dbs_t ** dbs, struct ozookeeper_t *ozookeeper)
 {
 //TODO
+
+    *dbs = malloc (sizeof (dbs_t));
 
     (*dbs)->size = 0;
 

@@ -29,7 +29,7 @@
 #include"vertex.h"
 #include"aknowledgements.h"
 #include"sleep.h"
-
+#include<stdlib.h>
 
 //TODO this is arbitrary
 #define ONGOING_TIMEOUT 10000
@@ -476,8 +476,7 @@ worker_balance (balance_t * balance)
 		    if (count - iter->counter > 1) {
 //I have missed the previous chunck
 
-			uint64_t *counter =
-			    (uint64_t *) malloc (sizeof (uint64_t));
+			uint64_t *counter = malloc (sizeof (uint64_t));
 			memcpy (counter, zframe_data (frame),
 				sizeof (uint64_t));
 			zlist_append (iter->m_counters, counter);
@@ -1117,7 +1116,7 @@ go_online (worker_t * worker)
 			     0);
     assert (result == ZOK);
 
-    fprintf(stderr,"\nWorker with id: %s has gone online",worker->id);
+    fprintf (stderr, "\nWorker with id: %s has gone online", worker->id);
 
 
 }
@@ -1257,7 +1256,7 @@ worker_fn (void *arg)
     void *self_wb = zsocket_new (ctx, ZMQ_DEALER);
     void *self_nb = zsocket_new (ctx, ZMQ_DEALER);
 
-    char *identity = (char *) malloc (1000);
+    char *identity = malloc (1000);
 
     sprintf (identity, "%swb", worker->id);
     zmq_setsockopt (self_wb, ZMQ_IDENTITY, identity, strlen (identity));
@@ -1362,7 +1361,7 @@ compute_init (compute_t ** compute, khash_t (vertices) * hash,
 	      localdb_t * localdb, worker_t * worker)
 {
 
-    *compute = (compute_t *) malloc (sizeof (compute_t));
+    *compute = malloc (sizeof (compute_t));
 
     (*compute)->router = router;
     (*compute)->events = events;
@@ -1416,14 +1415,13 @@ worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
 	     char *comp_name, char *res_name)
 {
 
-    *worker = (worker_t *) malloc (sizeof (worker_t));
+    *worker = malloc (sizeof (worker_t));
     (*worker)->zh = zh;
-    (*worker)->res_name = (char *) malloc (strlen (res_name) + 1);
+    (*worker)->res_name = malloc (strlen (res_name) + 1);
     strcpy ((*worker)->res_name, res_name);
-    (*worker)->comp_name = (char *) malloc (strlen (comp_name) + 1);
+    (*worker)->comp_name = malloc (strlen (comp_name) + 1);
     strcpy ((*worker)->comp_name, comp_name);
-    (*worker)->id =
-	(char *) malloc (strlen (comp_name) + strlen (res_name) + 1);
+    (*worker)->id = malloc (strlen (comp_name) + strlen (res_name) + 1);
     sprintf ((*worker)->id, "%s%s", comp_name, res_name);
     (*worker)->config = config;
 }
@@ -1448,12 +1446,11 @@ workers_init (workers_t ** workers, ozookeeper_t * ozookeeper)
     if (ZOK == result) {
 
 //mallocing
-	*workers = (workers_t *) malloc (sizeof (workers_t));
+	*workers = malloc (sizeof (workers_t));
 	(*workers)->size = worker_children.count;
-	(*workers)->id =
-	    (char **) malloc (sizeof (char *) * (worker_children.count));
+	(*workers)->id = malloc (sizeof (char *) * (worker_children.count));
 	(*workers)->pthread =
-	    (pthread_t *) malloc (sizeof (pthread_t) * worker_children.count);
+	    malloc (sizeof (pthread_t) * worker_children.count);
 
 //create the threads
 
@@ -1462,8 +1459,8 @@ workers_init (workers_t ** workers, ozookeeper_t * ozookeeper)
 	    worker_t *worker;
 	    for (iter = 0; iter < worker_children.count; iter++) {
 		(*workers)->id[iter] =
-		    (char *) malloc (strlen (worker_children.data[iter]) + 1 +
-				     strlen (comp_name));
+		    malloc (strlen (worker_children.data[iter]) + 1 +
+			    strlen (comp_name));
 
 		sprintf ((*workers)->id[iter], "%s%s", comp_name,
 			 worker_children.data[iter]);

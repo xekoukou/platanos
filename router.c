@@ -77,7 +77,7 @@ void
 router_init (struct router_t **router, int type)
 {
 
-    *router = (struct router_t *) malloc (sizeof (struct router_t));
+    *router = malloc (sizeof (struct router_t));
 
     (*router)->type = type;
     RB_INIT (&((*router)->hash_rb));
@@ -118,7 +118,7 @@ router_add (struct router_t *router, node_t * node)
 	node_piece (node->key, iter + node->st_piece, key);
 
 
-	hash[iter] = (struct hash_t *) malloc (sizeof (struct hash_t));
+	hash[iter] = malloc (sizeof (struct hash_t));
 	hash[iter]->node = node;
 
 	MurmurHash3_x64_128 ((void *) key, strlen (key), 0,
@@ -324,10 +324,8 @@ router_events (router_t * router, node_t * node, int removal)
 	if (dif_st_piece) {
 	    assert (dif_n_pieces == 0);
 
-	    hash =
-		(struct hash_t *) malloc (dif_st_piece * 2 *
-					  sizeof (struct hash_t));
-	    remove = (int *) malloc (dif_st_piece * 2 * sizeof (int));
+	    hash = malloc (dif_st_piece * 2 * sizeof (struct hash_t));
+	    remove = malloc (dif_st_piece * 2 * sizeof (int));
 	    size = dif_st_piece * 2;
 
 	    char key[1000];
@@ -357,10 +355,8 @@ router_events (router_t * router, node_t * node, int removal)
 	if (dif_n_pieces) {
 	    assert (dif_st_piece == 0);
 
-	    hash =
-		(struct hash_t *) malloc (dif_n_pieces *
-					  sizeof (struct hash_t));
-	    remove = (int *) malloc (dif_n_pieces * sizeof (int));
+	    hash = malloc (dif_n_pieces * sizeof (struct hash_t));
+	    remove = malloc (dif_n_pieces * sizeof (int));
 	    size = dif_n_pieces;
 	    char key[1000];
 	    int iter = dif_n_pieces;
@@ -386,10 +382,8 @@ router_events (router_t * router, node_t * node, int removal)
 
 	if (doesnt_exist) {
 
-	    hash =
-		(struct hash_t *) malloc (node->n_pieces *
-					  sizeof (struct hash_t));
-	    remove = (int *) malloc (node->n_pieces * sizeof (int));
+	    hash = malloc (node->n_pieces * sizeof (struct hash_t));
+	    remove = malloc (node->n_pieces * sizeof (int));
 	    size = node->n_pieces;
 	    char key[1000];
 	    int iter = node->n_pieces;
@@ -415,10 +409,8 @@ router_events (router_t * router, node_t * node, int removal)
     }
     else {
 //the case where we remove a node
-	hash =
-	    (struct hash_t *) malloc (node->n_pieces *
-				      sizeof (struct hash_t));
-	remove = (int *) malloc (node->n_pieces * sizeof (int));
+	hash = malloc (node->n_pieces * sizeof (struct hash_t));
+	remove = malloc (node->n_pieces * sizeof (int));
 	size = node->n_pieces;
 	char key[1000];
 	int iter = node->n_pieces;
@@ -577,7 +569,7 @@ router_events (router_t * router, node_t * node, int removal)
 	    if (forward == NULL) {
 // only one event
 		sizee = 1;
-		event = (event_t *) malloc (sizeof (event_t));
+		event = malloc (sizeof (event_t));
 
 		event->give = 0;
 		event->start.prefix = 0;
@@ -646,7 +638,7 @@ router_events (router_t * router, node_t * node, int removal)
 
 
 //create the event 
-		    event = (event_t *) malloc (sizeof (event_t));
+		    event = malloc (sizeof (event_t));
 		    event->start = backward->hkey;
 		    event->end = hash[iter].hkey;
 
@@ -760,7 +752,7 @@ node_init (node_t ** node, char *key, int n_pieces,
 	   char *bind_point_bl)
 {
 
-    *node = (node_t *) malloc (sizeof (node_t));
+    *node = malloc (sizeof (node_t));
     strcpy ((*node)->key, key);
     (*node)->n_pieces = n_pieces;
     (*node)->st_piece = st_piece;
@@ -774,7 +766,7 @@ node_t *
 node_dup (node_t * node)
 {
 
-    node_t *new_node = (node_t *) malloc (sizeof (node_t));
+    node_t *new_node = malloc (sizeof (node_t));
     memcpy (new_node, node, sizeof (node_t));
     return new_node;
 }

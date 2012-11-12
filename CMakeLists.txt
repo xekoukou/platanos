@@ -45,4 +45,4 @@ zookeeper.c
 main.c
 )
 
-target_link_libraries(node_exec MurmurHash zookeeper_mt proc czmq leveldb)
+target_link_libraries(node_exec MurmurHash zookeeper_mt proc czmq leveldb tcmalloc)

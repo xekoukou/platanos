@@ -34,7 +34,7 @@ oconfig_init (oconfig_t ** config)
 {
 
 
-    *config = (oconfig_t *) malloc (sizeof (oconfig_t));
+    *config = malloc (sizeof (oconfig_t));
 
 //Open the configuration file
     FILE *fconfig = fopen ("./config", "r");

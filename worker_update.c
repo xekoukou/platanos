@@ -27,6 +27,7 @@
 #include"hash/khash.h"
 #include"btree/kbtree.h"
 #include"aknowledgements.h"
+#include<stdlib.h>
 
 //TODO this is arbitrary
 #define ONGOING_TIMEOUT 10000
@@ -35,7 +36,7 @@ void
 update_init (update_t ** update, void *dealer, router_t * router,
 	     balance_t * balance, compute_t * compute)
 {
-    *update = (update_t *) malloc (sizeof (update_t));
+    *update = malloc (sizeof (update_t));
     (*update)->id = 0;
     (*update)->dealer = dealer;
     (*update)->router = router;
@@ -46,7 +47,7 @@ update_init (update_t ** update, void *dealer, router_t * router,
 void
 on_give_init (on_give_t ** on_give, event_t * event, int un_id)
 {
-    *on_give = (on_give_t *) malloc (sizeof (on_give_t));
+    *on_give = malloc (sizeof (on_give_t));
     (*on_give)->event = event;
     (*on_give)->unc_vertices = zlist_new ();
     (*on_give)->rec_counter = 0;
@@ -71,7 +72,7 @@ on_give_destroy (on_give_t * on_give)
 void
 on_receive_init (on_receive_t ** on_receive, zmsg_t * msg)
 {
-    *on_receive = (on_receive_t *) malloc (sizeof (on_receive_t));
+    *on_receive = malloc (sizeof (on_receive_t));
 
     zframe_t *frame = zmsg_pop (msg);
     memcpy (&((*on_receive)->un_id), zframe_data (frame), sizeof (int));
@@ -102,7 +103,7 @@ balance_init (balance_t ** balance, khash_t (vertices) * hash,
 	      void *router_bl, void *self_bl, char *self_key)
 {
 
-    *balance = (balance_t *) malloc (sizeof (balance_t));
+    *balance = malloc (sizeof (balance_t));
     (*balance)->hash = hash;
     (*balance)->router_bl = router_bl;
     (*balance)->self_bl = self_bl;

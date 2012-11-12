@@ -46,7 +46,7 @@ cmp_smsg_t (struct smsg_t *first, struct smsg_t *second)
 void
 sleep_init (sleep_t ** sleep)
 {
-    *sleep = (sleep_t *) malloc (sizeof (sleep_t));
+    *sleep = malloc (sizeof (sleep_t));
     RB_INIT (&((*sleep)->smsg_rb));
     (*sleep)->timeout = -1;
     (*sleep)->pr_time = zclock_time ();

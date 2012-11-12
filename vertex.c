@@ -21,11 +21,11 @@
 
 
 #include"vertex.h"
-
+#include<stdlib.h>
 
 void
 vertex_init (vertex_t ** vertex)
 {
-    *vertex = (vertex_t *) malloc (sizeof (vertex_t));
+    *vertex = malloc (sizeof (vertex_t));
 
 }

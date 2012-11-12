@@ -1,4 +1,29 @@
+/*
+    Copyright contributors as noted in the AUTHORS file.
+                
+    This file is part of PLATANOS.
+
+    PLATANOS is free software; you can redistribute it and/or modify it under
+    the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+            
+    PLATANOS is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+        
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
+
+
+
+
 #include <stdint.h>
+#include <stdlib.h>
 #include <stddef.h>
 #include "tree/tree.h"
 #include"router.h"
@@ -50,7 +75,7 @@ RB_GENERATE (intervals_t, interval_t, field, cmp_interval_t);
 void
 intervals_init (intervals_t ** intervals)
 {
-    *intervals = (intervals_t *) malloc (sizeof (intervals_t));
+    *intervals = malloc (sizeof (intervals_t));
     RB_INIT (*intervals);
 }
 
@@ -59,7 +84,7 @@ void
 interval_init (interval_t ** interval, struct _hkey_t *start,
 	       struct _hkey_t *end)
 {
-    *interval = (interval_t *) malloc (sizeof (interval_t));
+    *interval = malloc (sizeof (interval_t));
     memcpy (&((*interval)->start), start, sizeof (struct _hkey_t));
     memcpy (&((*interval)->end), end, sizeof (struct _hkey_t));
 
@@ -69,7 +94,7 @@ void
 interval_minit (interval_t ** interval, zmsg_t * msg)
 {
 
-    *interval = (interval_t *) malloc (sizeof (interval_t));
+    *interval = malloc (sizeof (interval_t));
 
     zframe_t *frame = zmsg_first (msg);
     frame = zmsg_next (msg);
@@ -557,7 +582,7 @@ void
 action_minit (action_t ** action, zmsg_t * msg)
 {
 
-    *action = (action_t *) malloc (sizeof (action_t));
+    *action = malloc (sizeof (action_t));
 
     zframe_t *frame = zmsg_first (msg);
     memcpy ((*action)->key, zframe_data (frame), zframe_size (frame));
