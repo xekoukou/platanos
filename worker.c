@@ -725,7 +725,7 @@ update_n_pieces (update_t * update, zmsg_t * msg)
 		interval_init (&interval, &(event->start), &(event->end));
 		intervals_remove (update->balance->intervals, interval);
 
-//update un_id;
+//update un_id
 		if (update->balance->un_id > 1000000000) {
 		    update->balance->un_id = 1;
 		}
@@ -971,8 +971,21 @@ add_node (update_t * update, zmsg_t * msg)
     if (0 == router_add (update->router, node)) {
 	free (node);
     }
-    event_t *event;
-    while ((event = zlist_pop (events))) {
+    event_t *event = zlist_pop (events);
+    if (event && (strcmp (event->key, "\0") == 0)) {
+
+	interval_t *interval;
+	interval_init (&interval, &(event->start), &(event->end));
+	intervals_add (update->balance->intervals, interval);
+	free (event);
+	event = zlist_pop (events);
+	assert (event == NULL);
+    }
+
+    while (event) {
+
+	assert (event->give == 1);
+
 //check if there is an action that this event describes
 	if (0 == actions_update (update->balance->actions, event)) {
 
@@ -1024,6 +1037,7 @@ add_node (update_t * update, zmsg_t * msg)
 //do nothing, the event has already happened
 	    free (event);
 	}
+	event = zlist_pop (events);
     }
     zlist_destroy (&events);
 

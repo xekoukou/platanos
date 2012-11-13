@@ -211,19 +211,25 @@ intervals_add (intervals_t * intervals, interval_t * interval)
 
     interval_below = RB_NFIND (intervals_t, intervals, interval);
 
+    if (interval_below != NULL) {
 //2 intervals should never overlap
-    assert (memcmp
-	    (&(interval_below->end), &(interval->end),
-	     sizeof (struct _hkey_t)) != 0);
+	assert (memcmp
+		(&(interval_below->end), &(interval->end),
+		 sizeof (struct _hkey_t)) != 0);
+    }
 
 //in case the end of the interval is in the other side of the circle
     if (interval_below == NULL) {
 
 	interval_below = RB_MIN (intervals_t, intervals);
-	assert (memcmp
-		(&(interval_below->end), &(interval->end),
-		 sizeof (struct _hkey_t))
-		!= 0);
+
+	if (interval_below != NULL) {
+//2 intervals should never overlap
+	    assert (memcmp
+		    (&(interval_below->end), &(interval->end),
+		     sizeof (struct _hkey_t)) != 0);
+	}
+
     }
 
     if (interval_below) {
@@ -453,8 +459,12 @@ event_init (event_t ** event, struct _hkey_t start, struct _hkey_t end,
     (*event)->give = give;
     memcpy (&((*event)->start), &start, sizeof (struct _hkey_t));
     memcpy (&((*event)->end), &end, sizeof (struct _hkey_t));
-    strcpy ((*event)->key, key);
-
+    if (key) {
+	strcpy ((*event)->key, key);
+    }
+    else {
+	strcpy ((*event)->key, "\0");
+    }
 }
 
 event_t *
@@ -541,6 +551,7 @@ events_possible (zlist_t * events, intervals_t * intervals)
 int
 event_possible (event_t * event, intervals_t * intervals)
 {
+    assert (event->key);
 
     interval_t *interval;
     interval_init (&interval, &(event->start), &(event->end));
@@ -554,7 +565,6 @@ event_possible (event_t * event, intervals_t * intervals)
     }
     free (interval);
     return 0;
-
 
 }
 

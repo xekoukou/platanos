@@ -587,7 +587,7 @@ router_events (router_t * router, node_t * node, int removal)
 		interval_t *small_interval = NULL;
 
 //using the small interval to prove whether a hash is bigger or smaller to another hash according to the orientation
-                 int siter;
+		int siter;
 		for (siter = 0; siter < size; siter++) {
 		    if (remove[siter] == 1) {
 			if (small_interval == NULL) {
@@ -639,11 +639,11 @@ router_events (router_t * router, node_t * node, int removal)
 				   &(limit->hkey));
 
 
-		    if (interval_belongs_h (interval,  &(ask->hkey))) {
+		    if (interval_belongs_h (interval, &(ask->hkey))) {
 
 			ask_greater_limit = 0;
 		    }
-                free(interval);
+		    free (interval);
 		}
 
 		event_t *event;
