@@ -128,7 +128,7 @@ router_add (struct router_t *router, node_t * node)
 	    //delete the previous hashes
 	    int siter;
 	    for (siter = 0; siter < iter; siter++) {
-		RB_INSERT (hash_rb_t, &(router->hash_rb), hash[siter]);
+		RB_REMOVE (hash_rb_t, &(router->hash_rb), hash[siter]);
 		free (hash[siter]);
 	    }
 	    return 0;
@@ -460,7 +460,7 @@ router_events (router_t * router, node_t * node, int removal)
 		int triter;
 		for (triter = 0; triter < size; triter++) {
 		    if (cmp_hash_t (&(hash[triter]), forward) == 0) {
-			assert (remove[triter] != 1);
+			assert (remove[triter] != 0);
 			limit = &(hash[triter]);
 
 			remove[triter] = 2;
@@ -489,7 +489,7 @@ router_events (router_t * router, node_t * node, int removal)
 		    for (triter = 0; triter < size; triter++) {
 			if (cmp_hash_t (&(hash[triter]), forward) == 0) {
 
-			    assert (remove[triter] != 1);
+			    assert (remove[triter] != 0);
 			    limit = &(hash[triter]);
 
 
@@ -523,7 +523,7 @@ router_events (router_t * router, node_t * node, int removal)
 		    int triter;
 		    for (triter = 0; triter < size; triter++) {
 			if (cmp_hash_t (&(hash[triter]), backward) == 0) {
-			    assert (remove[triter] != 1);
+			    assert (remove[triter] != 0);
 			    if (!limit) {
 				limit = &(hash[triter]);
 
@@ -552,7 +552,7 @@ router_events (router_t * router, node_t * node, int removal)
 			int triter;
 			for (triter = 0; triter < size; triter++) {
 			    if (cmp_hash_t (&(hash[triter]), backward) == 0) {
-				assert (remove[triter] != 1);
+				assert (remove[triter] != 0);
 				if (!limit) {
 				    limit = &(hash[triter]);
 
@@ -577,7 +577,13 @@ router_events (router_t * router, node_t * node, int removal)
 		}
 
 
-		//find the rest of the hashes that are inside the interval forward<-backward
+		if (!limit) {
+
+		    limit = backward;
+		}
+
+
+		//find the rest(ie the added ones) of the hashes that are inside the interval forward<-backward
 		//disable them while also finding the ask hash
 
 
@@ -589,19 +595,23 @@ router_events (router_t * router, node_t * node, int removal)
 //using the small interval to prove whether a hash is bigger or smaller to another hash according to the orientation
 		int siter;
 		for (siter = 0; siter < size; siter++) {
-		    if (remove[siter] == 1) {
-			if (small_interval == NULL) {
+		    if (remove[siter] == 0) {
+
+			if (interval_belongs_h
+			    (big_interval, &(hash[siter].hkey))) {
+
+			    if (small_interval == NULL) {
 //happens only at the beggining
-			    interval_init (&small_interval,
-					   &(backward->hkey),
-					   &(hash[siter].hkey));
+				interval_init (&small_interval,
+					       &(backward->hkey),
+					       &(hash[siter].hkey));
 
-			    ask = &(hash[siter]);
-			}
-			else {
+				ask = &(hash[siter]);
+				remove[siter] = 2;
+			    }
+			    else {
 
-			    if (interval_belongs_h
-				(big_interval, &(hash[siter].hkey))) {
+
 				if (interval_belongs_h
 				    (small_interval, &(hash[siter].hkey))) {
 
@@ -620,6 +630,7 @@ router_events (router_t * router, node_t * node, int removal)
 				    ask = &(hash[siter]);
 				    remove[siter] = 2;
 				}
+
 			    }
 			}
 		    }
@@ -630,39 +641,39 @@ router_events (router_t * router, node_t * node, int removal)
 		}
 		free (big_interval);
 
-		int ask_greater_limit = 1;
-
 		if (!ask) {
 
-		    interval_t *interval;
-		    interval_init (&interval, &(backward->hkey),
-				   &(limit->hkey));
-
-
-		    if (interval_belongs_h (interval, &(ask->hkey))) {
-
-			ask_greater_limit = 0;
-		    }
-		    free (interval);
+		    ask = backward;
 		}
+		assert (limit != ask);
+
+		int ask_greater_limit;
+
+
+		interval_t *interval;
+		interval_init (&interval, &(backward->hkey), &(limit->hkey));
+
+
+		if (interval_belongs_h (interval, &(ask->hkey))) {
+
+		    ask_greater_limit = 0;
+		}
+		else {
+		    ask_greater_limit = 0;
+
+		}
+		free (interval);
 
 		event_t *event;
 
-		if (!ask || !ask_greater_limit) {
+		if (!ask_greater_limit) {
 
 //it gives
 		    if (strcmp (forward->node->key, router->self->key) != 0) {
-			if (ask) {
-			    event_init (&event, ask->hkey, limit->hkey, 1,
-					forward->node->key);
+			event_init (&event, ask->hkey, limit->hkey, 1,
+				    forward->node->key);
+			assert (strcmp (event->key, "\0") != 0);
 
-			}
-			else {
-
-			    event_init (&event, backward->hkey, limit->hkey,
-					1, forward->node->key);
-
-			}
 		    }
 
 		}
@@ -673,6 +684,7 @@ router_events (router_t * router, node_t * node, int removal)
 
 			event_init (&event, limit->hkey, ask->hkey, 0,
 				    forward->node->key);
+			assert (strcmp (event->key, "\0") != 0);
 
 		    }
 		}
@@ -725,6 +737,7 @@ router_events (router_t * router, node_t * node, int removal)
 	    }
 	}
     }
+
     free (hash);
     free (remove);
 

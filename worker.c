@@ -968,10 +968,22 @@ add_node (update_t * update, zmsg_t * msg)
 
 //update router object
 //this should always happen after the prev step
-    if (0 == router_add (update->router, node)) {
-	free (node);
+    assert (1 == router_add (update->router, node));
+
+    fprintf (stderr, "\nworker_update:size of event list: %lu",
+	     zlist_size (events));
+    event_t *event = zlist_first (events);
+    int iter = 0;
+    while (event) {
+	iter++;
+	fprintf (stderr,
+		 "\nevent %d \n start: %lu %lu \n end: %lu %lu \n key: %s \n give: %d",
+		 iter, event->start.prefix, event->start.suffix,
+		 event->end.prefix, event->end.suffix, event->key,
+		 event->give);
+	event = zlist_next (events);
     }
-    event_t *event = zlist_pop (events);
+    event = zlist_pop (events);
     if (event && (strcmp (event->key, "\0") == 0)) {
 
 	interval_t *interval;
