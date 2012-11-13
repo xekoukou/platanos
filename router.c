@@ -664,7 +664,7 @@ router_events (router_t * router, node_t * node, int removal)
 		}
 		free (interval);
 
-		event_t *event;
+		event_t *event=NULL;
 
 		if (!ask_greater_limit) {
 

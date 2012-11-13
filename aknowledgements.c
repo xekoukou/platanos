@@ -488,7 +488,6 @@ events_remove (zlist_t * events, node_t * node)
     event_t *iter = zlist_first (events);
 
     while (iter) {
-	fprintf (stderr, "\nevents_remove:iter->key :%s", iter->key);
 
 	if (strcmp (node->key, iter->key) == 0) {
 	    zlist_remove (events, iter);
