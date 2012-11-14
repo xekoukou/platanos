@@ -671,7 +671,7 @@ router_events (router_t * router, node_t * node, int removal)
 //it gives
 		    if (strcmp (forward->node->key, router->self->key) == 0) {
 			event_init (&event, ask->hkey, limit->hkey, 0,
-				    forward->node->key);
+				    node->key);
 			assert (strcmp (event->key, "\0") != 0);
 
 		    }
@@ -691,7 +691,7 @@ router_events (router_t * router, node_t * node, int removal)
 		    if (strcmp (forward->node->key, router->self->key) == 0) {
 
 			event_init (&event, limit->hkey, ask->hkey, 1,
-				    forward->node->key);
+				    node->key);
 			assert (strcmp (event->key, "\0") != 0);
 
 		    }
