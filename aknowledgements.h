@@ -96,7 +96,7 @@ int interval_belongs (interval_t * interval, uint64_t key);
 
 void intervals_add (intervals_t * intervals, interval_t * interval);
 
-//returns true if it is contained inside one integral
+//returns the integral if it is contained inside one integral or NULL
 interval_t *intervals_contained (intervals_t * intervals,
 				 interval_t * interval);
 

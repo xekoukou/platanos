@@ -250,7 +250,6 @@ intervals_add (intervals_t * intervals, interval_t * interval)
 
 }
 
-//returns true if it is contained inside one integral
 interval_t *
 intervals_contained (intervals_t * intervals, interval_t * interval)
 {
@@ -262,7 +261,7 @@ intervals_contained (intervals_t * intervals, interval_t * interval)
 	reversed = 1;
     }
 
-    interval_t *iter;
+    interval_t *iter=NULL;
     RB_FOREACH (iter, intervals_t, intervals) {
 	iter_reversed = 0;
 	if ((cmp_hkey_t (&(iter->start), &(iter->end)) > 0)) {
