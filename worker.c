@@ -980,7 +980,7 @@ add_node (update_t * update, zmsg_t * msg)
 	       bind_point_bl);
 
     zlist_t *events;
-    if (start) {
+    if (!start) {
 //obtain the new events
 	events = router_events (update->router, node, 0);
     }
@@ -989,7 +989,7 @@ add_node (update_t * update, zmsg_t * msg)
 //this should always happen after the prev step
     assert (1 == router_add (update->router, node));
 
-    if (start) {
+    if (!start) {
 	fprintf (stderr, "\nworker_update:size of event list: %lu",
 		 zlist_size (events));
 	event_t *event = zlist_first (events);
