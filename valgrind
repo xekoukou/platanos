@@ -1,1 +1,1 @@
-valgrind --tool=memcheck --leak-check=full --suppressions=../valgrind.supp --soname-synonyms=somalloc=NONE APPLICATION
+valgrind --tool=memcheck --leak-check=full --suppressions=../valgrind.supp --soname-synonyms=somalloc=NONE ./node_exec
