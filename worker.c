@@ -911,7 +911,7 @@ remove_node (update_t * update, zmsg_t * msg)
 
     while ((event = zlist_pop (events))) {
 
-	assert (event->give = 0);
+	assert (event->give == 0);
 //the only possible thing that could happen would be to add 
 //the new intervals to this node
 
