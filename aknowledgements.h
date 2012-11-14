@@ -41,7 +41,7 @@
 //intervals are disjoint by default
 //we sort them by the end
 
-
+//an interval should never have end and start equal
 struct interval_t
 {
 
@@ -89,6 +89,7 @@ interval_init (interval_t ** interval, struct _hkey_t *start,
 //the msg is not deleted, it will be used to create action_t later
 void interval_minit (interval_t ** interval, zmsg_t * msg);
 
+//th interval is closed
 int interval_belongs_h (interval_t * interval, struct _hkey_t *hkey);
 
 int interval_belongs (interval_t * interval, uint64_t key);

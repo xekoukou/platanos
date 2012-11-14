@@ -893,8 +893,22 @@ remove_node (update_t * update, zmsg_t * msg)
 //this should always happen after the prev step
     router_delete (update->router, node);
 
+    fprintf (stderr, "\nremove_node:worker_update:size of event list: %lu",
+	     zlist_size (events));
+    event_t *event = zlist_first (events);
+    int iter = 0;
+    while (event) {
+	iter++;
+	fprintf (stderr,
+		 "\nevent %d \n start: %lu %lu \n end: %lu %lu \n key: %s \n give: %d",
+		 iter, event->start.prefix, event->start.suffix,
+		 event->end.prefix, event->end.suffix, event->key,
+		 event->give);
+	event = zlist_next (events);
+    }
 
-    event_t *event;
+
+
     while ((event = zlist_pop (events))) {
 
 	assert (event->give = 0);

@@ -124,45 +124,48 @@ interval_belongs_h (interval_t * interval, struct _hkey_t *hkey)
     if (cmp_hkey_t (&(interval->end), hkey) < 0) {
 	side = 1;
     }
-
-
-    if (interval) {
-	//check whether it is reversed
-	int reversed = 0;
-
-	if ((cmp_hkey_t (&(interval->start), &(interval->end)) > 0)) {
-	    reversed = 1;
+    else {
+	if (cmp_hkey_t (&(interval->end), hkey) == 0) {
+	    return 1;
 	}
-	if (!reversed && !side) {
-	    if (cmp_hkey_t (&(search.end), &(interval->start)) > 0) {
-		return 1;
+    }
 
-	    }
-	}
 
-	if (reversed && !side) {
+    //check whether it is reversed
+    int reversed = 0;
+
+    if ((cmp_hkey_t (&(interval->start), &(interval->end)) > 0)) {
+	reversed = 1;
+    }
+    if (!reversed && !side) {
+	if (cmp_hkey_t (&(search.end), &(interval->start)) >= 0) {
 	    return 1;
 
 	}
-	if (!reversed && side) {
-	    return 0;
+    }
 
-	}
-	if (reversed && side) {
-	    if (cmp_hkey_t (&(search.end), &(interval->start)) > 0) {
-		return 1;
-
-	    }
-	}
-
-
-
-
-
-
-
+    if (reversed && !side) {
+	return 1;
 
     }
+    if (!reversed && side) {
+	return 0;
+
+    }
+    if (reversed && side) {
+	if (cmp_hkey_t (&(search.end), &(interval->start)) >= 0) {
+	    return 1;
+
+	}
+    }
+
+
+
+
+
+
+
+
 //in case there is no interval
     return 0;
 }
@@ -365,6 +368,12 @@ intervals_belongs_h (intervals_t * intervals, struct _hkey_t *hkey)
 
 
     if (result) {
+
+	if (cmp_hkey_t (&(result->end), hkey) == 0) {
+	    return 1;
+	}
+
+
 	//check whether it is reversed
 	int reversed = 0;
 
@@ -372,7 +381,7 @@ intervals_belongs_h (intervals_t * intervals, struct _hkey_t *hkey)
 	    reversed = 1;
 	}
 	if (!reversed && !side) {
-	    if (cmp_hkey_t (&(search.end), &(result->start)) > 0) {
+	    if (cmp_hkey_t (&(search.end), &(result->start)) >= 0) {
 		return 1;
 
 	    }
@@ -387,7 +396,7 @@ intervals_belongs_h (intervals_t * intervals, struct _hkey_t *hkey)
 
 	}
 	if (reversed && side) {
-	    if (cmp_hkey_t (&(search.end), &(result->start)) > 0) {
+	    if (cmp_hkey_t (&(search.end), &(result->start)) >= 0) {
 		return 1;
 
 	    }
@@ -455,6 +464,8 @@ void
 event_init (event_t ** event, struct _hkey_t start, struct _hkey_t end,
 	    int give, char *key)
 {
+    assert (memcmp (&start, &end, sizeof (struct _hkey_t)) != 0);
+
     *event = malloc (sizeof (event_t));
     (*event)->give = give;
     memcpy (&((*event)->start), &start, sizeof (struct _hkey_t));

@@ -1393,13 +1393,13 @@ computers (ozookeeper_t * ozookeeper, int start)
     for (siter = 0; siter < size; siter++) {
 	if (array[siter] == 0) {
 	    deallocate_String_vector (&
-				      (ozookeeper->updater.
-				       w_resources[siter]));
+				      (ozookeeper->
+				       updater.w_resources[siter]));
 	    free (ozookeeper->updater.w_online[siter]);
 
 	    deallocate_String_vector (&
-				      (ozookeeper->updater.
-				       db_resources[siter]));
+				      (ozookeeper->
+				       updater.db_resources[siter]));
 	    free (ozookeeper->updater.db_online[siter]);
 
 	}

@@ -647,22 +647,29 @@ router_events (router_t * router, node_t * node, int removal)
 		}
 		assert (limit != ask);
 
+
 		int ask_greater_limit;
 
+		if (limit != backward) {
+		    interval_t *interval;
+		    interval_init (&interval, &(backward->hkey),
+				   &(limit->hkey));
 
-		interval_t *interval;
-		interval_init (&interval, &(backward->hkey), &(limit->hkey));
 
+		    if (interval_belongs_h (interval, &(ask->hkey))) {
 
-		if (interval_belongs_h (interval, &(ask->hkey))) {
+			ask_greater_limit = 0;
+		    }
+		    else {
+			ask_greater_limit = 1;
 
-		    ask_greater_limit = 0;
+		    }
+		    free (interval);
 		}
 		else {
 		    ask_greater_limit = 1;
 
 		}
-		free (interval);
 
 		event_t *event = NULL;
 
