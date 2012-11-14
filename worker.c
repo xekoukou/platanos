@@ -996,8 +996,6 @@ add_node (update_t * update, zmsg_t * msg)
 
     while (event) {
 
-	assert (event->give == 1);
-
 //check if there is an action that this event describes
 	if (0 == actions_update (update->balance->actions, event)) {
 

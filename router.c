@@ -659,32 +659,50 @@ router_events (router_t * router, node_t * node, int removal)
 		    ask_greater_limit = 0;
 		}
 		else {
-		    ask_greater_limit = 0;
+		    ask_greater_limit = 1;
 
 		}
 		free (interval);
 
-		event_t *event=NULL;
+		event_t *event = NULL;
 
 		if (!ask_greater_limit) {
 
 //it gives
-		    if (strcmp (forward->node->key, router->self->key) != 0) {
-			event_init (&event, ask->hkey, limit->hkey, 1,
+		    if (strcmp (forward->node->key, router->self->key) == 0) {
+			event_init (&event, ask->hkey, limit->hkey, 0,
 				    forward->node->key);
 			assert (strcmp (event->key, "\0") != 0);
 
 		    }
+		    else {
+			if (strcmp (node->key, router->self->key) == 0) {
+			    event_init (&event, ask->hkey, limit->hkey, 1,
+					forward->node->key);
+			    assert (strcmp (event->key, "\0") != 0);
 
+			}
+
+		    }
 		}
 		else {
 
 //it receives
-		    if (strcmp (forward->node->key, router->self->key) != 0) {
+		    if (strcmp (forward->node->key, router->self->key) == 0) {
 
-			event_init (&event, limit->hkey, ask->hkey, 0,
+			event_init (&event, limit->hkey, ask->hkey, 1,
 				    forward->node->key);
 			assert (strcmp (event->key, "\0") != 0);
+
+		    }
+		    else {
+
+			if (strcmp (node->key, router->self->key) == 0) {
+
+			    event_init (&event, limit->hkey, ask->hkey, 0,
+					forward->node->key);
+			    assert (strcmp (event->key, "\0") != 0);
+			}
 
 		    }
 		}
@@ -702,27 +720,29 @@ router_events (router_t * router, node_t * node, int removal)
 	    }			//forward NULL
 	    else {
 
+		//add_node can happen before add_self for a different than self node
+		if (router->self) {
+		    if (!exists
+			&& (strcmp (node->key, router->self->key) == 0)) {
+
+			event_t *event;
+			struct _hkey_t start;
+			struct _hkey_t end;
 
 
-		if (!exists) {
+			start.prefix = 0;
+			start.suffix = 0;
 
-		    event_t *event;
-		    struct _hkey_t start;
-		    struct _hkey_t end;
+			end.prefix = 0xFFFFFFFFFFFFFFFF;
+			end.suffix = 0xFFFFFFFFFFFFFFFF;
 
+			event_init (&event, start, end, 0, NULL);
 
-		    start.prefix = 0;
-		    start.suffix = 0;
-
-		    end.prefix = 0xFFFFFFFFFFFFFFFF;
-		    end.suffix = 0xFFFFFFFFFFFFFFFF;
-
-		    event_init (&event, start, end, 0, NULL);
-
-		    zlist_append (solution, event);
-		    return solution;
+			zlist_append (solution, event);
+			return solution;
 
 
+		    }
 		}
 
 
