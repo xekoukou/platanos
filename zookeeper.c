@@ -490,13 +490,14 @@ ozookeeper_update_delete_node (ozookeeper_t * ozookeeper, char *key)
 //TODO check
 //this is done when a node goes online
 void
-ozookeeper_update_add_node (ozookeeper_t * ozookeeper, int db, char *key,
-			    int n_pieces, unsigned long st_piece,
+ozookeeper_update_add_node (ozookeeper_t * ozookeeper, int db, int start,
+			    char *key, int n_pieces, unsigned long st_piece,
 			    char *bind_point_nb, char *bind_point_wb,
 			    char *bind_point_bl)
 {
     zmsg_t *msg = zmsg_new ();
     zmsg_add (msg, zframe_new ("add_node", strlen ("add_node") + 1));
+    zmsg_add (msg, zframe_new (&start, sizeof (int)));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
     zmsg_add (msg, zframe_new (&n_pieces, sizeof (int)));
     zmsg_add (msg, zframe_new (&st_piece, sizeof (unsigned long)));
@@ -592,7 +593,7 @@ w_n_pieces (zhandle_t * zh, int type,
 	    int state, const char *path, void *watcherCtx);
 
 void
-online (ozookeeper_t * ozookeeper, int db, int online, int self,
+online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
 	char *comp_name, char *res_name)
 {
     char octopus[1000];
@@ -711,7 +712,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int self,
 
 	if (online) {
 
-	    ozookeeper_update_add_node (ozookeeper, db, path, n_pieces,
+	    ozookeeper_update_add_node (ozookeeper, db, start, path, n_pieces,
 					st_piece, bind_point_nb,
 					bind_point_wb, bind_point_bl);
 
@@ -800,11 +801,11 @@ w_online (zhandle_t * zh, int type,
 	    (result =
 	     zoo_wexists (ozookeeper->zh, spath, w_online, ozookeeper,
 			  &stat))) {
-	    online (ozookeeper, db, 1, 0, comp_name, res_name);
+	    online (ozookeeper, db, 1, 0, 0, comp_name, res_name);
 	}
 	else {
 	    assert (result == ZNONODE);
-	    online (ozookeeper, db, 0, 0, comp_name, res_name);
+	    online (ozookeeper, db, 0, 0, 0, comp_name, res_name);
 	}
 
     }
@@ -1247,7 +1248,7 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
 		    if (self) {
 			onlin = 1;
 		    }
-		    online (ozookeeper, db, onlin, self, comp_name,
+		    online (ozookeeper, db, onlin, start, self, comp_name,
 			    resources.data[iter]);
 
 		}
@@ -1393,13 +1394,13 @@ computers (ozookeeper_t * ozookeeper, int start)
     for (siter = 0; siter < size; siter++) {
 	if (array[siter] == 0) {
 	    deallocate_String_vector (&
-				      (ozookeeper->
-				       updater.w_resources[siter]));
+				      (ozookeeper->updater.
+				       w_resources[siter]));
 	    free (ozookeeper->updater.w_online[siter]);
 
 	    deallocate_String_vector (&
-				      (ozookeeper->
-				       updater.db_resources[siter]));
+				      (ozookeeper->updater.
+				       db_resources[siter]));
 	    free (ozookeeper->updater.db_online[siter]);
 
 	}

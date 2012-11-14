@@ -945,6 +945,7 @@ remove_node (update_t * update, zmsg_t * msg)
 void
 add_node (update_t * update, zmsg_t * msg)
 {
+    int start;
     node_t *node;
     char key[100];
     int n_pieces;
@@ -954,7 +955,8 @@ add_node (update_t * update, zmsg_t * msg)
     char bind_point_bl[50];
 
     zframe_t *frame = zmsg_first (msg);
-
+    memcpy (&start, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
     memcpy (key, zframe_data (frame), zframe_size (frame));
     frame = zmsg_next (msg);
     memcpy (&n_pieces, zframe_data (frame), zframe_size (frame));
@@ -970,100 +972,106 @@ add_node (update_t * update, zmsg_t * msg)
 
     zmsg_destroy (&msg);
 
-    fprintf (stderr, "\nworker_add_node\nkey:%s\nn_pieces:%d\nst_piece:%lu",
-	     key, n_pieces, st_piece);
+    fprintf (stderr,
+	     "\nworker_add_node\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
+	     start, key, n_pieces, st_piece);
 
     node_init (&node, key, n_pieces, st_piece, bind_point_nb, bind_point_wb,
 	       bind_point_bl);
 
-//obtain the new events
     zlist_t *events;
-    events = router_events (update->router, node, 0);
+    if (start) {
+//obtain the new events
+	events = router_events (update->router, node, 0);
+    }
 
 //update router object
 //this should always happen after the prev step
     assert (1 == router_add (update->router, node));
 
-    fprintf (stderr, "\nworker_update:size of event list: %lu",
-	     zlist_size (events));
-    event_t *event = zlist_first (events);
-    int iter = 0;
-    while (event) {
-	iter++;
-	fprintf (stderr,
-		 "\nevent %d \n start: %lu %lu \n end: %lu %lu \n key: %s \n give: %d",
-		 iter, event->start.prefix, event->start.suffix,
-		 event->end.prefix, event->end.suffix, event->key,
-		 event->give);
-	event = zlist_next (events);
-    }
-    event = zlist_pop (events);
-    if (event && (strcmp (event->key, "\0") == 0)) {
-
-	interval_t *interval;
-	interval_init (&interval, &(event->start), &(event->end));
-	intervals_add (update->balance->intervals, interval);
-	free (event);
+    if (start) {
+	fprintf (stderr, "\nworker_update:size of event list: %lu",
+		 zlist_size (events));
+	event_t *event = zlist_first (events);
+	int iter = 0;
+	while (event) {
+	    iter++;
+	    fprintf (stderr,
+		     "\nevent %d \n start: %lu %lu \n end: %lu %lu \n key: %s \n give: %d",
+		     iter, event->start.prefix, event->start.suffix,
+		     event->end.prefix, event->end.suffix, event->key,
+		     event->give);
+	    event = zlist_next (events);
+	}
 	event = zlist_pop (events);
-	assert (event == NULL);
-    }
+	if (event && (strcmp (event->key, "\0") == 0)) {
 
-    while (event) {
+	    interval_t *interval;
+	    interval_init (&interval, &(event->start), &(event->end));
+	    intervals_add (update->balance->intervals, interval);
+	    free (event);
+	    event = zlist_pop (events);
+	    assert (event == NULL);
+	}
+
+	while (event) {
 
 //check if there is an action that this event describes
-	if (0 == actions_update (update->balance->actions, event)) {
+	    if (0 == actions_update (update->balance->actions, event)) {
 
 //check whether we can perform this event now
-	    if (event_possible (event, update->balance->intervals)) {
+		if (event_possible (event, update->balance->intervals)) {
 // perform this event
 
 //update the intervals
 
-		interval_t *interval;
-		interval_init (&interval, &(event->start), &(event->end));
-		intervals_remove (update->balance->intervals, interval);
+		    interval_t *interval;
+		    interval_init (&interval, &(event->start), &(event->end));
+		    intervals_remove (update->balance->intervals, interval);
 
 //update un_id;
-		if (update->balance->un_id > 1000000000) {
-		    update->balance->un_id = 1;
-		}
-		else {
-		    update->balance->un_id++;
-		}
+		    if (update->balance->un_id > 1000000000) {
+			update->balance->un_id = 1;
+		    }
+		    else {
+			update->balance->un_id++;
+		    }
 
 
 //create on_give object
-		on_give_t *on_give;
-		on_give_init (&on_give, event, update->balance->un_id);
+		    on_give_t *on_give;
+		    on_give_init (&on_give, event, update->balance->un_id);
 
 //update balance object
-		balance_update (update->balance, on_give);
+		    balance_update (update->balance, on_give);
 
 //put event into the events list
 //not necessary
-		zlist_append (update->balance->events, event);
+		    zlist_append (update->balance->events, event);
 
 //put on_give event into the list
-		zlist_append (update->balance->on_gives, on_give);
+		    zlist_append (update->balance->on_gives, on_give);
+
+
+		}
+		else {
+//add the event to the events
+		    zlist_append (update->balance->events, event);
+
+		}
+
 
 
 	    }
 	    else {
-//add the event to the events
-		zlist_append (update->balance->events, event);
-
-	    }
-
-
-
-	}
-	else {
 //do nothing, the event has already happened
-	    free (event);
+		free (event);
+	    }
+	    event = zlist_pop (events);
 	}
-	event = zlist_pop (events);
+	zlist_destroy (&events);
+
     }
-    zlist_destroy (&events);
 
     fprintf (stderr, "\nWorker with id: %s has added the node with id %s.",
 	     update->balance->self_key, key);

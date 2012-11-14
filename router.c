@@ -727,29 +727,26 @@ router_events (router_t * router, node_t * node, int removal)
 	    }			//forward NULL
 	    else {
 
-		//add_node can happen before add_self for a different than self node
-		if (router->self) {
-		    if (!exists
-			&& (strcmp (node->key, router->self->key) == 0)) {
+		if (!exists && (strcmp (node->key, router->self->key) == 0)) {
 
-			event_t *event;
-			struct _hkey_t start;
-			struct _hkey_t end;
+		    event_t *event;
+		    struct _hkey_t start;
+		    struct _hkey_t end;
 
 
-			start.prefix = 0;
-			start.suffix = 0;
+		    start.prefix = 0;
+		    start.suffix = 0;
 
-			end.prefix = 0xFFFFFFFFFFFFFFFF;
-			end.suffix = 0xFFFFFFFFFFFFFFFF;
+		    end.prefix = 0xFFFFFFFFFFFFFFFF;
+		    end.suffix = 0xFFFFFFFFFFFFFFFF;
 
-			event_init (&event, start, end, 0, NULL);
+		    event_init (&event, start, end, 0, NULL);
 
-			zlist_append (solution, event);
-			return solution;
+		    zlist_append (solution, event);
+		    return solution;
 
 
-		    }
+
 		}
 
 
