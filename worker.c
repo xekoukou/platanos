@@ -469,7 +469,7 @@ worker_balance (balance_t * balance)
 
 
 
-//this is necessary
+//this is necessary  ur put an else {}
 			break;
 		    }
 
@@ -551,6 +551,8 @@ worker_balance (balance_t * balance)
 	    zmsg_destroy (&msg);
 	}
 	else {
+//TODO check if I had already received that NEW_INTERVAL
+//after all we use lazy pirate
 
 	    assert (memcmp (NEW_INTERVAL, zframe_data (type_fr), 1) == 0);
 //this is an interval initiation msg
@@ -1372,17 +1374,22 @@ worker_fn (void *arg)
 //main loop
     while (1) {
 //finding the minimum timeout
+        int who=0;
 	int64_t timeout = balance->timeout;
 	if ((sleep->timeout > 0 && sleep->timeout < balance->timeout)
 	    || (balance->timeout < 0)) {
 	    timeout = sleep->timeout;
+            who=1;
 	}
 	rc = zmq_poll (pollitems, 4, timeout);
 	assert (rc != -1);
 
 //sends all msgs that their delay has expired
+        if(who){
 	worker_sleep (sleep, compute);
-
+        }else{
+        worker_balance_update(balance); 
+        }
 
 	if (pollitems[0].revents & ZMQ_POLLIN) {
 	    worker_update (update, sub);
