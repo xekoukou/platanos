@@ -904,6 +904,18 @@ remove_node (update_t * update, zmsg_t * msg)
 
     events_remove (update->balance->events, node);
 
+    int rc;
+    rc = zsocket_disconnect (update->compute->socket_nb, "%s",
+			     node->bind_point_nb);
+    assert (rc == 0);
+    rc = zsocket_disconnect (update->compute->socket_wb, "%s",
+			     node->bind_point_wb);
+    assert (rc == 0);
+    rc = zsocket_disconnect (update->balance->router_bl, "%s",
+			     node->bind_point_bl);
+    assert (rc == 0);
+
+
 
 //obtain the new events
     zlist_t *events;
@@ -994,6 +1006,19 @@ add_node (update_t * update, zmsg_t * msg)
 
 
     zmsg_destroy (&msg);
+
+//connect to the node
+
+    int rc;
+    rc = zsocket_connect (update->compute->socket_nb, "%s", bind_point_nb);
+    assert (rc == 0);
+    rc = zsocket_connect (update->compute->socket_wb, "%s", bind_point_wb);
+    assert (rc == 0);
+    rc = zsocket_connect (update->balance->router_bl, "%s", bind_point_bl);
+    assert (rc == 0);
+
+
+
 
     fprintf (stderr,
 	     "\nworker_add_node\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
