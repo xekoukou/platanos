@@ -159,13 +159,6 @@ interval_belongs_h (interval_t * interval, struct _hkey_t *hkey)
 	}
     }
 
-
-
-
-
-
-
-
 //in case there is no interval
     return 0;
 }
@@ -214,34 +207,24 @@ intervals_add (intervals_t * intervals, interval_t * interval)
 
     interval_below = RB_NFIND (intervals_t, intervals, interval);
 
-    if (interval_below != NULL) {
-//2 intervals should never overlap
-	assert (memcmp
-		(&(interval_below->end), &(interval->end),
-		 sizeof (struct _hkey_t)) != 0);
-    }
-
 //in case the end of the interval is in the other side of the circle
     if (interval_below == NULL) {
 
 	interval_below = RB_MIN (intervals_t, intervals);
-
-	if (interval_below != NULL) {
-//2 intervals should never overlap
-	    assert (memcmp
-		    (&(interval_below->end), &(interval->end),
-		     sizeof (struct _hkey_t)) != 0);
-	}
-
     }
 
     if (interval_below) {
 	if (memcmp (&(interval_below->start), &(interval->end),
-		    sizeof (struct _hkey_t))) {
+		    sizeof (struct _hkey_t)) == 0) {
 	    memcpy (&(interval->end), &(interval_below->end),
 		    sizeof (struct _hkey_t));
 	    RB_REMOVE (intervals_t, intervals, interval_below);
 	    free (interval_below);
+	}
+	else {
+	    assert (interval_belongs_h (interval, &(interval_below->start))==
+		    0);
+
 	}
     }
 
@@ -261,7 +244,7 @@ intervals_contained (intervals_t * intervals, interval_t * interval)
 	reversed = 1;
     }
 
-    interval_t *iter=NULL;
+    interval_t *iter = NULL;
     RB_FOREACH (iter, intervals_t, intervals) {
 	iter_reversed = 0;
 	if ((cmp_hkey_t (&(iter->start), &(iter->end)) > 0)) {
@@ -281,13 +264,12 @@ intervals_contained (intervals_t * intervals, interval_t * interval)
 	}
 	if ((!reversed && iter_reversed)) {
 
-	    if ((cmp_hkey_t (&(interval->end), &(iter->start)) >= 0)
-		&& (cmp_hkey_t (&(iter->start), &(interval->start)) <= 0)) {
+	    if ((cmp_hkey_t (&(iter->start), &(interval->start)) <= 0)) {
 		return iter;
 
 	    }
 	    if ((cmp_hkey_t (&(interval->end), &(iter->end)) <= 0)
-		&& (cmp_hkey_t (&(iter->end), &(interval->start)) >= 0)) {
+		) {
 		return iter;
 
 	    }
@@ -313,8 +295,8 @@ int
 intervals_remove (intervals_t * intervals, interval_t * interval)
 {
     interval_t *inside = intervals_contained (intervals, interval);
-    interval_t *up=NULL;
-    interval_t *down=NULL;
+    interval_t *up = NULL;
+    interval_t *down = NULL;
 
 
     if (inside) {
