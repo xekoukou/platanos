@@ -1216,7 +1216,7 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
 
 	    memcpy (old_resources, &resources, sizeof (struct String_vector));
 	    if (old_online[position] != NULL) {
-		free (old_online);
+		free (old_online[position]);
 	    }
 	    old_online[position] = online_vector;
 
