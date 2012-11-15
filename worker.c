@@ -611,6 +611,13 @@ worker_balance_update (balance_t * balance)
 	    if (time - iter->last_time > ONGOING_TIMEOUT) {
 		if (iter->state == 0) {
 
+		    fprintf (stderr,
+			     "sending NEW_INTERVAL msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
+			     iter->event->key, iter->event->start.prefix,
+			     iter->event->start.suffix,
+			     iter->event->end.prefix,
+			     iter->event->end.suffix);
+
 
 		    frame = zframe_new (NEW_INTERVAL, 1);
 		    zmsg_add (msg, frame);
@@ -629,7 +636,7 @@ worker_balance_update (balance_t * balance)
 
 
 		    address =
-			zframe_new (&(iter->event->key),
+			zframe_new (iter->event->key,
 				    strlen (iter->event->key));
 
 		    zmsg_wrap (msg, address);
@@ -638,6 +645,13 @@ worker_balance_update (balance_t * balance)
 		}
 
 		if (iter->state == 2) {
+		    fprintf (stderr,
+			     "sending EOT msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
+			     iter->event->key, iter->event->start.prefix,
+			     iter->event->start.suffix,
+			     iter->event->end.prefix,
+			     iter->event->end.suffix);
+
 
 		    frame = zframe_new (NEW_CHUNK, 1);
 		    zmsg_add (msg, frame);
@@ -767,7 +781,7 @@ update_n_pieces (update_t * update, zmsg_t * msg)
     }
     zlist_destroy (&events);
 
-    intervals_print(update->balance->intervals);
+    intervals_print (update->balance->intervals);
 
     fprintf (stderr, "\nWorker with id: %s has updated its n_pieces to %d.",
 	     update->balance->self_key, n_pieces);
@@ -860,7 +874,7 @@ update_st_piece (update_t * update, zmsg_t * msg)
     }
     zlist_destroy (&events);
 
-    intervals_print(update->balance->intervals);
+    intervals_print (update->balance->intervals);
 
     fprintf (stderr,
 	     "\nWorker with id: %s has incremented the st_piece of the worker with id:%s to: %lu.",
@@ -936,7 +950,7 @@ remove_node (update_t * update, zmsg_t * msg)
     zlist_destroy (&events);
 
 
-    intervals_print(update->balance->intervals);
+    intervals_print (update->balance->intervals);
 
     fprintf (stderr, "\nWorker with id: %s has removed the node with id %s.",
 	     update->balance->self_key, key);
@@ -1081,7 +1095,7 @@ add_node (update_t * update, zmsg_t * msg)
 	zlist_destroy (&events);
 
     }
-    intervals_print(update->balance->intervals);
+    intervals_print (update->balance->intervals);
 
     fprintf (stderr, "\nWorker with id: %s has added the node with id %s.",
 	     update->balance->self_key, key);
@@ -1374,22 +1388,23 @@ worker_fn (void *arg)
 //main loop
     while (1) {
 //finding the minimum timeout
-        int who=0;
+	int who = 0;
 	int64_t timeout = balance->timeout;
 	if ((sleep->timeout > 0 && sleep->timeout < balance->timeout)
 	    || (balance->timeout < 0)) {
 	    timeout = sleep->timeout;
-            who=1;
+	    who = 1;
 	}
 	rc = zmq_poll (pollitems, 4, timeout);
 	assert (rc != -1);
 
 //sends all msgs that their delay has expired
-        if(who){
-	worker_sleep (sleep, compute);
-        }else{
-        worker_balance_update(balance); 
-        }
+	if (who) {
+	    worker_sleep (sleep, compute);
+	}
+	else {
+	    worker_balance_update (balance);
+	}
 
 	if (pollitems[0].revents & ZMQ_POLLIN) {
 	    worker_update (update, sub);

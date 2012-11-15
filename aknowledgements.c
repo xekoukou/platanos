@@ -222,7 +222,7 @@ intervals_add (intervals_t * intervals, interval_t * interval)
 	    free (interval_below);
 	}
 	else {
-	    assert (interval_belongs_h (interval, &(interval_below->start))==
+	    assert (interval_belongs_h (interval, &(interval_below->start)) ==
 		    0);
 
 	}
@@ -411,17 +411,21 @@ intervals_belongs (intervals_t * intervals, uint64_t key)
 }
 
 
-void intervals_print (intervals_t *intervals){
+void
+intervals_print (intervals_t * intervals)
+{
 
-fprintf(stderr, "\nMy intervals are:");
+    fprintf (stderr, "\nMy intervals are:");
 
     interval_t *iter = NULL;
     RB_FOREACH (iter, intervals_t, intervals) {
 
-fprintf(stderr, "\nstart: %lu %lu \nend: %lu %lu",iter->start.prefix,iter->start.suffix,iter->end.prefix,iter->end.suffix);
+	fprintf (stderr, "\nstart: %lu %lu \nend: %lu %lu",
+		 iter->start.prefix, iter->start.suffix, iter->end.prefix,
+		 iter->end.suffix);
 
 
-}
+    }
 }
 
 
