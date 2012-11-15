@@ -1,4 +1,5 @@
 deallocate string_vectors when necessary
 
+//removing a node should also romove the on_gives and on_receives from this node
 
 
