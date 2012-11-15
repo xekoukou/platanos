@@ -340,7 +340,6 @@ worker_balance (balance_t * balance)
 	    }
 	    iter = zlist_next (balance->on_gives);
 	}
-	zmsg_destroy (&msg);
     }
     else {
 	if (memcmp (NEW_CHUNK, zframe_data (type_fr), 1) == 0) {
@@ -548,7 +547,6 @@ worker_balance (balance_t * balance)
 	    }
 	    //in case no on_receive events exists, drop things
 
-	    zmsg_destroy (&msg);
 	}
 	else {
 //TODO check if I had already received that NEW_INTERVAL
@@ -587,6 +585,7 @@ worker_balance (balance_t * balance)
 
     }
     zframe_destroy (&type_fr);
+    zmsg_destroy (&msg);
 
 }
 
