@@ -37,6 +37,9 @@ void
 ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
 		 void *w_pub, void *w_router, void *db_pub, void *db_router)
 {
+//USED TO DEBUG ,revert
+zoo_set_debug_level(ZOO_LOG_LEVEL_DEBUG);
+
 
     *ozookeeper = malloc (sizeof (ozookeeper_t));
 
