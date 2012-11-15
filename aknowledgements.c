@@ -313,8 +313,8 @@ int
 intervals_remove (intervals_t * intervals, interval_t * interval)
 {
     interval_t *inside = intervals_contained (intervals, interval);
-    interval_t *up;
-    interval_t *down;
+    interval_t *up=NULL;
+    interval_t *down=NULL;
 
 
     if (inside) {
