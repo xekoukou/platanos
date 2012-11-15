@@ -411,6 +411,20 @@ intervals_belongs (intervals_t * intervals, uint64_t key)
 }
 
 
+void intervals_print (intervals_t *intervals){
+
+fprintf(stderr, "\nMy intervals are:");
+
+    interval_t *iter = NULL;
+    RB_FOREACH (iter, intervals_t, intervals) {
+
+fprintf(stderr, "\nstart: %lu %lu \nend: %lu %lu",iter->start.prefix,iter->start.suffix,iter->end.prefix,iter->end.suffix);
+
+
+}
+}
+
+
 //
 //
 //

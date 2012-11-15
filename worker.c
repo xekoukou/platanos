@@ -765,6 +765,8 @@ update_n_pieces (update_t * update, zmsg_t * msg)
     }
     zlist_destroy (&events);
 
+    intervals_print(update->balance->intervals);
+
     fprintf (stderr, "\nWorker with id: %s has updated its n_pieces to %d.",
 	     update->balance->self_key, n_pieces);
 }
@@ -856,6 +858,8 @@ update_st_piece (update_t * update, zmsg_t * msg)
     }
     zlist_destroy (&events);
 
+    intervals_print(update->balance->intervals);
+
     fprintf (stderr,
 	     "\nWorker with id: %s has incremented the st_piece of the worker with id:%s to: %lu.",
 	     update->balance->self_key, node->key, st_piece);
@@ -928,6 +932,9 @@ remove_node (update_t * update, zmsg_t * msg)
 
 
     zlist_destroy (&events);
+
+
+    intervals_print(update->balance->intervals);
 
     fprintf (stderr, "\nWorker with id: %s has removed the node with id %s.",
 	     update->balance->self_key, key);
@@ -1072,6 +1079,7 @@ add_node (update_t * update, zmsg_t * msg)
 	zlist_destroy (&events);
 
     }
+    intervals_print(update->balance->intervals);
 
     fprintf (stderr, "\nWorker with id: %s has added the node with id %s.",
 	     update->balance->self_key, key);

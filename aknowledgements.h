@@ -109,6 +109,9 @@ int intervals_belongs_h (intervals_t * intervals, struct _hkey_t *hkey);
 //return true if it belongs to one of the intervals
 int intervals_belongs (intervals_t * intervals, uint64_t key);
 
+void intervals_print (intervals_t *intervals);
+
+
 void event_init (event_t ** event, struct _hkey_t start, struct _hkey_t end,
 		 int give, char *key);
 
