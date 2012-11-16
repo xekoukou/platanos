@@ -575,7 +575,7 @@ worker_balance (balance_t * balance)
 	    }
 
 
-	    f (already_received == 0) {
+	    if (already_received == 0) {
 //update intervals, now the node has taken responsibility of the interval
 		interval_t *interval;
 		interval_minit (&interval, msg);
