@@ -32,7 +32,7 @@
 #include<stdlib.h>
 
 //TODO this is arbitrary
-#define ONGOING_TIMEOUT 10000
+#define ONGOING_TIMEOUT 100
 #define COUNTER_SIZE 1000	/* 1000 vertices per chunk */
 
 #define NEW_INTERVAL "\001"
@@ -723,7 +723,8 @@ update_n_pieces (update_t * update, zmsg_t * msg)
 
 //obtain the new events
     zlist_t *events;
-    events = router_events (update->router, node, 0);
+    int circle;
+    events = router_events (update->router, node, 0, &circle);
 
 //update router object
 //this should always happen after the prev step
@@ -815,7 +816,8 @@ update_st_piece (update_t * update, zmsg_t * msg)
 
 //obtain the new events
     zlist_t *events;
-    events = router_events (update->router, node, 0);
+    int circle;
+    events = router_events (update->router, node, 0, &circle);
 
 //update router object
 //this should always happen after the prev step
@@ -924,7 +926,8 @@ remove_node (update_t * update, zmsg_t * msg)
 
 //obtain the new events
     zlist_t *events;
-    events = router_events (update->router, node, 1);
+    int circle;
+    events = router_events (update->router, node, 1, &circle);
 
 //update router object
 //this should always happen after the prev step
@@ -1033,9 +1036,11 @@ add_node (update_t * update, zmsg_t * msg)
 	       bind_point_bl);
 
     zlist_t *events;
+    int circle;
     if (!start) {
 //obtain the new events
-	events = router_events (update->router, node, 0);
+	events = router_events (update->router, node, 0, &circle);
+	update->balance->intervals->circle = circle;
     }
 
 //update router object

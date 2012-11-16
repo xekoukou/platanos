@@ -130,7 +130,8 @@ node_t *router_fnode (struct router_t *router, char *key);
 //removal(0,1) is boolean indicating whether this is about removing a node or adding a node
 //0 also means that there might be a change in st_piece, n_pieces
 
-zlist_t *router_events (router_t * router, node_t * node, int removal);
+zlist_t *router_events (router_t * router, node_t * node, int removal,
+			int *circle);
 
 
 //result should be big enough

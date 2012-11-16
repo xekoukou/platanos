@@ -70,13 +70,14 @@ cmp_interval_t (struct interval_t *first, struct interval_t *second)
 
 }
 
-RB_GENERATE (intervals_t, interval_t, field, cmp_interval_t);
+RB_GENERATE (intervals_rb_t, interval_t, field, cmp_interval_t);
 
 void
 intervals_init (intervals_t ** intervals)
 {
     *intervals = malloc (sizeof (intervals_t));
-    RB_INIT (*intervals);
+    RB_INIT (&((*intervals)->intervals_rb));
+    (*intervals)->circle = 0;
 }
 
 
@@ -184,6 +185,7 @@ interval_belongs (interval_t * interval, uint64_t key)
 void
 intervals_add (intervals_t * intervals, interval_t * interval)
 {
+    assert (intervals->circle == 0);
 
     interval_t *interval_above = NULL;
     interval_t *interval_below = NULL;
@@ -193,7 +195,8 @@ intervals_add (intervals_t * intervals, interval_t * interval)
     memcpy (&temp, &(interval->end), sizeof (struct _hkey_t));
     memcpy (&(interval->end), &(interval->start), sizeof (struct _hkey_t));
 
-    interval_above = RB_FIND (intervals_t, intervals, interval);
+    interval_above =
+	RB_FIND (intervals_rb_t, &(intervals->intervals_rb), interval);
 
     memcpy (&(interval->end), &temp, sizeof (struct _hkey_t));
 
@@ -201,16 +204,18 @@ intervals_add (intervals_t * intervals, interval_t * interval)
 
 	memcpy (&(interval->start), &(interval_above->start),
 		sizeof (struct _hkey_t));
-	RB_REMOVE (intervals_t, intervals, interval_above);
+	RB_REMOVE (intervals_rb_t, &(intervals->intervals_rb),
+		   interval_above);
 	free (interval_above);
     }
 
-    interval_below = RB_NFIND (intervals_t, intervals, interval);
+    interval_below =
+	RB_NFIND (intervals_rb_t, &(intervals->intervals_rb), interval);
 
 //in case the end of the interval is in the other side of the circle
     if (interval_below == NULL) {
 
-	interval_below = RB_MIN (intervals_t, intervals);
+	interval_below = RB_MIN (intervals_rb_t, &(intervals->intervals_rb));
     }
 
     if (interval_below) {
@@ -218,7 +223,8 @@ intervals_add (intervals_t * intervals, interval_t * interval)
 		    sizeof (struct _hkey_t)) == 0) {
 	    memcpy (&(interval->end), &(interval_below->end),
 		    sizeof (struct _hkey_t));
-	    RB_REMOVE (intervals_t, intervals, interval_below);
+	    RB_REMOVE (intervals_rb_t, &(intervals->intervals_rb),
+		       interval_below);
 	    free (interval_below);
 	}
 	else {
@@ -228,14 +234,24 @@ intervals_add (intervals_t * intervals, interval_t * interval)
 	}
     }
 
-    RB_INSERT (intervals_t, intervals, interval);
+    RB_INSERT (intervals_rb_t, &(intervals->intervals_rb), interval);
 
 
 }
 
 interval_t *
-intervals_contained (intervals_t * intervals, interval_t * interval)
+intervals_contained (intervals_t * intervals, interval_t * interval,
+		     int *circle)
 {
+
+    *circle = intervals->circle;
+
+    if (*circle) {
+	return NULL;
+
+    }
+
+
 //check whether it is reversed
     int reversed = 0;
     int iter_reversed;
@@ -245,7 +261,7 @@ intervals_contained (intervals_t * intervals, interval_t * interval)
     }
 
     interval_t *iter = NULL;
-    RB_FOREACH (iter, intervals_t, intervals) {
+    RB_FOREACH (iter, intervals_rb_t, &(intervals->intervals_rb)) {
 	iter_reversed = 0;
 	if ((cmp_hkey_t (&(iter->start), &(iter->end)) > 0)) {
 	    iter_reversed = 1;
@@ -294,7 +310,18 @@ intervals_contained (intervals_t * intervals, interval_t * interval)
 int
 intervals_remove (intervals_t * intervals, interval_t * interval)
 {
-    interval_t *inside = intervals_contained (intervals, interval);
+    int circle;
+    interval_t *inside = intervals_contained (intervals, interval, &circle);
+
+    if (circle) {
+	interval_t *complement;
+	interval_init (&complement, &(inside->start), &(interval->start));
+	RB_INSERT (intervals_rb_t, &(intervals->intervals_rb), complement);
+	free (interval);
+	return 1;
+
+    }
+
     interval_t *up = NULL;
     interval_t *down = NULL;
 
@@ -308,14 +335,14 @@ intervals_remove (intervals_t * intervals, interval_t * interval)
 	    interval_init (&down, &(interval->end), &(inside->end));
 	}
 
-	RB_REMOVE (intervals_t, intervals, inside);
+	RB_REMOVE (intervals_rb_t, &(intervals->intervals_rb), inside);
 	free (inside);
 
 	if (up) {
-	    RB_INSERT (intervals_t, intervals, up);
+	    RB_INSERT (intervals_rb_t, &(intervals->intervals_rb), up);
 	}
 	if (down) {
-	    RB_INSERT (intervals_t, intervals, down);
+	    RB_INSERT (intervals_rb_t, &(intervals->intervals_rb), down);
 	}
 	free (interval);
 
@@ -339,11 +366,11 @@ intervals_belongs_h (intervals_t * intervals, struct _hkey_t *hkey)
 
     memcpy (&(search.end), hkey, sizeof (struct _hkey_t));
 
-    result = RB_NFIND (intervals_t, intervals, &search);
+    result = RB_NFIND (intervals_rb_t, &(intervals->intervals_rb), &search);
 
     int side = 0;
     if (result == NULL) {
-	result = RB_MIN (intervals_t, intervals);
+	result = RB_MIN (intervals_rb_t, &(intervals->intervals_rb));
 	side = 1;
     }
 
@@ -418,7 +445,7 @@ intervals_print (intervals_t * intervals)
     fprintf (stderr, "\nMy intervals are:");
 
     interval_t *iter = NULL;
-    RB_FOREACH (iter, intervals_t, intervals) {
+    RB_FOREACH (iter, intervals_rb_t, &(intervals->intervals_rb)) {
 
 	fprintf (stderr, "\nstart: %lu %lu \nend: %lu %lu",
 		 iter->start.prefix, iter->start.suffix, iter->end.prefix,
@@ -543,8 +570,10 @@ events_possible (zlist_t * events, intervals_t * intervals)
 	    memcpy (&(interval->start), &(iter->start),
 		    sizeof (struct _hkey_t));
 	    memcpy (&(interval->end), &(iter->end), sizeof (struct _hkey_t));
-
-	    if (intervals_contained (intervals, interval)) {
+	    int circle;
+	    intervals_t *is_contained =
+		intervals_contained (intervals, interval, &circle);
+	    if (circle || is_contained) {
 		return iter;
 	    }
 
@@ -566,8 +595,10 @@ event_possible (event_t * event, intervals_t * intervals)
     interval_init (&interval, &(event->start), &(event->end));
 
     if (event->give) {
-
-	if (intervals_contained (intervals, interval)) {
+	int circle;
+	intervals_t *is_contained =
+	    intervals_contained (intervals, interval, &circle);
+	if (circle || is_contained) {
 	    return 1;
 	}
 

@@ -52,8 +52,15 @@ struct interval_t
 
 };
 
-RB_HEAD (intervals_t, interval_t);
-RB_PROTOTYPE (intervals_t, interval_t, field, cmp_interval_t);
+RB_HEAD (intervals_rb_t, interval_t);
+RB_PROTOTYPE (intervals_rb_t, interval_t, field, cmp_interval_t);
+
+struct intervals_t
+{
+    struct intervals_rb_t intervals_rb;
+
+    int circle;
+};
 
 //the key is the key of the node that will take part in the event /action
 //there is only the exception for the first node that will go online
@@ -80,6 +87,7 @@ typedef struct action_t action_t;
 
 typedef struct interval_t interval_t;
 typedef struct intervals_t intervals_t;
+typedef struct intervals_rb_t intervals_rb_t;
 
 void intervals_init (intervals_t ** intervals);
 void
@@ -98,7 +106,7 @@ void intervals_add (intervals_t * intervals, interval_t * interval);
 
 //returns the integral if it is contained inside one integral or NULL
 interval_t *intervals_contained (intervals_t * intervals,
-				 interval_t * interval);
+				 interval_t * interval, int *circle);
 
 //removes and free interval
 //returns true if there was a change
