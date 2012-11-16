@@ -151,6 +151,9 @@ worker_balance (balance_t * balance)
 	exit (1);
     }
 
+    //debugging
+    zmsg_dump (msg);
+
     zmsg_t *responce;
 
     zframe_t *address = zmsg_unwrap (msg);
@@ -335,6 +338,7 @@ worker_balance (balance_t * balance)
 		    zmsg_destroy (&responce);
 		}
 
+		zmsg_destroy (&msg);
 
 		break;
 	    }
@@ -467,6 +471,7 @@ worker_balance (balance_t * balance)
 
 
 
+			zmsg_destroy (&msg);
 
 //this is necessary  ur put an else {}
 			break;
@@ -561,14 +566,6 @@ worker_balance (balance_t * balance)
 	    intervals_add (balance->intervals, interval);
 
 
-
-
-	    on_receive_t *on_receive;
-//on_receive destroys the msg
-	    on_receive_init (&on_receive, msg);
-	    zlist_append (balance->on_receives, on_receive);
-
-
 //send confirmation
 	    responce = zmsg_new ();
 	    frame = zframe_new (INTERVAL_RECEIVED, 1);
@@ -580,12 +577,21 @@ worker_balance (balance_t * balance)
 	    zmsg_wrap (responce, address);
 	    zmsg_send (&responce, balance->router_bl);
 
+
+
+
+	    on_receive_t *on_receive;
+//on_receive destroys the msg
+	    on_receive_init (&on_receive, msg);
+	    zlist_append (balance->on_receives, on_receive);
+
+
+
 	}
 
 
     }
     zframe_destroy (&type_fr);
-    zmsg_destroy (&msg);
 
 }
 
