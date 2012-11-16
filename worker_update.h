@@ -70,9 +70,10 @@ typedef struct
     zlist_t *on_receives;
     //used by on_gives scheduling
     int un_id;
-    int64_t timeout;
+    int64_t next_time;
     int64_t pr_time;
     char *self_key;		//used to send the interval of the on_gives
+    void *wake_nod;		//socket to awake the worker poll
 } balance_t;
 
 
@@ -89,7 +90,8 @@ void update_init (update_t ** update, void *dealer, router_t * router,
 		  balance_t * balance, compute_t * compute);
 
 void balance_init (balance_t ** balance, khash_t (vertices) * hash,
-		   void *router_bl, void *self_bl, char *self_key);
+		   void *router_bl, void *self_bl, char *self_key,
+		   void *wake_nod);
 
 void balance_update (balance_t * balance, on_give_t * on_give);
 

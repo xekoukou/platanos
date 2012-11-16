@@ -44,8 +44,7 @@ typedef struct
 {
     struct smsg_rb_t smsg_rb;
     struct smsg_t *min;		//used to reduce latency in finding the minimum item
-    int64_t pr_time;		//previous_time
-    int64_t timeout;		//time till next expiry
+    int64_t next_time;		//next_time
 
 } sleep_t;
 

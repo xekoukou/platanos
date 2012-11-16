@@ -38,11 +38,16 @@ typedef struct
     char *id;			//comp_name +res_name
     char *res_name;
     char *comp_name;
+    int64_t next_time;
+    int is_it_sleep;
 } worker_t;
 
 void worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
 		  char *comp_name, char *res_name);
 
+
+void worker_update_timeout (worker_t * worker, int new_next_time,
+			    int is_it_sleep, void *wake_nod);
 
 
 typedef struct
@@ -60,14 +65,17 @@ typedef struct
     int interval;		//the interval in which the counter resides
     unsigned long interval_size;
     worker_t *worker;		//this is the object given to the thread, it also has
-} compute_t;			//the zookeeper handle used to set the worker online or get
-		   //get the interval 
+    //the zookeeper handle used to set the worker online or get
+    //get the interval 
+    void *wake_nod;
+
+} compute_t;
 
 void compute_init (compute_t ** compute, khash_t (vertices) * hash,
 		   router_t * router, zlist_t * events,
 		   intervals_t * intervals, void *socket_nb, void *self_nb,
 		   void *socket_wb, void *self_wb, localdb_t * localdb,
-		   worker_t * worker);
+		   worker_t * worker, void *wake_nod);
 
 
 

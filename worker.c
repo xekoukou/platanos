@@ -619,6 +619,11 @@ worker_balance_update (balance_t * balance)
 
     on_give_t *iter = zlist_first (balance->on_gives);
 
+    if (iter == NULL) {
+
+	balance->next_time = -1;
+    }
+
     while (iter) {
 
 	zmsg_t *msg = zmsg_new ();
@@ -633,7 +638,7 @@ worker_balance_update (balance_t * balance)
 		if (iter->state == 0) {
 
 		    fprintf (stderr,
-			     "sending NEW_INTERVAL msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
+			     "\nSending NEW_INTERVAL msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
 			     iter->event->key, iter->event->start.prefix,
 			     iter->event->start.suffix,
 			     iter->event->end.prefix,
@@ -701,10 +706,8 @@ worker_balance_update (balance_t * balance)
 	    }
 	    else {
 //update the timeout
-		if (balance->timeout >
-		    ONGOING_TIMEOUT - time + iter->last_time) {
-		    balance->timeout =
-			ONGOING_TIMEOUT - time + iter->last_time;
+		if (balance->next_time > iter->last_time) {
+		    balance->next_time = iter->last_time;
 		}
 	    }
 
@@ -713,6 +716,8 @@ worker_balance_update (balance_t * balance)
 
 	iter = zlist_next (balance->on_gives);
     }
+
+
 
 }
 
@@ -1406,11 +1411,20 @@ worker_fn (void *arg)
 
     router_init (&router, 0);
 
+//create sockets that awake the poll in case of an event
+
+    void *self_wake = zsocket_new (ctx, ZMQ_PAIR);
+    rc = zsocket_bind (self_wake, "inproc://%s", worker->id);
+    assert (rc == 0);
+    void *wake_nod = zsocket_new (ctx, ZMQ_PAIR);
+    rc = zsocket_connect (ctx, "inproc://%s", worker->id);
+    assert (rc == 0);
+
 
 //balance object
     balance_t *balance;
 
-    balance_init (&balance, hash, router_bl, self_bl, worker->id);
+    balance_init (&balance, hash, router_bl, self_bl, worker->id, wake_nod);
 
 //localdb object
 //used to save the counter used to create new vertices
@@ -1421,7 +1435,8 @@ worker_fn (void *arg)
     compute_t *compute;
 
     compute_init (&compute, hash, router, balance->events, balance->intervals,
-		  socket_nb, self_nb, socket_wb, self_wb, localdb, worker);
+		  socket_nb, self_nb, socket_wb, self_wb, localdb, worker,
+		  wake_nod);
 
 //update object
 //used to update things, like the router object
@@ -1430,43 +1445,43 @@ worker_fn (void *arg)
 
     update_init (&update, dealer, router, balance, compute);
 
-    zmq_pollitem_t pollitems[4] =
-	{ {sub, 0, ZMQ_POLLIN}, {self_bl, 0, ZMQ_POLLIN}, {self_wb, 0,
-							   ZMQ_POLLIN},
+    zmq_pollitem_t pollitems[5] =
+	{ {self_wake, 0, ZMQ_POLLIN}, {sub, 0, ZMQ_POLLIN}, {self_bl, 0,
+							     ZMQ_POLLIN},
+    {self_wb, 0,
+     ZMQ_POLLIN},
     {self_nb, 0, ZMQ_POLLIN}
     };
     fprintf (stderr, "\nworker with id:%s ready.", worker->id);
 //main loop
     while (1) {
 //finding the minimum timeout
-	int who = 0;
-	int64_t timeout = balance->timeout;
-	if ((sleep->timeout > 0 && sleep->timeout < balance->timeout)
-	    || (balance->timeout < 0)) {
-	    timeout = sleep->timeout;
-	    who = 1;
-	}
-	rc = zmq_poll (pollitems, 4, timeout);
+	rc = zmq_poll (pollitems, 5, worker->next_time - zclock_time ());
 	assert (rc != -1);
 
 //sends all msgs that their delay has expired
-	if (who) {
+	if (worker->is_it_sleep) {
 	    worker_sleep (sleep, compute);
 	}
 	else {
 	    worker_balance_update (balance);
 	}
-
 	if (pollitems[0].revents & ZMQ_POLLIN) {
-	    worker_update (update, sub);
+	    zframe_t *temp_frame = zframe_recv (self_wake);
+	    zframe_destroy (&temp_frame);
 	}
 	if (pollitems[1].revents & ZMQ_POLLIN) {
-	    worker_balance (balance);
+	    worker_update (update, sub);
+	    worker_update_timeout (worker, balance->next_time, 0, wake_nod);
 	}
 	if (pollitems[2].revents & ZMQ_POLLIN) {
-
+	    worker_balance (balance);
+	    worker_update_timeout (worker, balance->next_time, 0, wake_nod);
 	}
 	if (pollitems[3].revents & ZMQ_POLLIN) {
+
+	}
+	if (pollitems[4].revents & ZMQ_POLLIN) {
 
 	}
 
@@ -1482,10 +1497,25 @@ worker_fn (void *arg)
 }
 
 void
+worker_update_timeout (worker_t * worker, int new_next_time, int is_it_sleep,
+		       void *wake_nod)
+{
+
+    if (((new_next_time > 0) && (new_next_time < worker->next_time))
+	|| (worker->next_time < 0)) {
+	worker->next_time = new_next_time;
+	worker->is_it_sleep = is_it_sleep;
+	zframe_send (wake_nod, zframe_new ("", 0), 0);
+    }
+
+
+}
+
+void
 compute_init (compute_t ** compute, khash_t (vertices) * hash,
 	      router_t * router, zlist_t * events, intervals_t * intervals,
 	      void *socket_nb, void *self_nb, void *socket_wb, void *self_wb,
-	      localdb_t * localdb, worker_t * worker)
+	      localdb_t * localdb, worker_t * worker, void *wake_nod)
 {
 
     *compute = malloc (sizeof (compute_t));
@@ -1499,6 +1529,7 @@ compute_init (compute_t ** compute, khash_t (vertices) * hash,
     (*compute)->self_wb = self_wb;
     (*compute)->worker = worker;
     (*compute)->hash = hash;
+    (*compute)->wake_nod = wake_nod;
     (*compute)->localdb = localdb;
     (*compute)->interval = localdb_get_interval (localdb);
     (*compute)->counter = localdb_get_counter (localdb);
@@ -1551,6 +1582,8 @@ worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
     (*worker)->id = malloc (strlen (comp_name) + strlen (res_name) + 1);
     sprintf ((*worker)->id, "%s%s", comp_name, res_name);
     (*worker)->config = config;
+    (*worker)->next_time = -1;
+
 }
 
 void

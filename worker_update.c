@@ -99,7 +99,7 @@ on_receive_destroy (on_receive_t * on_receive)
 
 void
 balance_init (balance_t ** balance, khash_t (vertices) * hash,
-	      void *router_bl, void *self_bl, char *self_key)
+	      void *router_bl, void *self_bl, char *self_key, void *wake_nod)
 {
 
     *balance = malloc (sizeof (balance_t));
@@ -112,9 +112,10 @@ balance_init (balance_t ** balance, khash_t (vertices) * hash,
     (*balance)->on_gives = zlist_new ();
     (*balance)->on_receives = zlist_new ();
     (*balance)->un_id = 0;
-    (*balance)->timeout = -1;
+    (*balance)->next_time = -1;
     (*balance)->pr_time = zclock_time ();
     (*balance)->self_key = self_key;
+    (*balance)->wake_nod = wake_nod;
 
 
 }
@@ -126,11 +127,9 @@ balance_update (balance_t * balance, on_give_t * on_give)
 
     assert (on_give->state == 0 || on_give->state == 2);
 
-    int64_t time = zclock_time ();
-    if (ONGOING_TIMEOUT - time + on_give->last_time < balance->timeout
-	|| balance->timeout == -1) {
-	balance->timeout = ONGOING_TIMEOUT - time + on_give->last_time;
-	balance->pr_time = time;
-    }
 
+    if ((on_give->last_time < balance->next_time)
+	|| (balance->next_time < 0)) {
+	balance->next_time = on_give->last_time;
+    }
 }

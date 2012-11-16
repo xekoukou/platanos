@@ -48,8 +48,7 @@ sleep_init (sleep_t ** sleep)
 {
     *sleep = malloc (sizeof (sleep_t));
     RB_INIT (&((*sleep)->smsg_rb));
-    (*sleep)->timeout = -1;
-    (*sleep)->pr_time = zclock_time ();
+    (*sleep)->next_time = -1;
     (*sleep)->min = NULL;
 }
 
@@ -73,18 +72,11 @@ sleep_add (sleep_t * sleep, zmsg_t * msg, int64_t delay, unsigned short wb)
 
 
 
-    //update timeout if the new msgs needs to be sent sooner than the previous sooner msg
+    //update next if the new msgs needs to be sent sooner than the previous sooner msg
 
-    sleep->timeout = sleep->timeout + sleep->pr_time - zclock_time ();
-    sleep->pr_time = zclock_time ();
 
-    if (sleep->timeout > delay) {
-	sleep->timeout = delay;
-    }
-    else {
-	if (sleep->timeout < 0) {
-	    sleep->timeout = 0;
-	}
+    if ((sleep->next_time > smsg->expiry) || (sleep->next_time == -1)) {
+	sleep->next_time = smsg->expiry;
     }
 }
 
@@ -122,17 +114,10 @@ sleep_awake (sleep_t * sleep, unsigned short *wb)
 //update the timeout 
 
     if (sleep->min == NULL) {
-	sleep->timeout = -1;
+	sleep->next_time = -1;
     }
     else {
-	sleep->timeout = sleep->min->expiry - zclock_time ();
-	sleep->pr_time = zclock_time ();
-
-	if (sleep->timeout < 0) {
-	    sleep->timeout = 0;
-	}
-
-
+	sleep->next_time = sleep->min->expiry;
     }
     return msg;
 
