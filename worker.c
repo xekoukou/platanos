@@ -583,7 +583,6 @@ worker_balance (balance_t * balance)
 
 
 		on_receive_t *on_receive;
-//on_receive destroys the msg
 		on_receive_init (&on_receive, msg);
 		zlist_append (balance->on_receives, on_receive);
 

@@ -73,7 +73,7 @@ on_receive_init (on_receive_t ** on_receive, zmsg_t * msg)
 {
     *on_receive = malloc (sizeof (on_receive_t));
 
-    zframe_t *frame = zmsg_pop (msg);
+    zframe_t *frame = zmsg_first (msg);
     memcpy (&((*on_receive)->un_id), zframe_data (frame), sizeof (int));
     zframe_destroy (&frame);
     action_minit (&((*on_receive)->action), msg);
