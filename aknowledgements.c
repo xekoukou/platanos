@@ -233,9 +233,15 @@ intervals_add (intervals_t * intervals, interval_t * interval)
 
 	}
     }
+    if (memcmp (&(interval->start), &(interval->end),
+		sizeof (struct _hkey_t)) == 0) {
+	intervals->circle = 1;
+	free (interval);
+    }
+    else {
 
-    RB_INSERT (intervals_rb_t, &(intervals->intervals_rb), interval);
-
+	RB_INSERT (intervals_rb_t, &(intervals->intervals_rb), interval);
+    }
 
 }
 
@@ -315,9 +321,10 @@ intervals_remove (intervals_t * intervals, interval_t * interval)
 
     if (circle) {
 	interval_t *complement;
-	interval_init (&complement, &(inside->start), &(interval->start));
+	interval_init (&complement, &(interval->end), &(interval->start));
 	RB_INSERT (intervals_rb_t, &(intervals->intervals_rb), complement);
 	free (interval);
+	intervals->circle = 0;
 	return 1;
 
     }

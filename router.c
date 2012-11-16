@@ -296,7 +296,7 @@ router_dbroute (struct router_t *router, uint64_t key, char **rkey,
 
 //TODO remove sizee
 zlist_t *
-router_events (router_t * router, node_t * node, int removal, int *cirlce)
+router_events (router_t * router, node_t * node, int removal, int *circle)
 {
     zlist_t *solution = zlist_new ();
     node_t *exists;
@@ -729,7 +729,7 @@ router_events (router_t * router, node_t * node, int removal, int *cirlce)
 
 		if (!exists && (strcmp (node->key, router->self->key) == 0)) {
 
-		    *cirlce = 1;
+		    *circle = 1;
 //TODO assert that the solution has no events
 		    return solution;
 
@@ -742,7 +742,7 @@ router_events (router_t * router, node_t * node, int removal, int *cirlce)
 
 		free (hash);
 		free (remove);
-		*cirlce = 0;
+		*circle = 0;
 		return solution;
 
 
@@ -753,7 +753,7 @@ router_events (router_t * router, node_t * node, int removal, int *cirlce)
     free (hash);
     free (remove);
 
-    *cirlce = 0;
+    *circle = 0;
     return solution;
 
 

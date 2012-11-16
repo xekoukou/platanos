@@ -1061,7 +1061,12 @@ add_node (update_t * update, zmsg_t * msg)
     if (!start) {
 //obtain the new events
 	events = router_events (update->router, node, 0, &circle);
-	update->balance->intervals->circle = circle;
+	//router_events emits a circle when the event is the full circle, and emits null events
+	//thus the action taken when circle is 0 is to evaluate the events themselves,
+	//those will change the first circle into 0 for example
+	if (circle) {
+	    update->balance->intervals->circle = circle;
+	}
     }
 
 //update router object
@@ -1083,15 +1088,6 @@ add_node (update_t * update, zmsg_t * msg)
 	    event = zlist_next (events);
 	}
 	event = zlist_pop (events);
-	if (event && (strcmp (event->key, "\0") == 0)) {
-
-	    interval_t *interval;
-	    interval_init (&interval, &(event->start), &(event->end));
-	    intervals_add (update->balance->intervals, interval);
-	    free (event);
-	    event = zlist_pop (events);
-	    assert (event == NULL);
-	}
 
 	while (event) {
 
