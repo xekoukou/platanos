@@ -560,11 +560,34 @@ worker_balance (balance_t * balance)
 	    assert (memcmp (NEW_INTERVAL, zframe_data (type_fr), 1) == 0);
 //this is an interval initiation msg
 
-//update intervals, now the node has taken responsibility of the interval
-	    interval_t *interval;
-	    interval_minit (&interval, msg);
-	    intervals_add (balance->intervals, interval);
+	    int already_received = 0;
+	    on_receive_t *iter = zlist_first (balance->on_receives);
+	    while (iter) {
+		if ((strcmp
+		     ((const char *) zframe_data (frame),
+		      iter->action->key) == 0)
+		    &&
+		    (memcmp
+		     (zframe_data (id_frame), &(iter->un_id),
+		      sizeof (int)) == 0)) {
+		    already_received = 1;
+		}
+	    }
 
+
+	    f (already_received == 0) {
+//update intervals, now the node has taken responsibility of the interval
+		interval_t *interval;
+		interval_minit (&interval, msg);
+		intervals_add (balance->intervals, interval);
+
+
+		on_receive_t *on_receive;
+//on_receive destroys the msg
+		on_receive_init (&on_receive, msg);
+		zlist_append (balance->on_receives, on_receive);
+
+	    }
 
 //send confirmation
 	    responce = zmsg_new ();
@@ -577,13 +600,6 @@ worker_balance (balance_t * balance)
 	    zmsg_wrap (responce, address);
 	    zmsg_send (&responce, balance->router_bl);
 
-
-
-
-	    on_receive_t *on_receive;
-//on_receive destroys the msg
-	    on_receive_init (&on_receive, msg);
-	    zlist_append (balance->on_receives, on_receive);
 
 
 
