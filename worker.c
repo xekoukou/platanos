@@ -338,7 +338,6 @@ worker_balance (balance_t * balance)
 		    zmsg_destroy (&responce);
 		}
 
-		zmsg_destroy (&msg);
 
 		break;
 	    }
@@ -471,7 +470,6 @@ worker_balance (balance_t * balance)
 
 
 
-			zmsg_destroy (&msg);
 
 //this is necessary  ur put an else {}
 			break;
@@ -544,7 +542,6 @@ worker_balance (balance_t * balance)
 
 		    }
 
-		    zmsg_destroy (&msg);
 
 		    break;
 		}
@@ -607,6 +604,7 @@ worker_balance (balance_t * balance)
 
     }
     zframe_destroy (&type_fr);
+    zmsg_destroy (&msg);
 
 }
 
