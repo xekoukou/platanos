@@ -1412,14 +1412,12 @@ worker_fn (void *arg)
     router_init (&router, 0);
 
 //create sockets that awake the poll in case of an event
-
-    void *self_wake = zsocket_new (ctx, ZMQ_PAIR);
-    rc = zsocket_bind (self_wake, "inproc://%s", worker->id);
+    void *self_wake = zsocket_new (ctx, ZMQ_PULL);
+    rc = zsocket_bind (self_wake, "inproc://self-%s", worker->id);
     assert (rc == 0);
-    void *wake_nod = zsocket_new (ctx, ZMQ_PAIR);
-    rc = zsocket_connect (ctx, "inproc://%s", worker->id);
+    void *wake_nod = zsocket_new (ctx, ZMQ_PUSH);
+    rc = zsocket_connect (wake_nod, "inproc://self-%s", worker->id);
     assert (rc == 0);
-
 
 //balance object
     balance_t *balance;
@@ -1456,7 +1454,17 @@ worker_fn (void *arg)
 //main loop
     while (1) {
 //finding the minimum timeout
-	rc = zmq_poll (pollitems, 5, worker->next_time - zclock_time ());
+	int64_t timeout;
+	if (worker->next_time < 0) {
+	    timeout = -1;
+	}
+	else {
+	    timeout = worker->next_time - zclock_time ();
+	    if (timeout < 0) {
+		timeout = 0;
+	    }
+	}
+	rc = zmq_poll (pollitems, 5, timeout);
 	assert (rc != -1);
 
 //sends all msgs that their delay has expired
