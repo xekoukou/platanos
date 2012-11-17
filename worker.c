@@ -460,7 +460,7 @@ worker_balance (balance_t * balance)
 
 
 
-
+			    zlist_remove (balance->on_receives, iter);
 			    //destroy on_receive
 			    on_receive_destroy (iter);
 
@@ -961,6 +961,11 @@ remove_node (update_t * update, zmsg_t * msg)
     node = nodes_search (update->router->nodes, key);
 
     assert (node != NULL);
+
+    on_gives_remove (update->balance->on_gives, update->balance->events,
+		     node);
+
+    on_receives_destroy (update->balance->on_receives, update->balance, node);
 
 //remove all previous events by this node. they will never happen
 //the node is dead

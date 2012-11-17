@@ -68,6 +68,31 @@ on_give_destroy (on_give_t * on_give)
     free (on_give);
 }
 
+//we assume that all vertices of this transaction have
+//been put in the unc_vertices list
+void
+on_gives_remove (zlist_t * on_gives, zlist_t * events, node_t * node)
+{
+
+    on_give_t *iter = zlist_first (on_gives);
+
+    while (iter) {
+	if (strcmp (node->key, iter->event->key) == 0) {
+	    zlist_remove (on_gives, iter);
+	    zlist_remove (events, iter->event);
+	    free (iter->event);
+	    vertex_t *vertex;
+	    while (vertex = zlist_pop (iter->unc_vertices)) {
+		free (vertex);
+	    }
+	    zlist_destroy (&(iter->unc_vertices));
+	    free (iter);
+	}
+	iter = zlist_next (on_gives);
+    }
+
+}
+
 void
 on_receive_init (on_receive_t ** on_receive, zmsg_t * msg)
 {
@@ -82,6 +107,76 @@ on_receive_init (on_receive_t ** on_receive, zmsg_t * msg)
     (*on_receive)->counter = 0;
 
 }
+
+void
+on_receives_destroy (zlist_t * on_receives, balance_t * balance,
+		     node_t * node)
+{
+
+    on_receive_t *iter = zlist_first (on_receives);
+    while (iter) {
+	if (strcmp (node->key, iter->action->key) == 0) {
+
+
+//erase event if it exists
+	    if (events_update (balance->events, iter->action)) {
+		free (iter->action);
+	    }
+	    else {
+//add action to the list
+		zlist_append (balance->actions, iter->action);
+
+	    }
+//check whether any of the events can occur due to this action
+
+	    event_t *event;
+	    while ((event =
+		    events_possible (balance->events, balance->intervals))) {
+//perform this event
+
+//update the intervals
+
+		interval_t *interval;
+		interval_init (&interval, &(event->start), &(event->end));
+		intervals_remove (balance->intervals, interval);
+
+//update un_id;
+		if (balance->un_id > 1000000000) {
+		    balance->un_id = 1;
+		}
+		else {
+		    balance->un_id++;
+		}
+
+
+//create on_give object
+		on_give_t *on_give;
+		on_give_init (&on_give, event, balance->un_id);
+
+//update balance object
+		balance_update (balance, on_give);
+
+
+//put on_give event into the list
+		zlist_append (balance->on_gives, on_give);
+	    }
+
+
+
+
+	    zlist_remove (balance->on_receives, iter);
+	    on_receive_destroy (iter);
+	}
+
+	iter = zlist_next (on_receives);
+    }
+
+
+
+
+}
+
+
 
 //destroy this after you have inserted the action to the actions list
 //or removed the corresponding event

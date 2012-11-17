@@ -97,9 +97,23 @@ void balance_update (balance_t * balance, on_give_t * on_give);
 
 void on_give_init (on_give_t ** on_give, event_t * event, int un_id);
 
+//destroy this after you have removed the event from the events list
+//this will free the event
+//also remove it from the on_gives list
+//also all the vertices need to be freed before destroying this
+
 void on_give_destroy (on_give_t * on_give);
 
+//used when we receive a remove_node event
+void on_gives_remove (zlist_t * on_gives, zlist_t * events, node_t * node);
+
 void on_receive_init (on_receive_t ** on_receive, zmsg_t * msg);
+
+//used when we receive a remove_node event
+void
+on_receives_destroy (zlist_t * on_receives, balance_t * balance,
+		     node_t * node);
+
 
 //destroy this after you have inserted the action to the actions list
 //or removed the corresponding event
