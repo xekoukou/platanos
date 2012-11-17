@@ -156,7 +156,7 @@ worker_balance (balance_t * balance)
 
     zframe_t *address;
     zmsg_unwrap (msg);
-    
+
 
 
 
@@ -175,14 +175,18 @@ worker_balance (balance_t * balance)
 	    if ((memcmp
 		 (zframe_data (id_frame), &(iter->un_id),
 		  sizeof (int)) == 0)) {
-                  address=zframe_new(iter->event->key,strlen(iter->event->key));
-                
+		address =
+		    zframe_new (iter->event->key, strlen (iter->event->key));
+
 		if (memcmp (INTERVAL_RECEIVED, zframe_data (type_fr), 1) == 0) {
 		    // send the chunks
 
-                     iter->state=1;
+		    iter->state = 1;
 
-                   fprintf(stderr,"\nworker:%s\nAn INTERVAL_RECEIVED confirmation has arrived for the on_give event with id:%d and receiving key:%s",balance->self_key,iter->un_id,iter->event->key);                  
+		    fprintf (stderr,
+			     "\nworker:%s\nAn INTERVAL_RECEIVED confirmation has arrived for the on_give event with id:%d and receiving key:%s",
+			     balance->self_key, iter->un_id,
+			     iter->event->key);
 
 		    responce = zmsg_new ();
 		    frame = zframe_new (NEW_CHUNK, 1);
@@ -241,19 +245,22 @@ worker_balance (balance_t * balance)
 
 			}
 		    }
-                    if(responce_dup){
-                           zmsg_wrap (responce_dup, address);
-                                zmsg_send (&responce_dup, balance->router_bl);
+		    if (responce_dup) {
+			zmsg_wrap (responce_dup, address);
+			zmsg_send (&responce_dup, balance->router_bl);
 
-                   }
-               
-                    iter->state=2;
+		    }
+
+		    iter->state = 2;
 
 		    free (interval);
 		}
 		if (memcmp (CONFIRM_CHUNK, zframe_data (type_fr), 1) == 0) {
 		    //delete the vertices that have been verified  
- fprintf(stderr,"\nworker:%s\nA CONFIRM_CHUNK confirmation has arrived for the on_give event with id:%d and receiving key:%s",balance->self_key,iter->un_id,iter->event->key);                   
+		    fprintf (stderr,
+			     "\nworker:%s\nA CONFIRM_CHUNK confirmation has arrived for the on_give event with id:%d and receiving key:%s",
+			     balance->self_key, iter->un_id,
+			     iter->event->key);
 		    frame = zmsg_next (msg);
 		    uint64_t counter;
 		    memcpy (&counter, zframe_data (frame), sizeof (uint64_t));
@@ -282,7 +289,10 @@ worker_balance (balance_t * balance)
 		}
 
 		if (memcmp (MISSED_CHUNKES, zframe_data (type_fr), 1) == 0) {
- fprintf(stderr,"\nworker:%s\nA MISSED_CHUNKES confirmation has arrived for the on_give event with id:%d and receiving key:%s",balance->self_key,iter->un_id,iter->event->key);                   
+		    fprintf (stderr,
+			     "\nworker:%s\nA MISSED_CHUNKES confirmation has arrived for the on_give event with id:%d and receiving key:%s",
+			     balance->self_key, iter->un_id,
+			     iter->event->key);
 		    responce = zmsg_new ();
 		    frame = zframe_new (NEW_CHUNK, 1);
 		    zmsg_add (responce, frame);
@@ -367,9 +377,14 @@ worker_balance (balance_t * balance)
 		    (memcmp
 		     (zframe_data (id_frame), &(iter->un_id),
 		      sizeof (int)) == 0)) {
-                      address=zframe_new(iter->action->key,strlen(iter->action->key));                  
+		    address =
+			zframe_new (iter->action->key,
+				    strlen (iter->action->key));
 
- fprintf(stderr,"\nworker:%s\nA NEW_CHUNK has arrived for the on_receive event with id:%d and giving key:%s",balance->self_key,iter->un_id,iter->action->key);                   
+		    fprintf (stderr,
+			     "\nworker:%s\nA NEW_CHUNK has arrived for the on_receive event with id:%d and giving key:%s",
+			     balance->self_key, iter->un_id,
+			     iter->action->key);
 		    frame = zmsg_next (msg);
 
 		    uint64_t count;
@@ -580,8 +595,9 @@ worker_balance (balance_t * balance)
 		     (zframe_data (id_frame), &(iter->un_id),
 		      sizeof (int)) == 0)) {
 		    already_received = 1;
-                    break;
+		    break;
 		}
+		iter = zlist_next (balance->on_receives);
 	    }
 
 
@@ -595,12 +611,16 @@ worker_balance (balance_t * balance)
 		on_receive_t *on_receive;
 		on_receive_init (&on_receive, msg);
 		zlist_append (balance->on_receives, on_receive);
-                iter=on_receive;
+		iter = on_receive;
 
- fprintf(stderr,"\nworker:%s\nA NEW_INTERVAL has arrived for the on_receive event with id:%d and giving key:%s",balance->self_key,on_receive->un_id,on_receive->action->key);                   
+		fprintf (stderr,
+			 "\nworker:%s\nA NEW_INTERVAL has arrived for the on_receive event with id:%d and giving key:%s",
+			 balance->self_key, on_receive->un_id,
+			 on_receive->action->key);
 	    }
 
-            address=zframe_new(iter->action->key,strlen(iter->action->key));
+	    address =
+		zframe_new (iter->action->key, strlen (iter->action->key));
 
 //send confirmation
 	    responce = zmsg_new ();
@@ -686,7 +706,7 @@ worker_balance_update (balance_t * balance)
 
 		if (iter->state == 2) {
 		    fprintf (stderr,
-			     "sending EOT msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
+			     "\nSending EOT msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
 			     iter->event->key, iter->event->start.prefix,
 			     iter->event->start.suffix,
 			     iter->event->end.prefix,

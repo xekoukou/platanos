@@ -75,7 +75,7 @@ on_receive_init (on_receive_t ** on_receive, zmsg_t * msg)
 
     zframe_t *frame = zmsg_first (msg);
     memcpy (&((*on_receive)->un_id), zframe_data (frame), sizeof (int));
-    
+
     action_minit (&((*on_receive)->action), msg);
 
     (*on_receive)->m_counters = zlist_new ();
