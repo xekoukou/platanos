@@ -154,7 +154,10 @@ worker_balance (balance_t * balance)
 
     zmsg_t *responce;
 
-    zframe_t *address = zmsg_unwrap (msg);
+    zframe_t *address;
+    zmsg_unwrap (msg);
+    
+
 
 
 //clean this TODO
@@ -172,7 +175,7 @@ worker_balance (balance_t * balance)
 	    if ((memcmp
 		 (zframe_data (id_frame), &(iter->un_id),
 		  sizeof (int)) == 0)) {
-
+                  address=zframe_new(iter->event->key,strlen(iter->event->key));
                 
 		if (memcmp (INTERVAL_RECEIVED, zframe_data (type_fr), 1) == 0) {
 		    // send the chunks
@@ -358,12 +361,14 @@ worker_balance (balance_t * balance)
 	    on_receive_t *iter = zlist_first (balance->on_receives);
 	    while (iter) {
 		if ((strcmp
-		     ((const char *) zframe_data (frame),
+		     ((const char *) zframe_data (key_frame),
 		      iter->action->key) == 0)
 		    &&
 		    (memcmp
 		     (zframe_data (id_frame), &(iter->un_id),
 		      sizeof (int)) == 0)) {
+                      address=zframe_new(iter->action->key,strlen(iter->action->key));                  
+
  fprintf(stderr,"\nworker:%s\nA NEW_CHUNK has arrived for the on_receive event with id:%d and giving key:%s",balance->self_key,iter->un_id,iter->action->key);                   
 		    frame = zmsg_next (msg);
 
@@ -575,6 +580,7 @@ worker_balance (balance_t * balance)
 		     (zframe_data (id_frame), &(iter->un_id),
 		      sizeof (int)) == 0)) {
 		    already_received = 1;
+                    break;
 		}
 	    }
 
@@ -589,9 +595,12 @@ worker_balance (balance_t * balance)
 		on_receive_t *on_receive;
 		on_receive_init (&on_receive, msg);
 		zlist_append (balance->on_receives, on_receive);
+                iter=on_receive;
 
  fprintf(stderr,"\nworker:%s\nA NEW_INTERVAL has arrived for the on_receive event with id:%d and giving key:%s",balance->self_key,on_receive->un_id,on_receive->action->key);                   
 	    }
+
+            address=zframe_new(iter->action->key,strlen(iter->action->key));
 
 //send confirmation
 	    responce = zmsg_new ();
