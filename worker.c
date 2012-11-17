@@ -151,8 +151,6 @@ worker_balance (balance_t * balance)
 	exit (1);
     }
 
-    //debugging
-    zmsg_dump (msg);
 
     zmsg_t *responce;
 
@@ -175,10 +173,11 @@ worker_balance (balance_t * balance)
 		 (zframe_data (id_frame), &(iter->un_id),
 		  sizeof (int)) == 0)) {
 
-
+                
 		if (memcmp (INTERVAL_RECEIVED, zframe_data (type_fr), 1) == 0) {
 		    // send the chunks
 
+                   fprintf(stderr,"\nworker:%s\nAn INTERVAL_RECEIVED confirmation has arrived for the on_give event with id:%d and receiving key:%s",balance->self_key,iter->un_id,iter->event->key);                  
 
 		    responce = zmsg_new ();
 		    frame = zframe_new (NEW_CHUNK, 1);
@@ -237,6 +236,11 @@ worker_balance (balance_t * balance)
 
 			}
 		    }
+                    if(responce_dup){
+                           zmsg_wrap (responce_dup, address);
+                                zmsg_send (&responce_dup, balance->router_bl);
+
+                   }
 
 
 		    zmsg_destroy (&responce);
@@ -246,6 +250,7 @@ worker_balance (balance_t * balance)
 		}
 		if (memcmp (CONFIRM_CHUNK, zframe_data (type_fr), 1) == 0) {
 		    //delete the vertices that have been verified  
+ fprintf(stderr,"\nworker:%s\nA CONFIRM_CHUNK confirmation has arrived for the on_give event with id:%d and receiving key:%s",balance->self_key,iter->un_id,iter->event->key);                   
 		    frame = zmsg_next (msg);
 		    uint64_t counter;
 		    memcpy (&counter, zframe_data (frame), sizeof (uint64_t));
@@ -274,6 +279,7 @@ worker_balance (balance_t * balance)
 		}
 
 		if (memcmp (MISSED_CHUNKES, zframe_data (type_fr), 1) == 0) {
+ fprintf(stderr,"\nworker:%s\nA MISSED_CHUNKES confirmation has arrived for the on_give event with id:%d and receiving key:%s",balance->self_key,iter->un_id,iter->event->key);                   
 		    responce = zmsg_new ();
 		    frame = zframe_new (NEW_CHUNK, 1);
 		    zmsg_add (responce, frame);
@@ -358,6 +364,7 @@ worker_balance (balance_t * balance)
 		    (memcmp
 		     (zframe_data (id_frame), &(iter->un_id),
 		      sizeof (int)) == 0)) {
+ fprintf(stderr,"\nworker:%s\nA NEW_CHUNK has arrived for the on_receive event with id:%d and giving key:%s",balance->self_key,iter->un_id,iter->action->key);                   
 		    frame = zmsg_next (msg);
 
 		    uint64_t count;
@@ -471,7 +478,7 @@ worker_balance (balance_t * balance)
 
 
 
-//this is necessary  ur put an else {}
+//this is necessary  or put an else {}
 			break;
 		    }
 
@@ -583,6 +590,7 @@ worker_balance (balance_t * balance)
 		on_receive_init (&on_receive, msg);
 		zlist_append (balance->on_receives, on_receive);
 
+ fprintf(stderr,"\nworker:%s\nA NEW_CHUNK has arrived for the on_receive event with id:%d and giving key:%s",balance->self_key,on_receive->un_id,on_receive->action->key);                   
 	    }
 
 //send confirmation
