@@ -86,8 +86,12 @@ interval_init (interval_t ** interval, struct _hkey_t *start,
 	       struct _hkey_t *end)
 {
     *interval = malloc (sizeof (interval_t));
-    memcpy (&((*interval)->start), start, sizeof (struct _hkey_t));
-    memcpy (&((*interval)->end), end, sizeof (struct _hkey_t));
+    if (start) {
+	memcpy (&((*interval)->start), start, sizeof (struct _hkey_t));
+    }
+    if (end) {
+	memcpy (&((*interval)->end), end, sizeof (struct _hkey_t));
+    }
 
 }
 
