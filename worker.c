@@ -32,7 +32,7 @@
 #include<stdlib.h>
 
 //TODO this is arbitrary
-#define ONGOING_TIMEOUT 100
+#define ONGOING_TIMEOUT 4000
 #define COUNTER_SIZE 1000	/* 1000 vertices per chunk */
 
 #define NEW_INTERVAL "\001"
@@ -281,6 +281,7 @@ worker_balance (balance_t * balance)
 			}
 			//remove the event form the event list
 			zlist_remove (balance->events, iter->event);
+			zlist_remove (balance->on_gives, iter);
 			on_give_destroy (iter);
 
 		    }
