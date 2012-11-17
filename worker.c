@@ -177,6 +177,8 @@ worker_balance (balance_t * balance)
 		if (memcmp (INTERVAL_RECEIVED, zframe_data (type_fr), 1) == 0) {
 		    // send the chunks
 
+                     iter->state=1;
+
                    fprintf(stderr,"\nworker:%s\nAn INTERVAL_RECEIVED confirmation has arrived for the on_give event with id:%d and receiving key:%s",balance->self_key,iter->un_id,iter->event->key);                  
 
 		    responce = zmsg_new ();
@@ -241,10 +243,8 @@ worker_balance (balance_t * balance)
                                 zmsg_send (&responce_dup, balance->router_bl);
 
                    }
-
-
-		    zmsg_destroy (&responce);
-
+               
+                    iter->state=2;
 
 		    free (interval);
 		}
@@ -590,7 +590,7 @@ worker_balance (balance_t * balance)
 		on_receive_init (&on_receive, msg);
 		zlist_append (balance->on_receives, on_receive);
 
- fprintf(stderr,"\nworker:%s\nA NEW_CHUNK has arrived for the on_receive event with id:%d and giving key:%s",balance->self_key,on_receive->un_id,on_receive->action->key);                   
+ fprintf(stderr,"\nworker:%s\nA NEW_INTERVAL has arrived for the on_receive event with id:%d and giving key:%s",balance->self_key,on_receive->un_id,on_receive->action->key);                   
 	    }
 
 //send confirmation

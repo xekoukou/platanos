@@ -42,7 +42,7 @@ typedef struct
 //those operations will be repeated until they succeed
     int state;
 //state 0 giving the interval
-//state 1 giving the main body
+//state 1 giving the main body              //state 1 never happends really
 //state 2 sending the ending msg
 } on_give_t;			//ongoing event
 
