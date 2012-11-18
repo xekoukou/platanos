@@ -972,16 +972,16 @@ remove_node (update_t * update, zmsg_t * msg)
 
     events_remove (update->balance->events, node);
 
-  //  int rc;
-  //  rc = zsocket_disconnect (update->compute->socket_nb, "%s",
-  //			     node->bind_point_nb);
-  //  assert (rc == 0);
-  //  rc = zsocket_disconnect (update->compute->socket_wb, "%s",
-  //			     node->bind_point_wb);
-  //  assert (rc == 0);
-  //  rc = zsocket_disconnect (update->balance->router_bl, "%s",
-  //			     node->bind_point_bl);
-  //  assert (rc == 0);
+    //  int rc;
+    //  rc = zsocket_disconnect (update->compute->socket_nb, "%s",
+    //                         node->bind_point_nb);
+    //  assert (rc == 0);
+    //  rc = zsocket_disconnect (update->compute->socket_wb, "%s",
+    //                         node->bind_point_wb);
+    //  assert (rc == 0);
+    //  rc = zsocket_disconnect (update->balance->router_bl, "%s",
+    //                         node->bind_point_bl);
+    //  assert (rc == 0);
 
 
 
@@ -1509,6 +1509,7 @@ worker_fn (void *arg)
 	}
 	else {
 	    worker_balance_update (balance);
+	    worker_update_timeout (worker, balance->next_time, 0, wake_nod);
 	}
 	if (pollitems[0].revents & ZMQ_POLLIN) {
 	    zframe_t *temp_frame = zframe_recv (self_wake);
@@ -1544,12 +1545,23 @@ void
 worker_update_timeout (worker_t * worker, int new_next_time, int is_it_sleep,
 		       void *wake_nod)
 {
+    if (is_it_sleep) {
+	worker->snext_time = new_next_time;
+    }
+    else {
+	worker->bnext_time = new_next_time;
+    }
+    if ((worker->bnext_time == -1) && (worker->bnext_time == -1)) {
+	worker->next_time = -1;
+    }
+    else {
 
-    if (((new_next_time > 0) && (new_next_time < worker->next_time))
-	|| (worker->next_time < 0)) {
-	worker->next_time = new_next_time;
-	worker->is_it_sleep = is_it_sleep;
-	zframe_send (wake_nod, zframe_new ("", 0), 0);
+	if (((new_next_time > 0) && (new_next_time < worker->next_time))
+	    || (worker->next_time < 0)) {
+	    worker->next_time = new_next_time;
+	    worker->is_it_sleep = is_it_sleep;
+	    zframe_send (wake_nod, zframe_new ("", 0), 0);
+	}
     }
 
 
@@ -1627,6 +1639,8 @@ worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
     sprintf ((*worker)->id, "%s%s", comp_name, res_name);
     (*worker)->config = config;
     (*worker)->next_time = -1;
+    (*worker)->bnext_time = -1;
+    (*worker)->snext_time = -1;
     (*worker)->is_it_sleep = 1;
 
 }
