@@ -29,7 +29,7 @@
 #include<stdlib.h>
 
 //TODO this is arbitrary
-#define ONGOING_TIMEOUT 10000
+#define ONGOING_TIMEOUT 4000
 
 void
 update_init (update_t ** update, void *dealer, router_t * router,

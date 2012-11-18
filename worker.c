@@ -972,16 +972,16 @@ remove_node (update_t * update, zmsg_t * msg)
 
     events_remove (update->balance->events, node);
 
-    int rc;
-    rc = zsocket_disconnect (update->compute->socket_nb, "%s",
-			     node->bind_point_nb);
-    assert (rc == 0);
-    rc = zsocket_disconnect (update->compute->socket_wb, "%s",
-			     node->bind_point_wb);
-    assert (rc == 0);
-    rc = zsocket_disconnect (update->balance->router_bl, "%s",
-			     node->bind_point_bl);
-    assert (rc == 0);
+  //  int rc;
+  //  rc = zsocket_disconnect (update->compute->socket_nb, "%s",
+  //			     node->bind_point_nb);
+  //  assert (rc == 0);
+  //  rc = zsocket_disconnect (update->compute->socket_wb, "%s",
+  //			     node->bind_point_wb);
+  //  assert (rc == 0);
+  //  rc = zsocket_disconnect (update->balance->router_bl, "%s",
+  //			     node->bind_point_bl);
+  //  assert (rc == 0);
 
 
 
@@ -1627,6 +1627,7 @@ worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
     sprintf ((*worker)->id, "%s%s", comp_name, res_name);
     (*worker)->config = config;
     (*worker)->next_time = -1;
+    (*worker)->is_it_sleep = 1;
 
 }
 
