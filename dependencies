@@ -1,7 +1,7 @@
-libproc-dev
+libprocps0-dev
 zeromq
 zookeeper_mt
 czmq
 leveldb
 libgoogle-perftools-dev
-snappy
+libsnappy-dev

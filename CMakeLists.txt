@@ -5,19 +5,19 @@ set(CMAKE_CXX_FLAGS "-g -Wall")
 set(CMAKE_C_FLAGS "-DTHREADED -g -Wall")
 add_executable(zookeeper_register zookeeper_register.c config.c)
 
-target_link_libraries(zookeeper_register zookeeper_mt proc czmq)
+target_link_libraries(zookeeper_register zookeeper_mt procps czmq)
 
 add_executable(zookeeper_unregister zookeeper_unregister.c)
 
-target_link_libraries(zookeeper_unregister zookeeper_mt proc )
+target_link_libraries(zookeeper_unregister zookeeper_mt procps)
 
 add_executable(zookeeper_global_init zookeeper_global_init.c)
 
-target_link_libraries(zookeeper_global_init zookeeper_mt proc )
+target_link_libraries(zookeeper_global_init zookeeper_mt, procps)
 
 add_executable(zookeeper_control zookeeper_control.c)
 
-target_link_libraries(zookeeper_control zookeeper_mt proc )
+target_link_libraries(zookeeper_control zookeeper_mt, procps)
 
 
 add_subdirectory(MurmurHash)
@@ -45,4 +45,4 @@ zookeeper.c
 main.c
 )
 
-target_link_libraries(node_exec MurmurHash zookeeper_mt proc czmq leveldb tcmalloc)
+target_link_libraries(node_exec MurmurHash zookeeper_mt procps czmq leveldb tcmalloc)
