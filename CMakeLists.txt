@@ -13,11 +13,11 @@ target_link_libraries(zookeeper_unregister zookeeper_mt procps)
 
 add_executable(zookeeper_global_init zookeeper_global_init.c)
 
-target_link_libraries(zookeeper_global_init zookeeper_mt, procps)
+target_link_libraries(zookeeper_global_init zookeeper_mt procps)
 
 add_executable(zookeeper_control zookeeper_control.c)
 
-target_link_libraries(zookeeper_control zookeeper_mt, procps)
+target_link_libraries(zookeeper_control zookeeper_mt procps)
 
 
 add_subdirectory(MurmurHash)
