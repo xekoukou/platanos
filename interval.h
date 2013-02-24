@@ -24,7 +24,7 @@
 #include "hkey.h"
 #include "tree/tree.h"
 #include <czmq.h>
-
+#include"MurmurHash/MurmurHash3.h"
 
 //TODO We dont need an rb tree here
 //but it works anyway

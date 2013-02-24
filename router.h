@@ -33,32 +33,10 @@
 #include "interval.h"
 #include "event.h"
 #include "hkey.h"
+#include "node.h"
+#include "nodes.h"
 
 
-
-
-
-struct node_t
-{
-    unsigned long st_piece;
-    int n_pieces;
-    char key[100];		//key is the routing_address or the subscription subject that we will accept from this node.
-    int alive;			//this is only used in a db_routing, all worker nodes received 
-    //are assumed alive. The reason for this is that db nodes need 
-    //to remain the same for each vertex despite the failures
-    // so that the vertex can know which db to fix in case of failures
-
-    char bind_point_nb[50];	//this is used by db only
-    char bind_point_wb[50];
-    char bind_point_bl[50];
-
-};
-
-
-typedef struct router_t router_t;
-typedef struct node_t node_t;
-
-KHASH_MAP_INIT_STR (nodes_t, node_t *);
 
 
 struct hash_t
@@ -85,6 +63,7 @@ struct router_t
 };
 
 
+typedef struct router_t router_t;
 
 
 void router_init (router_t ** router, int type);
@@ -128,34 +107,6 @@ node_t *router_fnode (struct router_t *router, char *key);
 
 zlist_t *router_events (router_t * router, node_t * node, int removal,
 			int *circle);
-
-
-//result should be big enough
-void node_piece (char *key, unsigned long pnumber, char *result);
-
-
-
-void nodes_init (khash_t (nodes_t) ** nodes);
-
-void nodes_put (khash_t (nodes_t) * nodes, node_t * node);
-
-//deletes the entry if present
-//the node is deleted bu router_delete
-void nodes_delete (khash_t (nodes_t) * nodes, char *key);
-
-//returns NULL if not found
-node_t *nodes_search (khash_t (nodes_t) * nodes, char *key);
-
-
-void node_init (node_t ** node, char *key, int n_pieces,
-		unsigned long st_piece, char *bind_point_nb,
-		char *bind_point_wb, char *bind_point_bl);
-
-node_t *node_dup (node_t * node);
-
-// only used in a db_routing 
-void node_set_alive (node_t * node, int alive);
-
 
 
 #endif

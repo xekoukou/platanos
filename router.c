@@ -33,13 +33,6 @@
 #include"hash/khash.h"
 #include"action.h"
 
-//result should be big enough
-void
-node_piece (char *key, unsigned long pnumber, char *result)
-{
-    sprintf (result, "%s%lu", key, pnumber);
-}
-
 
 RB_GENERATE (hash_rb_t, hash_t, field, cmp_hash_t);
 
@@ -768,80 +761,3 @@ router_fnode (struct router_t * router, char *key)
     return nodes_search (router->nodes, key);
 }
 
-
-//NODES HASH is used to find a node only by its key
-
-
-
-void
-nodes_init (khash_t (nodes_t) ** nodes)
-{
-
-    *nodes = kh_init (nodes_t);
-}
-
-void
-nodes_put (khash_t (nodes_t) * nodes, node_t * node)
-{
-    int is_missing;
-    khiter_t k;
-    k = kh_put (nodes_t, nodes, node->key, &is_missing);
-    kh_value (nodes, k) = node;
-
-}
-
-//deletes the entry if present
-//the node is deleted bu router_delete
-void
-nodes_delete (khash_t (nodes_t) * nodes, char *key)
-{
-    khiter_t k;
-    k = kh_get (nodes_t, nodes, key);
-    if (k != kh_end (nodes)) {
-	kh_del (nodes_t, nodes, k);
-    }
-
-
-}
-
-//returns NULL if not found
-node_t *
-nodes_search (khash_t (nodes_t) * nodes, char *key)
-{
-
-    khiter_t k;
-    k = kh_get (nodes_t, nodes, key);
-    if (k != kh_end (nodes)) {
-	return kh_value (nodes, k);
-    }
-    return NULL;
-
-
-}
-
-
-
-void
-node_init (node_t ** node, char *key, int n_pieces,
-	   unsigned long st_piece, char *bind_point_nb,
-	   char *bind_point_wb, char *bind_point_bl)
-{
-
-    *node = malloc (sizeof (node_t));
-    strcpy ((*node)->key, key);
-    (*node)->n_pieces = n_pieces;
-    (*node)->st_piece = st_piece;
-    strcpy ((*node)->bind_point_nb, bind_point_nb);
-    strcpy ((*node)->bind_point_wb, bind_point_wb);
-    strcpy ((*node)->bind_point_bl, bind_point_bl);
-
-}
-
-node_t *
-node_dup (node_t * node)
-{
-
-    node_t *new_node = malloc (sizeof (node_t));
-    memcpy (new_node, node, sizeof (node_t));
-    return new_node;
-}

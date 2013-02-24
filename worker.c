@@ -22,13 +22,21 @@
 
 #include<czmq.h>
 #include"worker.h"
-#include"worker_update.h"
 #include"zookeeper.h"
 #include<zookeeper/zookeeper.h>
 #include"hash/khash.h"
 #include"vertex.h"
 #include"sleep.h"
 #include<stdlib.h>
+#include"on_give.h"
+#include"on_receive.h"
+#include"update.h"
+#include"balance.h"
+#include"events.h"
+#include"nodes.h"
+#include"actions.h"
+
+
 
 //TODO this is arbitrary
 #define ONGOING_TIMEOUT 4000
