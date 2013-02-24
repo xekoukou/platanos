@@ -27,6 +27,7 @@
 #include"config.h"
 #include"worker.h"
 #include"db.h"
+#include"zk_common.h"
 
 #define _LL_CAST_ (long long)
 

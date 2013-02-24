@@ -37,7 +37,7 @@ events.c
 event.c
 interval.c
 intervals.c
-common.c
+zk_common.c
 config.c
 localdb.c
 router.c

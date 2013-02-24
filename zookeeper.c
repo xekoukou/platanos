@@ -24,7 +24,6 @@
 #include"zookeeper.h"
 #include<string.h>
 #include<czmq.h>
-#include"common.h"
 #include"worker.h"
 #include"db.h"
 #include<stdlib.h>
