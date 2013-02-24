@@ -4,4 +4,4 @@ zookeeper_mt
 czmq
 leveldb
 libgoogle-perftools-dev
-libsnappy-dev
+libsnappy-dev or (snappy build from source with pkg-config depend)

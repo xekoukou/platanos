@@ -30,11 +30,16 @@ include_directories ("${PROJECT_SOURCE_DIR}/tree")
 include_directories ("${PROJECT_SOURCE_DIR}/hash")
 
 add_executable(node_exec 
-aknowledgements.c
+hkey.c
+action.c
+actions.c
+events.c
+event.c
+interval.c
+intervals.c
 common.c
 config.c
 localdb.c
-main.c
 router.c
 sleep.c
 vertex.c

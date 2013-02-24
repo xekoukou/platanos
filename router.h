@@ -30,14 +30,11 @@
 #include <czmq.h>
 #include"hash/khash.h"
 #include"MurmurHash/MurmurHash3.h"
+#include "interval.h"
+#include "event.h"
+#include "hkey.h"
 
 
-
-struct _hkey_t
-{
-    uint64_t prefix;
-    uint64_t suffix;
-};
 
 
 
@@ -123,7 +120,6 @@ void router_dbroute (struct router_t *router, uint64_t key, char **rkey,
 node_t *router_fnode (struct router_t *router, char *key);
 
 
-#include"aknowledgements.h"
 
 //returns an array of events of a specific size
 //if this node already exist it creates events from the difference of their settings
