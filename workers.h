@@ -17,26 +17,29 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef OCTOPUS_WORKERS_H_
+#define OCTOPUS_WORKERS_H_
 
+#include<pthread.h>
+#include "zookeeper.h"
 
-
-#ifndef OCTOPUS_DB_H_
-#define OCTOPUS_DB_H_
-
-#include"zookeeper.h"
 
 struct ozookeeper_t;
 
-struct dbs_t
+struct workers_t
 {
     pthread_t *pthread;
-    char **id;			//has null at the end
+    char **id;                  //has null at the end
     int size;
 };
 
-typedef struct dbs_t dbs_t;
+typedef struct workers_t workers_t;
 
-void dbs_init (dbs_t ** dbs, struct ozookeeper_t *ozookeeper);
+
+
+void workers_init (workers_t ** workers, struct ozookeeper_t *ozookeeper);
+
+void workers_monitor (workers_t * workers);
 
 
 #endif

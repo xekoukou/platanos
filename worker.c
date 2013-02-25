@@ -17,26 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-
-
-#include<czmq.h>
 #include"worker.h"
-#include"zookeeper.h"
-#include<zookeeper/zookeeper.h>
-#include"hash/khash.h"
-#include"vertex.h"
-#include"sleep.h"
-#include<stdlib.h>
-#include"on_give.h"
-#include"on_receive.h"
-#include"update.h"
-#include"balance.h"
-#include"events.h"
-#include"nodes.h"
-#include"actions.h"
-
-
 
 //TODO this is arbitrary
 #define ONGOING_TIMEOUT 4000
@@ -1574,61 +1555,6 @@ worker_update_timeout (worker_t * worker, int new_next_time, int is_it_sleep,
 
 }
 
-void
-compute_init (compute_t ** compute, khash_t (vertices) * hash,
-	      router_t * router, zlist_t * events, intervals_t * intervals,
-	      void *socket_nb, void *self_nb, void *socket_wb, void *self_wb,
-	      localdb_t * localdb, worker_t * worker, void *wake_nod)
-{
-
-    *compute = malloc (sizeof (compute_t));
-
-    (*compute)->router = router;
-    (*compute)->events = events;
-    (*compute)->intervals = intervals;
-    (*compute)->socket_nb = socket_nb;
-    (*compute)->self_nb = self_nb;
-    (*compute)->socket_wb = socket_wb;
-    (*compute)->self_wb = self_wb;
-    (*compute)->worker = worker;
-    (*compute)->hash = hash;
-    (*compute)->wake_nod = wake_nod;
-    (*compute)->localdb = localdb;
-    (*compute)->interval = localdb_get_interval (localdb);
-    (*compute)->counter = localdb_get_counter (localdb);
-//in case we just started
-    if ((*compute)->interval == -1) {
-	(*compute)->interval = worker_new_interval (worker, localdb);
-//init counter
-	localdb_incr_counter (localdb, 1);
-	(*compute)->counter = 1;
-    }
-
-//getting the interval size
-
-    int result;
-    struct Stat stat;
-
-    char path[1000];
-    char octopus[1000];
-    unsigned long buffer;
-    int buffer_len = sizeof (unsigned long);
-
-    oconfig_octopus (worker->config, octopus);
-
-    sprintf (path, "/%s/global_properties/interval/interval_size", octopus);
-    result = zoo_get (worker->zh, path, 0, (char *) buffer,
-		      &buffer_len, &stat);
-    assert (result == ZOK);
-
-    assert (buffer_len == sizeof (unsigned long));
-
-    (*compute)->interval_size = buffer;
-
-
-
-}
-
 
 
 void
@@ -1649,70 +1575,5 @@ worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
     (*worker)->bnext_time = -1;
     (*worker)->snext_time = -1;
     (*worker)->is_it_sleep = 1;
-
-}
-
-void
-workers_init (workers_t ** workers, ozookeeper_t * ozookeeper)
-{
-
-    int result;
-    char path[1000];
-    char octopus[1000];
-    char comp_name[1000];
-
-    oconfig_octopus (ozookeeper->config, octopus);
-    oconfig_comp_name (ozookeeper->config, comp_name);
-
-    sprintf (path, "/%s/computers/%s/worker_nodes", octopus, comp_name);
-    struct String_vector worker_children;
-    result = zoo_get_children (ozookeeper->zh, path, 0, &worker_children);
-
-
-    if (ZOK == result) {
-
-//mallocing
-	*workers = malloc (sizeof (workers_t));
-	(*workers)->size = worker_children.count;
-	(*workers)->id = malloc (sizeof (char *) * (worker_children.count));
-	(*workers)->pthread =
-	    malloc (sizeof (pthread_t) * worker_children.count);
-
-//create the threads
-
-	int iter;
-	if (worker_children.count < 1000) {
-	    worker_t *worker;
-	    for (iter = 0; iter < worker_children.count; iter++) {
-		(*workers)->id[iter] =
-		    malloc (strlen (worker_children.data[iter]) + 1 +
-			    strlen (comp_name));
-
-		sprintf ((*workers)->id[iter], "%s%s", comp_name,
-			 worker_children.data[iter]);
-
-		worker_init (&worker, ozookeeper->zh, ozookeeper->config,
-			     comp_name, worker_children.data[iter]
-		    );
-
-		pthread_create (&((*workers)->pthread[iter]), NULL, worker_fn,
-				worker);
-	    }
-	}
-	else {
-	    fprintf (stderr, "\n More workers than allowed.. error exiting");
-	    exit (1);
-	}
-	if (ZOK != result && ZNONODE != result) {
-	    fprintf (stderr, "\n Couldnt get the children.. error exiting");
-	    exit (1);
-	}
-
-
-	deallocate_String_vector (&worker_children);
-    }
-
-
-
 
 }

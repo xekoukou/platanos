@@ -46,6 +46,8 @@ router.c
 sleep.c
 vertex.c
 worker.c
+workers.c
+compute.c
 db.c
 balance.c
 on_give.c

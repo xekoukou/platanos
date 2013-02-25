@@ -25,19 +25,24 @@
 
 #include"balance.h"
 #include"router.h"
-#include"worker.h"
+#include"compute.h"
 
-typedef struct
+struct compute_t;
+typedef struct compute_t compute_t;
+
+struct update_t
 {
     unsigned int id;            //the id of the previous update
     void *dealer;               //used to confirm the updates to the ozookeeper object
     router_t *router;
     balance_t *balance;
     compute_t *compute;
-} update_t;
+};
+
+typedef struct update_t update_t;
 
 void update_init (update_t ** update, void *dealer, router_t * router,
-                  balance_t * balance, compute_t * compute);
+                  balance_t * balance, struct compute_t * compute);
 
 
 

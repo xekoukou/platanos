@@ -26,10 +26,16 @@
 #include<zookeeper/zookeeper.h>
 #include"config.h"
 #include"worker.h"
+#include"workers.h"
 #include"db.h"
 #include"zk_common.h"
 
 #define _LL_CAST_ (long long)
+
+struct workers_t;
+struct dbs_t;
+typedef struct dbs_t dbs_t;
+
 
 typedef struct
 {
@@ -57,7 +63,7 @@ struct ozookeeper_t
     void *db_pub;
     void *db_router;
     oz_updater_t updater;
-    workers_t *workers;
+    struct workers_t *workers;
     dbs_t *dbs;
 };
 
@@ -73,7 +79,7 @@ ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
 
 int ozookeeper_not_corrupt (ozookeeper_t ** ozookeep);
 
-void ozookeeper_init_workers (ozookeeper_t * ozookeeper, workers_t * workers);
+void ozookeeper_init_workers (ozookeeper_t * ozookeeper, struct workers_t * workers);
 
 void ozookeeper_init_dbs (ozookeeper_t * ozookeeper, dbs_t * dbs);
 
