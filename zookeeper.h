@@ -29,6 +29,7 @@
 #include"workers.h"
 #include"db.h"
 #include"zk_common.h"
+#include"zk_updater.h"
 
 #define _LL_CAST_ (long long)
 
@@ -36,23 +37,6 @@ struct workers_t;
 struct dbs_t;
 typedef struct dbs_t dbs_t;
 
-
-typedef struct
-{
-    unsigned int id;		//used to id updates
-    char *key;			//computer + res_name that is also the id of all communication to the worker 
-//contains null
-
-//these are used to find the changes that happened to the children
-    struct String_vector computers;
-    struct String_vector *w_resources;
-    int **w_online;		//this is used tocheck whether a previous watch event has set a resource
-//offline (used by w_st_piece ,w_n_pieces)
-
-    struct String_vector *db_resources;
-    int **db_online;
-
-} oz_updater_t;
 
 struct ozookeeper_t
 {
@@ -94,16 +78,4 @@ void ozookeeper_destroy (ozookeeper_t * ozookeeper);
 void global_watcher (zhandle_t * zzh, int type, int state, const char *path,
 		     void *context);
 
-// doesnt allocate memory
-void oz_updater_init (oz_updater_t * updater);
-
-void oz_updater_destroy (oz_updater_t * updater);
-
-void oz_updater_key (oz_updater_t * updater, char *key);
-
-void oz_updater_free_key (oz_updater_t * updater);
-
-void
-oz_updater_search (oz_updater_t * updater, int db, char *comp_name,
-		   char *res_name, int *m, int *n);
 #endif

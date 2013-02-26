@@ -291,96 +291,6 @@ ozookeeper_init_dbs (ozookeeper_t * ozookeeper, dbs_t * dbs)
 }
 
 
-
-// doesnt allocate memory
-void
-oz_updater_init (oz_updater_t * updater)
-{
-    updater->id = 1;
-    //allocate_String_vector (&(updater->computers));
-    updater->computers.count = 0;
-    updater->computers.data = 0;
-    updater->w_resources = NULL;
-    updater->w_online = NULL;
-    updater->db_resources = NULL;
-    updater->db_online = NULL;
-    updater->key = NULL;
-}
-
-// just creates a path
-void
-oz_updater_key (oz_updater_t * updater, char *key)
-{
-    updater->key = malloc (strlen (key) + 1);
-    strcpy (updater->key, key);
-}
-
-void
-oz_updater_free_key (oz_updater_t * updater)
-{
-    if (updater->key != NULL) {
-	free (updater->key);
-    }
-}
-
-void
-oz_updater_destroy (oz_updater_t * updater)
-{
-    free (updater->key);
-    int iter;
-
-    for (iter = 0; iter < updater->computers.count; iter++) {
-	deallocate_String_vector (&(updater->w_resources[iter]));
-	deallocate_String_vector (&(updater->db_resources[iter]));
-	free (updater->w_online[iter]);
-	free (updater->db_online[iter]);
-    }
-    free (updater->w_resources);
-    free (updater->db_resources);
-    free (updater->db_online);
-    free (updater->w_online);
-}
-
-//returns the location where the resource is ex.(5, 17)
-//if it doesnt exist you get (-1,something) or (something,-1)
-void
-oz_updater_search (oz_updater_t * updater, int db, char *comp_name,
-		   char *res_name, int *m, int *n)
-{
-    *m = -1;
-    *n = -1;
-
-    int iter;
-    for (iter = 0; iter < updater->computers.count; iter++) {
-	if (strcmp (updater->computers.data[iter], comp_name) == 0) {
-	    *m = iter;
-	    break;
-	}
-    }
-    if (db) {
-	for (iter = 0; iter < updater->db_resources[*m].count; iter++) {
-	    if (strcmp (updater->db_resources[*m].data[iter], res_name) == 0) {
-		*n = iter;
-		break;
-	    }
-	}
-    }
-    else {
-	for (iter = 0; iter < updater->w_resources[*m].count; iter++) {
-	    if (strcmp (updater->w_resources[*m].data[iter], res_name) == 0) {
-		*n = iter;
-		break;
-	    }
-	}
-
-
-
-
-    }
-
-}
-
-
 //one node update
 void
 ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
@@ -1117,7 +1027,7 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
 
     struct Stat stat;
 
-
+//TODO this is probably not needed
     result = zoo_wexists (ozookeeper->zh, path,
 			  w_resources, ozookeeper, &stat);
     if (result == ZOK) {
@@ -1141,84 +1051,10 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
 		fprintf (stderr, "\n%s", resources.data[iter]);
 	    }
 
+        zlist_t * db_old = zlist_new();
 
-
-
-
-
-
-//update resources
-//find its location
-//at least one computer should exist that has the same name
-	    int position = -1;
-	    for (iter = 0; iter < ozookeeper->updater.computers.count; iter++) {
-		if (strcmp
-		    (ozookeeper->updater.computers.data[iter],
-		     comp_name) == 0) {
-		    position = iter;
-		    break;
-		}
-	    }
-	    assert (position != -1);
-
-
-
-	    struct String_vector *old_resources;
-	    int **old_online;
-
-	    if (db) {
-		old_resources = &(ozookeeper->updater.db_resources[position]);
-		old_online = ozookeeper->updater.db_online;
-	    }
-	    else {
-		old_resources = &(ozookeeper->updater.w_resources[position]);
-		old_online = ozookeeper->updater.w_online;
-
-	    }
-
-
-//i use this in case there is a reordering of the existing children
-	    int *sort = malloc (sizeof (int) * resources.count);
-//update the online vector
-	    int *online_vector =
-		(int *) calloc (resources.count, sizeof (int));
-
-//set watches to new resources
-	    for (iter = 0; iter < resources.count; iter++) {
-		int exists = 0;
-		for (siter = 0; siter < old_resources->count; siter++) {
-		    if (strcmp
-			(resources.data[iter],
-			 old_resources->data[siter]) == 0) {
-			exists = 1;
-		    }
-		}
-		if (exists) {
-		    sort[iter] = siter;
-		    online_vector[iter] = old_online[position][siter];
-		}
-		else {
-		    sort[iter] = -1;
-//databases need to know whether a node has unregistered
-		    if (db) {
-			sprintf (path, "%s%s",
-				 ozookeeper->updater.computers.data[position],
-				 old_resources->data[siter]);
-			ozookeeper_update_delete_node (ozookeeper, spath);
-
-		    }
-		}
-	    }
-
-	    deallocate_String_vector (old_resources);
-
-
-	    memcpy (old_resources, &resources, sizeof (struct String_vector));
-	    if (old_online[position] != NULL) {
-		free (old_online[position]);
-	    }
-	    old_online[position] = online_vector;
-
+       	int * sort = oz_updater_new_resources(&(ozookeeper->updater),comp_name,resources,db,db_old);
+ 
 
 	    fprintf (stderr, "\ndb:%d new resources for computer %s", db,
 		     comp_name);
@@ -1228,11 +1064,26 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
 		}
 	    }
 
+            //inform for unregistered dbs
+                           //databases need to know whether a node has unregistered
+                    if (db) {
+                        char *res=zlist_first(db_old);
+                        while(res){
+                        sprintf (spath, "%s%s",
+                                 comp_name,
+                                 res);
+                        ozookeeper_update_delete_node (ozookeeper, spath);
+                        res= zlist_next(db_old);
+			}
+                    }
+                  
+                  zlist_destroy(&db_old);
+
+
 	    //check the new resources
 
 	    for (iter = 0; iter < resources.count; iter++) {
 		if (sort[iter] == -1) {
-
 
 //check if this node is online
 		    sprintf (spath, "/%s/computers/%s/%s/%s/online",
@@ -1309,126 +1160,7 @@ computers (ozookeeper_t * ozookeeper, int start)
 				w_computers, ozookeeper, &computers);
     assert (result == ZOK);
 
-//i use this in case there is a reordering of the existing children
-    int *sort = malloc (sizeof (int) * computers.count);
-//array to free the previous resources
-//TODO calloc puts things to zero?
-    int size = ozookeeper->updater.computers.count;
-    int *array = (int *) calloc (ozookeeper->updater.computers.count,
-				 sizeof (int)
-	);
-
-//set watches to new computers
-    for (iter = 0; iter < computers.count; iter++) {
-	int exists = 0;
-	for (siter = 0; siter < ozookeeper->updater.computers.count; siter++) {
-	    if (strcmp
-		(computers.data[iter],
-		 ozookeeper->updater.computers.data[siter]) == 0) {
-		exists = 1;
-		break;
-	    }
-	}
-	if (exists) {
-	    sort[iter] = siter;
-	    array[siter] = 1;
-	}
-	else {
-	    sort[iter] = -1;
-	}
-    }
-
-    deallocate_String_vector (&(ozookeeper->updater.computers));
-
-//set the new computer list
-    memcpy (&(ozookeeper->updater.computers), &computers,
-	    sizeof (struct String_vector));
-
-
-//I allocate the new resources and set watches to new computer's resources
-    struct String_vector *new_w_resources =
-	malloc (sizeof (struct String_vector)
-		* computers.count);
-
-    int **new_w_online_matrix = malloc (sizeof (int *) * computers.count);
-
-    struct String_vector *new_db_resources =
-	malloc (sizeof (struct String_vector)
-		* computers.count);
-
-    int **new_db_online_matrix = malloc (sizeof (int *) * computers.count);
-
-
-//obtain the previous data
-    for (iter = 0; iter < computers.count; iter++) {
-	if (sort[iter] != -1) {
-
-	    memcpy (&(new_w_resources[iter]),
-		    &(ozookeeper->updater.w_resources[sort[iter]]),
-		    sizeof (struct String_vector));
-	    new_w_online_matrix[iter] =
-		ozookeeper->updater.w_online[sort[iter]];
-
-	    memcpy (&(new_db_resources[iter]),
-		    &(ozookeeper->updater.db_resources[sort[iter]]),
-		    sizeof (struct String_vector));
-	    new_db_online_matrix[iter] =
-		ozookeeper->updater.db_online[sort[iter]];
-
-
-	}
-	else {
-//initialize the vector
-	    new_w_resources[iter].count = 0;
-	    new_w_resources[iter].data = 0;
-	    new_w_online_matrix[iter] = NULL;
-
-	    new_db_resources[iter].count = 0;
-	    new_db_resources[iter].data = 0;
-	    new_db_online_matrix[iter] = NULL;
-
-
-	}
-    }
-
-//free the previous memory and update the pointer to the new memory
-
-    for (siter = 0; siter < size; siter++) {
-	if (array[siter] == 0) {
-	    deallocate_String_vector (&
-				      (ozookeeper->
-				       updater.w_resources[siter]));
-	    free (ozookeeper->updater.w_online[siter]);
-
-	    deallocate_String_vector (&
-				      (ozookeeper->
-				       updater.db_resources[siter]));
-	    free (ozookeeper->updater.db_online[siter]);
-
-	}
-
-    }
-    if (ozookeeper->updater.w_resources != NULL) {
-	free (ozookeeper->updater.w_resources);
-	assert (ozookeeper->updater.w_online != NULL);
-	assert (ozookeeper->updater.db_resources != NULL);
-	assert (ozookeeper->updater.db_online != NULL);
-	free (ozookeeper->updater.w_online);
-
-	free (ozookeeper->updater.db_resources);
-	free (ozookeeper->updater.db_online);
-
-    }
-    ozookeeper->updater.w_resources = new_w_resources;
-    ozookeeper->updater.w_online = new_w_online_matrix;
-
-    ozookeeper->updater.db_resources = new_db_resources;
-    ozookeeper->updater.db_online = new_db_online_matrix;
-
-
-    free (array);
-
-
+    int *sort=oz_updater_new_computers(&(ozookeeper->updater),computers);
 
 
     fprintf (stderr, "\nregistered computers:");
@@ -1488,9 +1220,6 @@ w_computers (zhandle_t * zh, int type,
 }
 
 
-
-
-
 //completions
 
 //i use this completion function simply to preserve the order of operations
@@ -1507,30 +1236,6 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
