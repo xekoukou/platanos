@@ -28,7 +28,7 @@
 struct smsg_t
 {
     int64_t expiry;
-    unsigned short wb;		//boolean 1 or 0
+    unsigned short wb;          //boolean 1 or 0
     zmsg_t *msg;
       RB_ENTRY (smsg_t) field;
 };
@@ -43,8 +43,8 @@ RB_PROTOTYPE (smsg_rb_t, smsg_t, field, cmp_smsg_t);
 typedef struct
 {
     struct smsg_rb_t smsg_rb;
-    struct smsg_t *min;		//used to reduce latency in finding the minimum item
-    int64_t next_time;		//next_time
+    struct smsg_t *min;         //used to reduce latency in finding the minimum item
+    int64_t next_time;          //next_time
 
 } sleep_t;
 
@@ -52,7 +52,7 @@ typedef struct
 void sleep_init (sleep_t ** sleep);
 
 void sleep_add (sleep_t * sleep, zmsg_t * msg, int64_t delay,
-		unsigned short wb);
+                unsigned short wb);
 
 //returns null when there are no more msgs to give
 //dont give null msgs, it will brake it

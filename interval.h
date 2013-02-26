@@ -58,8 +58,7 @@ int interval_belongs_h (interval_t * interval, struct _hkey_t *hkey);
 int interval_belongs (interval_t * interval, uint64_t key);
 
 
-int
-cmp_interval_t (struct interval_t *first, struct interval_t *second);
+int cmp_interval_t (struct interval_t *first, struct interval_t *second);
 
 
 

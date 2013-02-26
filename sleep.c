@@ -34,10 +34,10 @@ int
 cmp_smsg_t (struct smsg_t *first, struct smsg_t *second)
 {
     if (first->expiry > second->expiry) {
-	return 1;
+        return 1;
     }
     else if (first->expiry < second->expiry) {
-	return -1;
+        return -1;
     }
     return 0;
 }
@@ -62,10 +62,10 @@ sleep_add (sleep_t * sleep, zmsg_t * msg, int64_t delay, unsigned short wb)
 
     //update min
     if (sleep->min == NULL) {
-	sleep->min = smsg;
+        sleep->min = smsg;
     }
     if (cmp_smsg_t (sleep->min, smsg) > 0) {
-	sleep->min = smsg;
+        sleep->min = smsg;
     }
 //insert into rbtree
     RB_INSERT (smsg_rb_t, &(sleep->smsg_rb), smsg);
@@ -76,7 +76,7 @@ sleep_add (sleep_t * sleep, zmsg_t * msg, int64_t delay, unsigned short wb)
 
 
     if ((sleep->next_time > smsg->expiry) || (sleep->next_time == -1)) {
-	sleep->next_time = smsg->expiry;
+        sleep->next_time = smsg->expiry;
     }
 }
 
@@ -96,28 +96,28 @@ sleep_awake (sleep_t * sleep, unsigned short *wb)
     zmsg_t *msg = NULL;
 
     if (sleep->min != NULL) {
-	if ((sleep->min->expiry - zclock_time ()) < 0) {
+        if ((sleep->min->expiry - zclock_time ()) < 0) {
 
-	    struct smsg_t *temp;
+            struct smsg_t *temp;
 
-	    temp = sleep->min;
-	    //update the min
-	    sleep->min = RB_PARENT (sleep->min, field);
-	    msg = temp->msg;
-	    *wb = temp->wb;
-	    //free the previous min smsg
-	    free (temp);
+            temp = sleep->min;
+            //update the min
+            sleep->min = RB_PARENT (sleep->min, field);
+            msg = temp->msg;
+            *wb = temp->wb;
+            //free the previous min smsg
+            free (temp);
 
-	}
+        }
     }
 
 //update the timeout 
 
     if (sleep->min == NULL) {
-	sleep->next_time = -1;
+        sleep->next_time = -1;
     }
     else {
-	sleep->next_time = sleep->min->expiry;
+        sleep->next_time = sleep->min->expiry;
     }
     return msg;
 

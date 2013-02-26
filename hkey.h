@@ -35,11 +35,9 @@ struct _hkey_t
 };
 
 
-int
-cmp_hkey_t (struct _hkey_t *first, struct _hkey_t *second);
+int cmp_hkey_t (struct _hkey_t *first, struct _hkey_t *second);
 
 
 typedef struct _hkey_t hkey_t;
 
 #endif
-

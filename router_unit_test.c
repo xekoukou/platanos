@@ -72,7 +72,7 @@ main ()
     int iter = 0;
 
     for (iter = 0; iter < repl; iter++) {
-	rkey[iter] = (char *) malloc (100);
+        rkey[iter] = (char *) malloc (100);
     }
     int nreturned;
     router_dbroute (router, "a radom key", rkey, &nreturned);
@@ -80,8 +80,8 @@ main ()
     printf ("\n it returned %d", nreturned);
 
     while (nreturned) {
-	printf ("\n key '%s'", rkey[nreturned - 1]);
-	nreturned--;
+        printf ("\n key '%s'", rkey[nreturned - 1]);
+        nreturned--;
     }
 
     node_t *result;
@@ -91,7 +91,7 @@ main ()
     router_destroy (router);
 
     if (passed) {
-	printf ("\nTest passed");
+        printf ("\nTest passed");
     }
 
 }

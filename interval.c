@@ -22,7 +22,7 @@
 
 
 int
-cmp_interval_t (struct interval_t *first, interval_t *second)
+cmp_interval_t (struct interval_t *first, interval_t * second)
 {
 
     return cmp_hkey_t (&(first->end), &(second->end));
@@ -129,15 +129,3 @@ interval_belongs (interval_t * interval, uint64_t key)
     return interval_belongs_h (interval, &hkey);
 
 }
-
-
-
-
-
-
-
-
-
-
-
-

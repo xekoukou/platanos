@@ -56,4 +56,3 @@ balance_update (balance_t * balance, on_give_t * on_give)
         balance->next_time = on_give->last_time;
     }
 }
-

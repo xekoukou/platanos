@@ -42,10 +42,9 @@ struct update_t
 typedef struct update_t update_t;
 
 void update_init (update_t ** update, void *dealer, router_t * router,
-                  balance_t * balance, struct compute_t * compute);
+                  balance_t * balance, struct compute_t *compute);
 
 
 
 
 #endif
-

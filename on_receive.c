@@ -50,8 +50,7 @@ on_receive_destroy (on_receive_t * on_receive)
 
 
 void
-on_receives_destroy (zlist_t * on_receives, balance_t * balance,
-                     node_t * node)
+on_receives_destroy (zlist_t * on_receives, balance_t * balance, node_t * node)
 {
 
     on_receive_t *iter = zlist_first (on_receives);
@@ -111,7 +110,3 @@ on_receives_destroy (zlist_t * on_receives, balance_t * balance,
     }
 
 }
-
-
-
-

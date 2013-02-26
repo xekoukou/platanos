@@ -102,4 +102,3 @@ events_possible (zlist_t * events, intervals_t * intervals)
     return NULL;
 
 }
-

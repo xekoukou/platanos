@@ -38,8 +38,7 @@ void on_receive_init (on_receive_t ** on_receive, zmsg_t * msg);
 
 //used when we receive a remove_node event
 void
-on_receives_destroy (zlist_t * on_receives, balance_t * balance,
-                     node_t * node);
+on_receives_destroy (zlist_t * on_receives, balance_t * balance, node_t * node);
 
 
 //destroy this after you have inserted the action to the actions list

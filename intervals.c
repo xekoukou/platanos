@@ -54,8 +54,7 @@ intervals_add (intervals_t * intervals, interval_t * interval)
 
         memcpy (&(interval->start), &(interval_above->start),
                 sizeof (struct _hkey_t));
-        RB_REMOVE (intervals_rb_t, &(intervals->intervals_rb),
-                   interval_above);
+        RB_REMOVE (intervals_rb_t, &(intervals->intervals_rb), interval_above);
         free (interval_above);
     }
 
@@ -300,4 +299,3 @@ intervals_print (intervals_t * intervals)
 
     }
 }
-

@@ -31,5 +31,3 @@ update_init (update_t ** update, void *dealer, router_t * router,
     (*update)->balance = balance;
     (*update)->compute = compute;
 }
-
-

@@ -54,9 +54,9 @@ RB_PROTOTYPE (hash_rb_t, hash_t, field, cmp_hash_t);
 
 struct router_t
 {
-    int type;			//1 is db 0 is worker
+    int type;                   //1 is db 0 is worker
     struct hash_rb_t hash_rb;
-    int repl;			//replication, used only be the db_routing
+    int repl;                   //replication, used only be the db_routing
     node_t *self;
 
       khash_t (nodes_t) * nodes;
@@ -92,7 +92,7 @@ void router_get_repl (struct router_t *router, int *repl);
 
 //we grab the first repl number of nodes and return only the alive ones
 void router_dbroute (struct router_t *router, uint64_t key, char **rkey,
-		     int *nreturned);
+                     int *nreturned);
 
 //finds a node with its  key
 //returns null if not found
@@ -106,7 +106,7 @@ node_t *router_fnode (struct router_t *router, char *key);
 //0 also means that there might be a change in st_piece, n_pieces
 
 zlist_t *router_events (router_t * router, node_t * node, int removal,
-			int *circle);
+                        int *circle);
 
 
 #endif

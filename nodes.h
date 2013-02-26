@@ -38,4 +38,3 @@ node_t *nodes_search (khash_t (nodes_t) * nodes, char *key);
 
 
 #endif
-

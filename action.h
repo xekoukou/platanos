@@ -48,4 +48,3 @@ void action_minit (action_t ** action, zmsg_t * msg);
 
 
 #endif
-

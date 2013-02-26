@@ -30,7 +30,7 @@ struct ozookeeper_t;
 struct dbs_t
 {
     pthread_t *pthread;
-    char **id;			//has null at the end
+    char **id;                  //has null at the end
     int size;
 };
 

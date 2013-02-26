@@ -64,11 +64,14 @@ oz_updater_search (oz_updater_t * updater, int db, char *comp_name,
 //returns sort which is used to set watches only on the new computers
 //sort must be deallocated
 
-int * oz_updater_new_computers(oz_updater_t * updater, struct String_vector computers);
+int *oz_updater_new_computers (oz_updater_t * updater,
+                               struct String_vector computers);
 
 //returns sort which is used to set watches only on the new resources
 //sort must be deallocated
 
-int * oz_updater_new_resources(oz_updater_t * updater,char *comp_name, struct String_vector resources,int db,zlist_t *db_old);
+int *oz_updater_new_resources (oz_updater_t * updater, char *comp_name,
+                               struct String_vector resources, int db,
+                               zlist_t * db_old);
 
 #endif

@@ -51,4 +51,3 @@ cmp_hkey_t (struct _hkey_t *first, struct _hkey_t *second)
     }
 
 }
-

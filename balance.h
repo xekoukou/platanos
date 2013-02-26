@@ -62,4 +62,3 @@ void balance_update (balance_t * balance, on_give_t * on_give);
 
 
 #endif
-

@@ -34,4 +34,3 @@ int actions_update (zlist_t * actions, event_t * event);
 
 
 #endif
-

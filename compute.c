@@ -63,8 +63,7 @@ compute_init (compute_t ** compute, khash_t (vertices) * hash,
     oconfig_octopus (worker->config, octopus);
 
     sprintf (path, "/%s/global_properties/interval/interval_size", octopus);
-    result = zoo_get (worker->zh, path, 0, (char *) buffer,
-                      &buffer_len, &stat);
+    result = zoo_get (worker->zh, path, 0, (char *) buffer, &buffer_len, &stat);
     assert (result == ZOK);
 
     assert (buffer_len == sizeof (unsigned long));
@@ -74,5 +73,3 @@ compute_init (compute_t ** compute, khash_t (vertices) * hash,
 
 
 }
-
-

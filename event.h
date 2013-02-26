@@ -46,8 +46,7 @@ int event_possible (event_t * event, intervals_t * intervals);
 
 #include"action.h"
 
-int
-cmp_ev_ac (event_t * event, action_t * action);
+int cmp_ev_ac (event_t * event, action_t * action);
 
 
 

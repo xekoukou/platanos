@@ -32,8 +32,8 @@
 typedef struct
 {
 
-    char line[30][1000];	//all lines have 1000 max char including null
-    int n_lines;		//maximum lines are 30
+    char line[30][1000];        //all lines have 1000 max char including null
+    int n_lines;                //maximum lines are 30
 
 } oconfig_t;
 

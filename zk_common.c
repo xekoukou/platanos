@@ -27,9 +27,9 @@ last_path (const char *path)
     int size = strlen (path);
     int iter;
     for (iter = size - 1; iter >= 0; iter--) {
-	if (path[iter] == '/') {
-	    return &(path[iter + 1]);
-	}
+        if (path[iter] == '/') {
+            return &(path[iter + 1]);
+        }
     }
     return NULL;
 
@@ -48,15 +48,15 @@ part_path (char *path, int location, char **start, int *siz)
     int size = strlen (path);
     int iter;
     for (iter = size - 1; iter >= 0; iter--) {
-	if (path[iter] == '/') {
-	    end = st;
-	    st = iter;
-	    en++;
-	}
-	if (en == location) {
+        if (path[iter] == '/') {
+            end = st;
+            st = iter;
+            en++;
+        }
+        if (en == location) {
 
-	    break;
-	}
+            break;
+        }
     }
 
     *start = &(path[st + 1]);

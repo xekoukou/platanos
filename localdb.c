@@ -58,8 +58,8 @@ localdb_init (localdb_t ** localdb, char *id)
     sprintf (path, "/mnt/localdb/%s", id);
     (*localdb)->db = leveldb_open (options, path, &errptr);
     if (errptr) {
-	printf ("\n%s", errptr);
-	exit (1);
+        printf ("\n%s", errptr);
+        exit (1);
     }
 }
 
@@ -79,13 +79,13 @@ localdb_incr_counter (localdb_t * localdb, unsigned long counter)
     char *errptr = NULL;
 
     leveldb_put (localdb->db,
-		 localdb->writeoptions,
-		 "\0", 1,
-		 (const char *) &counter, sizeof (unsigned long), &errptr);
+                 localdb->writeoptions,
+                 "\0", 1,
+                 (const char *) &counter, sizeof (unsigned long), &errptr);
 
     if (errptr) {
-	printf ("\n%s", errptr);
-	exit (1);
+        printf ("\n%s", errptr);
+        exit (1);
     }
 
 
@@ -103,25 +103,25 @@ localdb_get_counter (localdb_t * localdb)
     size_t vallen;
 
     char *result = leveldb_get (localdb->db,
-				localdb->readoptions,
-				"\0", 1,
-				&vallen,
-				&errptr);
+                                localdb->readoptions,
+                                "\0", 1,
+                                &vallen,
+                                &errptr);
 
     if (errptr) {
-	printf ("\n%s", errptr);
-	exit (1);
+        printf ("\n%s", errptr);
+        exit (1);
     }
     if (result == NULL) {
-	return -1;
+        return -1;
     }
     if (vallen == sizeof (unsigned long)) {
-	memcpy (&counter, result, sizeof (unsigned long));
-	return counter;
+        memcpy (&counter, result, sizeof (unsigned long));
+        return counter;
     }
     else {
-	printf ("\n%s", errptr);
-	exit (1);
+        printf ("\n%s", errptr);
+        exit (1);
 
     }
 
@@ -134,12 +134,12 @@ localdb_set_interval (localdb_t * localdb, int interval)
     char *errptr = NULL;
 
     leveldb_put (localdb->db,
-		 localdb->writeoptions,
-		 "\1", 1, (const char *) &interval, sizeof (int), &errptr);
+                 localdb->writeoptions,
+                 "\1", 1, (const char *) &interval, sizeof (int), &errptr);
 
     if (errptr) {
-	printf ("\n%s", errptr);
-	exit (1);
+        printf ("\n%s", errptr);
+        exit (1);
     }
 
 
@@ -155,24 +155,24 @@ localdb_get_interval (localdb_t * localdb)
     size_t vallen;
 
     char *result = leveldb_get (localdb->db,
-				localdb->readoptions,
-				"\1", 1,
-				&vallen,
-				&errptr);
+                                localdb->readoptions,
+                                "\1", 1,
+                                &vallen,
+                                &errptr);
 
     if (errptr) {
-	printf ("\n%s", errptr);
-	exit (1);
+        printf ("\n%s", errptr);
+        exit (1);
     }
     if (result == NULL) {
-	return -1;
+        return -1;
     }
     if (vallen == sizeof (int)) {
-	memcpy (&interval, result, sizeof (int));
-	return interval;
+        memcpy (&interval, result, sizeof (int));
+        return interval;
     }
     else {
-	printf ("\n%s", errptr);
-	exit (1);
+        printf ("\n%s", errptr);
+        exit (1);
     }
 }

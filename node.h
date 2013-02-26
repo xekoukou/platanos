@@ -65,4 +65,3 @@ void node_set_alive (node_t * node, int alive);
 
 
 #endif
-

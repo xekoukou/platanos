@@ -42,25 +42,25 @@ cmp_hash_t (struct hash_t *first, struct hash_t *second)
 {
 
     if (first->hkey.prefix > second->hkey.prefix) {
-	return 1;
+        return 1;
     }
     else {
-	if (first->hkey.prefix < second->hkey.prefix) {
-	    return -1;
-	}
-	else {
-	    if (first->hkey.suffix > second->hkey.suffix) {
-		return 1;
-	    }
-	    else {
-		if (first->hkey.suffix < second->hkey.suffix) {
-		    return -1;
-		}
-		else {
-		    return 0;
-		}
-	    }
-	}
+        if (first->hkey.prefix < second->hkey.prefix) {
+            return -1;
+        }
+        else {
+            if (first->hkey.suffix > second->hkey.suffix) {
+                return 1;
+            }
+            else {
+                if (first->hkey.suffix < second->hkey.suffix) {
+                    return -1;
+                }
+                else {
+                    return 0;
+                }
+            }
+        }
     }
 
 }
@@ -89,7 +89,7 @@ router_destroy (struct router_t *router)
     struct hash_t *hash;
 //deletion per node
     while ((hash = RB_MIN (hash_rb_t, &(router->hash_rb)))) {
-	router_delete (router, hash->node);
+        router_delete (router, hash->node);
     }
 
     free (router);
@@ -108,24 +108,24 @@ router_add (struct router_t *router, node_t * node)
 
     int iter;
     for (iter = 0; iter < node->n_pieces; iter++) {
-	node_piece (node->key, iter + node->st_piece, key);
+        node_piece (node->key, iter + node->st_piece, key);
 
 
-	hash[iter] = malloc (sizeof (struct hash_t));
-	hash[iter]->node = node;
+        hash[iter] = malloc (sizeof (struct hash_t));
+        hash[iter]->node = node;
 
-	MurmurHash3_x64_128 ((void *) key, strlen (key), 0,
-			     (void *) &(hash[iter]->hkey));
+        MurmurHash3_x64_128 ((void *) key, strlen (key), 0,
+                             (void *) &(hash[iter]->hkey));
 
-	if (RB_INSERT (hash_rb_t, &(router->hash_rb), hash[iter]) != NULL) {
-	    //delete the previous hashes
-	    int siter;
-	    for (siter = 0; siter < iter; siter++) {
-		RB_REMOVE (hash_rb_t, &(router->hash_rb), hash[siter]);
-		free (hash[siter]);
-	    }
-	    return 0;
-	}
+        if (RB_INSERT (hash_rb_t, &(router->hash_rb), hash[iter]) != NULL) {
+            //delete the previous hashes
+            int siter;
+            for (siter = 0; siter < iter; siter++) {
+                RB_REMOVE (hash_rb_t, &(router->hash_rb), hash[siter]);
+                free (hash[siter]);
+            }
+            return 0;
+        }
     }
     nodes_put (router->nodes, node);
     return 1;
@@ -137,26 +137,26 @@ router_delete (struct router_t *router, node_t * node)
 {
 
     if (node != NULL) {
-	char key[1000];
-	int iter;
-	for (iter = 0; iter < node->n_pieces; iter++) {
-	    node_piece (node->key, iter + node->st_piece, key);
+        char key[1000];
+        int iter;
+        for (iter = 0; iter < node->n_pieces; iter++) {
+            node_piece (node->key, iter + node->st_piece, key);
 
-	    struct hash_t hash;
-	    struct hash_t *result;
+            struct hash_t hash;
+            struct hash_t *result;
 
-	    MurmurHash3_x64_128 ((void *) key, strlen (key), 0,
-				 (void *) &(hash.hkey));
+            MurmurHash3_x64_128 ((void *) key, strlen (key), 0,
+                                 (void *) &(hash.hkey));
 
-	    result = RB_FIND (hash_rb_t, &(router->hash_rb), &hash);
+            result = RB_FIND (hash_rb_t, &(router->hash_rb), &hash);
 
-	    if (result != NULL) {
-		RB_REMOVE (hash_rb_t, &(router->hash_rb), result);
-		free (result);
-	    }
-	}
-	nodes_delete (router->nodes, node->key);
-	free (node);
+            if (result != NULL) {
+                RB_REMOVE (hash_rb_t, &(router->hash_rb), result);
+                free (result);
+            }
+        }
+        nodes_delete (router->nodes, node->key);
+        free (node);
     }
 }
 
@@ -169,16 +169,16 @@ router_route (struct router_t *router, uint64_t key)
     struct hash_t *result;
 
     MurmurHash3_x64_128 ((void *) &key, sizeof (uint64_t), 0,
-			 (void *) &(hash.hkey));
+                         (void *) &(hash.hkey));
 
     result = RB_NFIND (hash_rb_t, &(router->hash_rb), &hash);
 
     if (result == NULL) {
-	result = RB_MIN (hash_rb_t, &(router->hash_rb));
+        result = RB_MIN (hash_rb_t, &(router->hash_rb));
     }
 
     if (result == NULL) {
-	return NULL;
+        return NULL;
     }
 
     return result->node->key;
@@ -212,68 +212,68 @@ node_set_alive (node_t * node, int alive)
 //we grab the first repl number of nodes and return only the alive ones
 void
 router_dbroute (struct router_t *router, uint64_t key, char **rkey,
-		int *nreturned)
+                int *nreturned)
 {
 
     struct hash_t hash;
     struct hash_t *result;
-    struct hash_t *first_result;	//used to identify a full circle
+    struct hash_t *first_result;        //used to identify a full circle
     *nreturned = 0;
 
     MurmurHash3_x64_128 ((void *) &key, sizeof (uint64_t), 0,
-			 (void *) &(hash.hkey));
+                         (void *) &(hash.hkey));
 
     result = RB_NFIND (hash_rb_t, &(router->hash_rb), &hash);
 
     if (result == NULL) {
-	result = RB_MIN (hash_rb_t, &(router->hash_rb));
+        result = RB_MIN (hash_rb_t, &(router->hash_rb));
     }
 
     if (result == NULL) {
-	*rkey = NULL;
-	return;
+        *rkey = NULL;
+        return;
     }
 
     int all = 1;
     first_result = result;
 //printf("\ndbroute debug key: %s",result->key);
     if (result->node->alive) {
-	strcpy (rkey[0], result->node->key);
-	(*nreturned)++;
+        strcpy (rkey[0], result->node->key);
+        (*nreturned)++;
     }
     while (1) {
-	struct hash_t *prev_result = result;
-	result = RB_NEXT (hash_rb_t, &(router->hash_rb), prev_result);
+        struct hash_t *prev_result = result;
+        result = RB_NEXT (hash_rb_t, &(router->hash_rb), prev_result);
 
 //go back to the beggining
-	if (result == NULL) {
-	    result = RB_MIN (hash_rb_t, &(router->hash_rb));
-	}
+        if (result == NULL) {
+            result = RB_MIN (hash_rb_t, &(router->hash_rb));
+        }
 //stop at a full circle or we found a repl number of nodes dead or alive
-	if ((strcmp (result->node->key, first_result->node->key) == 0)
-	    || (all == router->repl)) {
-	    break;
-	}
+        if ((strcmp (result->node->key, first_result->node->key) == 0)
+            || (all == router->repl)) {
+            break;
+        }
 
 //chech whether we already picked this node
-	int iter;
-	int neww = 1;
-	for (iter = 0; iter < *nreturned; iter++) {
-	    if (0 == strcmp (rkey[iter], result->node->key)) {
-		neww = 0;
-		break;
-	    }
-	}
+        int iter;
+        int neww = 1;
+        for (iter = 0; iter < *nreturned; iter++) {
+            if (0 == strcmp (rkey[iter], result->node->key)) {
+                neww = 0;
+                break;
+            }
+        }
 
-	if (neww) {
+        if (neww) {
 
-	    all++;		//all unique dead or alive
-	    if (result->node->alive) {
+            all++;              //all unique dead or alive
+            if (result->node->alive) {
 
-		strcpy (rkey[*nreturned], result->node->key);
-		(*nreturned)++;
-	    }
-	}
+                strcpy (rkey[*nreturned], result->node->key);
+                (*nreturned)++;
+            }
+        }
     }
 
 
@@ -297,128 +297,128 @@ router_events (router_t * router, node_t * node, int removal, int *circle)
 
     int dif_st_piece = 0;
     int dif_n_pieces = 0;
-    struct hash_t *hash;	//hash array
-    int *remove;		// an array that shows if that hash is removed or added
-    int size;			//the size of the array
+    struct hash_t *hash;        //hash array
+    int *remove;                // an array that shows if that hash is removed or added
+    int size;                   //the size of the array
 
     exists = router_fnode (router, node->key);
     if (!removal) {
 //check whether the node already exists
-	if (exists) {
+        if (exists) {
 
-	    dif_st_piece = node->st_piece - exists->st_piece;
-	    dif_n_pieces = node->n_pieces - exists->n_pieces;
-	    doesnt_exist = 0;
-	}
+            dif_st_piece = node->st_piece - exists->st_piece;
+            dif_n_pieces = node->n_pieces - exists->n_pieces;
+            doesnt_exist = 0;
+        }
 
 //always positive
-	if (dif_st_piece) {
-	    assert (dif_n_pieces == 0);
+        if (dif_st_piece) {
+            assert (dif_n_pieces == 0);
 
-	    hash = malloc (dif_st_piece * 2 * sizeof (struct hash_t));
-	    remove = malloc (dif_st_piece * 2 * sizeof (int));
-	    size = dif_st_piece * 2;
+            hash = malloc (dif_st_piece * 2 * sizeof (struct hash_t));
+            remove = malloc (dif_st_piece * 2 * sizeof (int));
+            size = dif_st_piece * 2;
 
-	    char key[1000];
-	    int iter;
-	    for (iter = 0; iter < dif_st_piece; iter++) {
-		node_piece (node->key, iter + exists->st_piece, key);
-
-
-		MurmurHash3_x64_128 ((void *) key, strlen (key), 0,
-				     (void *) &(hash[2 * iter].hkey));
-
-		remove[2 * iter] = 1;
-		node_piece (node->key,
-			    iter + exists->st_piece + exists->n_pieces, key);
+            char key[1000];
+            int iter;
+            for (iter = 0; iter < dif_st_piece; iter++) {
+                node_piece (node->key, iter + exists->st_piece, key);
 
 
-		MurmurHash3_x64_128 ((void *) key, strlen (key), 0,
-				     (void *) &(hash[2 * iter + 1].hkey));
+                MurmurHash3_x64_128 ((void *) key, strlen (key), 0,
+                                     (void *) &(hash[2 * iter].hkey));
 
-		remove[2 * iter + 1] = 0;
-
-
-
-	    }
-	}
-
-	if (dif_n_pieces) {
-	    assert (dif_st_piece == 0);
-
-	    hash = malloc (dif_n_pieces * sizeof (struct hash_t));
-	    remove = malloc (dif_n_pieces * sizeof (int));
-	    size = dif_n_pieces;
-	    char key[1000];
-	    int iter = dif_n_pieces;
-	    int positive = 0;
-	    if (dif_n_pieces > 0) {
-		positive = 1;
-	    }
-	    while (iter) {
-		node_piece (node->key,
-			    iter + exists->st_piece + exists->n_pieces - 1,
-			    key);
+                remove[2 * iter] = 1;
+                node_piece (node->key,
+                            iter + exists->st_piece + exists->n_pieces, key);
 
 
-		MurmurHash3_x64_128 ((void *) key, strlen (key), 0, (void *)
-				     &(hash
-				       [(positive * 2 - 1) * iter - 1].hkey));
+                MurmurHash3_x64_128 ((void *) key, strlen (key), 0,
+                                     (void *) &(hash[2 * iter + 1].hkey));
 
-		remove[(positive * 2 - 1) * iter - 1] = 1 - positive;
-
-		iter = iter - positive * 2 + 1;
-	    }
-	}
-
-	if (doesnt_exist) {
-
-	    hash = malloc (node->n_pieces * sizeof (struct hash_t));
-	    remove = malloc (node->n_pieces * sizeof (int));
-	    size = node->n_pieces;
-	    char key[1000];
-	    int iter = node->n_pieces;
-	    while (iter) {
-		node_piece (node->key, iter + node->st_piece - 1, key);
-
-
-		MurmurHash3_x64_128 ((void *) key, strlen (key), 0, (void *)
-				     &(hash[iter - 1].hkey));
-
-		remove[iter - 1] = 0;
-
-
-		iter--;
-
-
-	    }
+                remove[2 * iter + 1] = 0;
 
 
 
+            }
+        }
 
-	}
+        if (dif_n_pieces) {
+            assert (dif_st_piece == 0);
+
+            hash = malloc (dif_n_pieces * sizeof (struct hash_t));
+            remove = malloc (dif_n_pieces * sizeof (int));
+            size = dif_n_pieces;
+            char key[1000];
+            int iter = dif_n_pieces;
+            int positive = 0;
+            if (dif_n_pieces > 0) {
+                positive = 1;
+            }
+            while (iter) {
+                node_piece (node->key,
+                            iter + exists->st_piece + exists->n_pieces - 1,
+                            key);
+
+
+                MurmurHash3_x64_128 ((void *) key, strlen (key), 0, (void *)
+                                     &(hash
+                                       [(positive * 2 - 1) * iter - 1].hkey));
+
+                remove[(positive * 2 - 1) * iter - 1] = 1 - positive;
+
+                iter = iter - positive * 2 + 1;
+            }
+        }
+
+        if (doesnt_exist) {
+
+            hash = malloc (node->n_pieces * sizeof (struct hash_t));
+            remove = malloc (node->n_pieces * sizeof (int));
+            size = node->n_pieces;
+            char key[1000];
+            int iter = node->n_pieces;
+            while (iter) {
+                node_piece (node->key, iter + node->st_piece - 1, key);
+
+
+                MurmurHash3_x64_128 ((void *) key, strlen (key), 0, (void *)
+                                     &(hash[iter - 1].hkey));
+
+                remove[iter - 1] = 0;
+
+
+                iter--;
+
+
+            }
+
+
+
+
+        }
     }
     else {
 //the case where we remove a node
-	hash = malloc (node->n_pieces * sizeof (struct hash_t));
-	remove = malloc (node->n_pieces * sizeof (int));
-	size = node->n_pieces;
-	char key[1000];
-	int iter = node->n_pieces;
-	while (iter) {
-	    node_piece (node->key, iter + node->st_piece - 1, key);
+        hash = malloc (node->n_pieces * sizeof (struct hash_t));
+        remove = malloc (node->n_pieces * sizeof (int));
+        size = node->n_pieces;
+        char key[1000];
+        int iter = node->n_pieces;
+        while (iter) {
+            node_piece (node->key, iter + node->st_piece - 1, key);
 
 
-	    MurmurHash3_x64_128 ((void *) key, strlen (key), 0, (void *)
-				 &(hash[iter - 1].hkey));
+            MurmurHash3_x64_128 ((void *) key, strlen (key), 0, (void *)
+                                 &(hash[iter - 1].hkey));
 
-	    remove[iter - 1] = 1;
-
-
-	    iter--;
+            remove[iter - 1] = 1;
 
 
-	}
+            iter--;
+
+
+        }
 
 
 
@@ -433,314 +433,313 @@ router_events (router_t * router, node_t * node, int removal, int *circle)
 
     int iter;
     for (iter = 0; iter < size; iter++) {
-	if (remove[iter] != 2) {
+        if (remove[iter] != 2) {
 
-	    struct hash_t *forward = NULL;	//the first forward hash that is not the to be changed
-	    struct hash_t *ask = NULL;	//the greatest added hash till the forward hash or NULL
-	    struct hash_t *limit = NULL;	//the greatest removed hash till the forward hash with a lower limit the backward hash or NULL
-	    struct hash_t *backward = NULL;	//the smallest hash that is not to be changed
+            struct hash_t *forward = NULL;      //the first forward hash that is not the to be changed
+            struct hash_t *ask = NULL;  //the greatest added hash till the forward hash or NULL
+            struct hash_t *limit = NULL;        //the greatest removed hash till the forward hash with a lower limit the backward hash or NULL
+            struct hash_t *backward = NULL;     //the smallest hash that is not to be changed
 
 
 //forward cannot be one of the removed hashes
 
-	    forward = &(hash[iter]);
-	    forward = RB_NFIND (hash_rb_t, &(router->hash_rb), forward);
-	    while (1) {
-		int br = 1;
-		if (forward == NULL) {
-		    break;
-		}
-		int triter;
-		for (triter = 0; triter < size; triter++) {
-		    if (cmp_hash_t (&(hash[triter]), forward) == 0) {
-			assert (remove[triter] != 0);
-			limit = &(hash[triter]);
+            forward = &(hash[iter]);
+            forward = RB_NFIND (hash_rb_t, &(router->hash_rb), forward);
+            while (1) {
+                int br = 1;
+                if (forward == NULL) {
+                    break;
+                }
+                int triter;
+                for (triter = 0; triter < size; triter++) {
+                    if (cmp_hash_t (&(hash[triter]), forward) == 0) {
+                        assert (remove[triter] != 0);
+                        limit = &(hash[triter]);
 
-			remove[triter] = 2;
+                        remove[triter] = 2;
 
-			br = 0;
-			break;
-		    }
-		}
-		if (br) {
-		    break;
-		}
-		forward = RB_NEXT (hash_rb_t, &(router->hash_rb), forward);
-	    }
-
-
-	    //we cross the "river"
-	    if (forward == NULL) {
-		forward = RB_MIN (hash_rb_t, &(router->hash_rb));
-		while (1) {
-		    int br = 1;
-		    //the case where there are no nodes at all
-		    if (forward == NULL) {
-			break;
-		    }
-		    int triter;
-		    for (triter = 0; triter < size; triter++) {
-			if (cmp_hash_t (&(hash[triter]), forward) == 0) {
-
-			    assert (remove[triter] != 0);
-			    limit = &(hash[triter]);
+                        br = 0;
+                        break;
+                    }
+                }
+                if (br) {
+                    break;
+                }
+                forward = RB_NEXT (hash_rb_t, &(router->hash_rb), forward);
+            }
 
 
-			    remove[triter] = 2;
+            //we cross the "river"
+            if (forward == NULL) {
+                forward = RB_MIN (hash_rb_t, &(router->hash_rb));
+                while (1) {
+                    int br = 1;
+                    //the case where there are no nodes at all
+                    if (forward == NULL) {
+                        break;
+                    }
+                    int triter;
+                    for (triter = 0; triter < size; triter++) {
+                        if (cmp_hash_t (&(hash[triter]), forward) == 0) {
 
-			    br = 0;
-			    break;
-			}
-		    }
-
-
-		    if (br) {
-			break;
-		    }
-		    forward =
-			RB_NEXT (hash_rb_t, &(router->hash_rb), forward);
-
-		}
-	    }
-
-	    if (forward != NULL) {
-
-		//there is no NPREV in the library so we use the forward result
-
-		backward = RB_PREV (hash_rb_t, &(router->hash_rb), forward);
-		while (1) {
-		    int br = 1;	// same comments as in forward
-		    if (backward == NULL) {
-			break;
-		    }
-		    int triter;
-		    for (triter = 0; triter < size; triter++) {
-			if (cmp_hash_t (&(hash[triter]), backward) == 0) {
-			    assert (remove[triter] != 0);
-			    if (!limit) {
-				limit = &(hash[triter]);
-
-			    }
-			    remove[triter] = 2;
-
-			    br = 0;
-			    break;
-			}
-		    }
-		    if (br) {
-			break;
-		    }
-		    backward =
-			RB_PREV (hash_rb_t, &(router->hash_rb), backward);
-
-		}
-
-		if (backward == NULL) {
-		    backward = RB_MAX (hash_rb_t, &(router->hash_rb));
-		    while (1) {
-			int br = 1;
-			assert (backward != NULL);
+                            assert (remove[triter] != 0);
+                            limit = &(hash[triter]);
 
 
-			int triter;
-			for (triter = 0; triter < size; triter++) {
-			    if (cmp_hash_t (&(hash[triter]), backward) == 0) {
-				assert (remove[triter] != 0);
-				if (!limit) {
-				    limit = &(hash[triter]);
+                            remove[triter] = 2;
 
-				}
-				remove[triter] = 2;
-
-				br = 0;
-				break;
-			    }
-			}
+                            br = 0;
+                            break;
+                        }
+                    }
 
 
-			if (br) {
-			    break;
-			}
-			backward =
-			    RB_PREV (hash_rb_t, &(router->hash_rb), backward);
+                    if (br) {
+                        break;
+                    }
+                    forward = RB_NEXT (hash_rb_t, &(router->hash_rb), forward);
 
-		    }
+                }
+            }
+
+            if (forward != NULL) {
+
+                //there is no NPREV in the library so we use the forward result
+
+                backward = RB_PREV (hash_rb_t, &(router->hash_rb), forward);
+                while (1) {
+                    int br = 1; // same comments as in forward
+                    if (backward == NULL) {
+                        break;
+                    }
+                    int triter;
+                    for (triter = 0; triter < size; triter++) {
+                        if (cmp_hash_t (&(hash[triter]), backward) == 0) {
+                            assert (remove[triter] != 0);
+                            if (!limit) {
+                                limit = &(hash[triter]);
+
+                            }
+                            remove[triter] = 2;
+
+                            br = 0;
+                            break;
+                        }
+                    }
+                    if (br) {
+                        break;
+                    }
+                    backward =
+                        RB_PREV (hash_rb_t, &(router->hash_rb), backward);
+
+                }
+
+                if (backward == NULL) {
+                    backward = RB_MAX (hash_rb_t, &(router->hash_rb));
+                    while (1) {
+                        int br = 1;
+                        assert (backward != NULL);
 
 
-		}
+                        int triter;
+                        for (triter = 0; triter < size; triter++) {
+                            if (cmp_hash_t (&(hash[triter]), backward) == 0) {
+                                assert (remove[triter] != 0);
+                                if (!limit) {
+                                    limit = &(hash[triter]);
+
+                                }
+                                remove[triter] = 2;
+
+                                br = 0;
+                                break;
+                            }
+                        }
 
 
-		if (!limit) {
+                        if (br) {
+                            break;
+                        }
+                        backward =
+                            RB_PREV (hash_rb_t, &(router->hash_rb), backward);
 
-		    limit = backward;
-		}
+                    }
 
 
-		//find the rest(ie the added ones) of the hashes that are inside the interval forward<-backward
-		//disable them while also finding the ask hash
+                }
 
 
-		interval_t *big_interval;
-		interval_init (&big_interval, &(backward->hkey),
-			       &(forward->hkey));
-		interval_t *small_interval = NULL;
+                if (!limit) {
+
+                    limit = backward;
+                }
+
+
+                //find the rest(ie the added ones) of the hashes that are inside the interval forward<-backward
+                //disable them while also finding the ask hash
+
+
+                interval_t *big_interval;
+                interval_init (&big_interval, &(backward->hkey),
+                               &(forward->hkey));
+                interval_t *small_interval = NULL;
 
 //using the small interval to prove whether a hash is bigger or smaller to another hash according to the orientation
-		int siter;
-		for (siter = 0; siter < size; siter++) {
-		    if (remove[siter] == 0) {
+                int siter;
+                for (siter = 0; siter < size; siter++) {
+                    if (remove[siter] == 0) {
 
-			if (interval_belongs_h
-			    (big_interval, &(hash[siter].hkey))) {
+                        if (interval_belongs_h
+                            (big_interval, &(hash[siter].hkey))) {
 
-			    if (small_interval == NULL) {
+                            if (small_interval == NULL) {
 //happens only at the beggining
-				interval_init (&small_interval,
-					       &(backward->hkey),
-					       &(hash[siter].hkey));
+                                interval_init (&small_interval,
+                                               &(backward->hkey),
+                                               &(hash[siter].hkey));
 
-				ask = &(hash[siter]);
-				remove[siter] = 2;
-			    }
-			    else {
-
-
-				if (interval_belongs_h
-				    (small_interval, &(hash[siter].hkey))) {
+                                ask = &(hash[siter]);
+                                remove[siter] = 2;
+                            }
+                            else {
 
 
-				    remove[siter] = 2;
-
-				}
-				else {
-				    free (small_interval);
-				    interval_init (&small_interval,
-						   &(backward->hkey),
-						   &(hash[siter].hkey));
+                                if (interval_belongs_h
+                                    (small_interval, &(hash[siter].hkey))) {
 
 
+                                    remove[siter] = 2;
 
-				    ask = &(hash[siter]);
-				    remove[siter] = 2;
-				}
-
-			    }
-			}
-		    }
-		}
-
-		if (!small_interval) {
-		    free (small_interval);
-		}
-		free (big_interval);
-
-		if (!ask) {
-
-		    ask = backward;
-		}
-		assert (limit != ask);
+                                }
+                                else {
+                                    free (small_interval);
+                                    interval_init (&small_interval,
+                                                   &(backward->hkey),
+                                                   &(hash[siter].hkey));
 
 
-		int ask_greater_limit;
 
-		if (limit != backward) {
-		    interval_t *interval;
-		    interval_init (&interval, &(backward->hkey),
-				   &(limit->hkey));
+                                    ask = &(hash[siter]);
+                                    remove[siter] = 2;
+                                }
+
+                            }
+                        }
+                    }
+                }
+
+                if (!small_interval) {
+                    free (small_interval);
+                }
+                free (big_interval);
+
+                if (!ask) {
+
+                    ask = backward;
+                }
+                assert (limit != ask);
 
 
-		    if (interval_belongs_h (interval, &(ask->hkey))) {
+                int ask_greater_limit;
 
-			ask_greater_limit = 0;
-		    }
-		    else {
-			ask_greater_limit = 1;
+                if (limit != backward) {
+                    interval_t *interval;
+                    interval_init (&interval, &(backward->hkey),
+                                   &(limit->hkey));
 
-		    }
-		    free (interval);
-		}
-		else {
-		    ask_greater_limit = 1;
 
-		}
+                    if (interval_belongs_h (interval, &(ask->hkey))) {
 
-		event_t *event = NULL;
+                        ask_greater_limit = 0;
+                    }
+                    else {
+                        ask_greater_limit = 1;
 
-		if (!ask_greater_limit) {
+                    }
+                    free (interval);
+                }
+                else {
+                    ask_greater_limit = 1;
+
+                }
+
+                event_t *event = NULL;
+
+                if (!ask_greater_limit) {
 
 //it gives
-		    if (strcmp (forward->node->key, router->self->key) == 0) {
-			event_init (&event, ask->hkey, limit->hkey, 0,
-				    node->key);
-			assert (strcmp (event->key, "\0") != 0);
+                    if (strcmp (forward->node->key, router->self->key) == 0) {
+                        event_init (&event, ask->hkey, limit->hkey, 0,
+                                    node->key);
+                        assert (strcmp (event->key, "\0") != 0);
 
-		    }
-		    else {
-			if (strcmp (node->key, router->self->key) == 0) {
-			    event_init (&event, ask->hkey, limit->hkey, 1,
-					forward->node->key);
-			    assert (strcmp (event->key, "\0") != 0);
+                    }
+                    else {
+                        if (strcmp (node->key, router->self->key) == 0) {
+                            event_init (&event, ask->hkey, limit->hkey, 1,
+                                        forward->node->key);
+                            assert (strcmp (event->key, "\0") != 0);
 
-			}
+                        }
 
-		    }
-		}
-		else {
+                    }
+                }
+                else {
 
 //it receives
-		    if (strcmp (forward->node->key, router->self->key) == 0) {
+                    if (strcmp (forward->node->key, router->self->key) == 0) {
 
-			event_init (&event, limit->hkey, ask->hkey, 1,
-				    node->key);
-			assert (strcmp (event->key, "\0") != 0);
+                        event_init (&event, limit->hkey, ask->hkey, 1,
+                                    node->key);
+                        assert (strcmp (event->key, "\0") != 0);
 
-		    }
-		    else {
+                    }
+                    else {
 
-			if (strcmp (node->key, router->self->key) == 0) {
+                        if (strcmp (node->key, router->self->key) == 0) {
 
-			    event_init (&event, limit->hkey, ask->hkey, 0,
-					forward->node->key);
-			    assert (strcmp (event->key, "\0") != 0);
-			}
+                            event_init (&event, limit->hkey, ask->hkey, 0,
+                                        forward->node->key);
+                            assert (strcmp (event->key, "\0") != 0);
+                        }
 
-		    }
-		}
+                    }
+                }
 
-		if (event) {
-		    zlist_append (solution, event);
+                if (event) {
+                    zlist_append (solution, event);
 
-		}
-
-
+                }
 
 
 
 
-	    }			//forward NULL
-	    else {
 
-		if (!exists && (strcmp (node->key, router->self->key) == 0)) {
 
-		    *circle = 1;
+            }                   //forward NULL
+            else {
+
+                if (!exists && (strcmp (node->key, router->self->key) == 0)) {
+
+                    *circle = 1;
 //TODO assert that the solution has no events
-		    return solution;
+                    return solution;
 
 
 
-		}
+                }
 
 
 
 
-		free (hash);
-		free (remove);
-		*circle = 0;
-		return solution;
+                free (hash);
+                free (remove);
+                *circle = 0;
+                return solution;
 
 
-	    }
-	}
+            }
+        }
     }
 
     free (hash);
@@ -760,4 +759,3 @@ router_fnode (struct router_t * router, char *key)
 {
     return nodes_search (router->nodes, key);
 }
-

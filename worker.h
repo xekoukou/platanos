@@ -40,7 +40,7 @@ struct worker_t
 {
     zhandle_t *zh;
     oconfig_t *config;
-    char *id;			//comp_name +res_name
+    char *id;                   //comp_name +res_name
     char *res_name;
     char *comp_name;
     int64_t bnext_time;
@@ -52,12 +52,16 @@ struct worker_t
 typedef struct worker_t worker_t;
 
 void worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
-		  char *comp_name, char *res_name);
+                  char *comp_name, char *res_name);
 
 
 void worker_update_timeout (worker_t * worker, int new_next_time,
-			    int is_it_sleep, void *wake_nod);
+                            int is_it_sleep, void *wake_nod);
 
+
+
+//returns the new interval or -1 on error
+int worker_new_interval (worker_t * worker, localdb_t * localdb);
 
 
 //arg is a const integer  

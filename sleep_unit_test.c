@@ -42,14 +42,14 @@ main ()
     sleep_add (sleep, msg, 15, 0);
     int iter = 0;
     while (sleep_awake (sleep, &wb)) {
-	iter++;
+        iter++;
     }
     printf ("\nnumber of msgs:%d", iter);
 
     zclock_sleep (11);
 
     while (sleep_awake (sleep, &wb)) {
-	iter++;
+        iter++;
     }
     printf ("\nnumber of msgs:%d", iter);
 
@@ -57,7 +57,7 @@ main ()
     zclock_sleep (10);
 
     while (sleep_awake (sleep, &wb)) {
-	iter++;
+        iter++;
     }
     printf ("\nnumber of msgs:%d", iter);
 

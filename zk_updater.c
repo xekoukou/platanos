@@ -109,7 +109,10 @@ oz_updater_search (oz_updater_t * updater, int db, char *comp_name,
 //returns sort which is used to set watches only on the new computers
 //sort must be deallocated
 
-int * oz_updater_new_computers(oz_updater_t * updater, struct String_vector computers){
+int *
+oz_updater_new_computers (oz_updater_t * updater,
+                          struct String_vector computers)
+{
 
     int iter;
     int siter;
@@ -128,8 +131,7 @@ int * oz_updater_new_computers(oz_updater_t * updater, struct String_vector comp
         int exists = 0;
         for (siter = 0; siter < updater->computers.count; siter++) {
             if (strcmp
-                (computers.data[iter],
-                 updater->computers.data[siter]) == 0) {
+                (computers.data[iter], updater->computers.data[siter]) == 0) {
                 exists = 1;
                 break;
             }
@@ -145,8 +147,7 @@ int * oz_updater_new_computers(oz_updater_t * updater, struct String_vector comp
     deallocate_String_vector (&(updater->computers));
 
 //set the new computer list
-    memcpy (&(updater->computers), &computers,
-            sizeof (struct String_vector));
+    memcpy (&(updater->computers), &computers, sizeof (struct String_vector));
 
 
 //I allocate the new resources and set watches to new computer's resources
@@ -170,14 +171,12 @@ int * oz_updater_new_computers(oz_updater_t * updater, struct String_vector comp
             memcpy (&(new_w_resources[iter]),
                     &(updater->w_resources[sort[iter]]),
                     sizeof (struct String_vector));
-            new_w_online_matrix[iter] =
-                updater->w_online[sort[iter]];
+            new_w_online_matrix[iter] = updater->w_online[sort[iter]];
 
             memcpy (&(new_db_resources[iter]),
                     &(updater->db_resources[sort[iter]]),
                     sizeof (struct String_vector));
-            new_db_online_matrix[iter] =
-                updater->db_online[sort[iter]];
+            new_db_online_matrix[iter] = updater->db_online[sort[iter]];
 
 
         }
@@ -199,14 +198,10 @@ int * oz_updater_new_computers(oz_updater_t * updater, struct String_vector comp
 
     for (siter = 0; siter < size; siter++) {
         if (array[siter] == 0) {
-            deallocate_String_vector (&
-                                      (
-                                       updater->w_resources[siter]));
+            deallocate_String_vector (&(updater->w_resources[siter]));
             free (updater->w_online[siter]);
 
-            deallocate_String_vector (&
-                                      (
-                                       updater->db_resources[siter]));
+            deallocate_String_vector (&(updater->db_resources[siter]));
             free (updater->db_online[siter]);
 
         }
@@ -232,7 +227,7 @@ int * oz_updater_new_computers(oz_updater_t * updater, struct String_vector comp
 
     free (array);
 
-return sort;
+    return sort;
 
 
 }
@@ -241,83 +236,80 @@ return sort;
 //and inform whether a db has unregistered
 //sort must be deallocated
 
-int * oz_updater_new_resources(oz_updater_t * updater,char * comp_name, struct String_vector resources,int db, zlist_t *db_old){
+int *
+oz_updater_new_resources (oz_updater_t * updater, char *comp_name,
+                          struct String_vector resources, int db,
+                          zlist_t * db_old)
+{
 
-int iter;
-int siter;
+    int iter;
+    int siter;
 
 //update resources
 //find its location
 //at least one computer should exist that has the same name
-            int position = -1;
-            for (iter = 0; iter < updater->computers.count; iter++) {
-                if (strcmp
-                    (updater->computers.data[iter],
-                     comp_name) == 0) {
-                    position = iter;
-                    break;
-                }
-            }
-            assert (position != -1);
+    int position = -1;
+    for (iter = 0; iter < updater->computers.count; iter++) {
+        if (strcmp (updater->computers.data[iter], comp_name) == 0) {
+            position = iter;
+            break;
+        }
+    }
+    assert (position != -1);
 
 
 
-            struct String_vector *old_resources;
-            int **old_online;
+    struct String_vector *old_resources;
+    int **old_online;
 
-            if (db) {
-                old_resources = &(updater->db_resources[position]);
-                old_online = updater->db_online;
-            }
-            else {
-                old_resources = &(updater->w_resources[position]);
-                old_online = updater->w_online;
+    if (db) {
+        old_resources = &(updater->db_resources[position]);
+        old_online = updater->db_online;
+    }
+    else {
+        old_resources = &(updater->w_resources[position]);
+        old_online = updater->w_online;
 
-            }
+    }
 
 //i use this in case there is a reordering of the existing children
-            int *sort = malloc (sizeof (int) * resources.count);
+    int *sort = malloc (sizeof (int) * resources.count);
 //update the online vector
-            int *online_vector =
-                (int *) calloc (resources.count, sizeof (int));
+    int *online_vector = (int *) calloc (resources.count, sizeof (int));
 
 //set watches to new resources
-           zlist_autofree(db_old);
+    zlist_autofree (db_old);
 
 
-            for (iter = 0; iter < resources.count; iter++) {
-                int exists = 0;
-                for (siter = 0; siter < old_resources->count; siter++) {
-                    if (strcmp
-                        (resources.data[iter],
-                         old_resources->data[siter]) == 0) {
-                        exists = 1;
-                    }
-                }
-                if (exists) {
-                    sort[iter] = siter;
-                    online_vector[iter] = old_online[position][siter];
-                }
-                else {
-                    sort[iter] = -1;
-                    if(db){
-                    zlist_append(db_old,old_resources->data[siter]);
-                     }
-                }
+    for (iter = 0; iter < resources.count; iter++) {
+        int exists = 0;
+        for (siter = 0; siter < old_resources->count; siter++) {
+            if (strcmp (resources.data[iter], old_resources->data[siter]) == 0) {
+                exists = 1;
             }
-            
-            deallocate_String_vector (old_resources);
-
-
-            memcpy (old_resources, &resources, sizeof (struct String_vector));
-            if (old_online[position] != NULL) {
-                free (old_online[position]);
+        }
+        if (exists) {
+            sort[iter] = siter;
+            online_vector[iter] = old_online[position][siter];
+        }
+        else {
+            sort[iter] = -1;
+            if (db) {
+                zlist_append (db_old, old_resources->data[siter]);
             }
-            old_online[position] = online_vector;
+        }
+    }
+
+    deallocate_String_vector (old_resources);
 
 
-return sort;
+    memcpy (old_resources, &resources, sizeof (struct String_vector));
+    if (old_online[position] != NULL) {
+        free (old_online[position]);
+    }
+    old_online[position] = online_vector;
+
+
+    return sort;
 
 }
-
-

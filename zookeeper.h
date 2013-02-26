@@ -58,12 +58,13 @@ typedef struct ozookeeper_t ozookeeper_t;
 //initialize the ozookeeper object
 void
 ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
-		 void *w_pub, void *w_router, void *db_pub, void *db_router);
+                 void *w_pub, void *w_router, void *db_pub, void *db_router);
 
 
 int ozookeeper_not_corrupt (ozookeeper_t ** ozookeep);
 
-void ozookeeper_init_workers (ozookeeper_t * ozookeeper, struct workers_t * workers);
+void ozookeeper_init_workers (ozookeeper_t * ozookeeper,
+                              struct workers_t *workers);
 
 void ozookeeper_init_dbs (ozookeeper_t * ozookeeper, dbs_t * dbs);
 
@@ -76,6 +77,6 @@ void ozookeeper_zhandle (ozookeeper_t * ozookeeper, zhandle_t ** zh);
 void ozookeeper_destroy (ozookeeper_t * ozookeeper);
 
 void global_watcher (zhandle_t * zzh, int type, int state, const char *path,
-		     void *context);
+                     void *context);
 
 #endif

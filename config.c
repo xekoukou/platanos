@@ -39,21 +39,21 @@ oconfig_init (oconfig_t ** config)
 //Open the configuration file
     FILE *fconfig = fopen ("./config", "r");
     if (fconfig == NULL) {
-	printf
-	    ("\nconfig doesnt exist. Are you in the correnct directory? A config file must be created manually for every computer that is part of the octopus.. exiting");
-	exit (1);
+        printf
+            ("\nconfig doesnt exist. Are you in the correnct directory? A config file must be created manually for every computer that is part of the octopus.. exiting");
+        exit (1);
     }
 
     int line_position = 0;
     while ((fgets ((*config)->line[line_position], 1000, fconfig))
-	   && (line_position < 30)) {
-	(*config)->line[line_position][strlen ((*config)->line[line_position])
-				       - 1] = '\0';
+           && (line_position < 30)) {
+        (*config)->line[line_position][strlen ((*config)->line[line_position])
+                                       - 1] = '\0';
 
 
 
-	line_position++;
-	(*config)->n_lines = line_position;
+        line_position++;
+        (*config)->n_lines = line_position;
     }
     fclose (fconfig);
 
@@ -110,15 +110,15 @@ oconfig_incr_port (oconfig_t * config)
 //Open the configuration file
     FILE *fconfig = fopen ("./config", "r+");
     if (fconfig == NULL) {
-	printf
-	    ("\nconfig doesnt exist. Are you in the correnct directory? A config file must be created manually for every computer that is part of the octopus.. exiting");
-	exit (1);
+        printf
+            ("\nconfig doesnt exist. Are you in the correnct directory? A config file must be created manually for every computer that is part of the octopus.. exiting");
+        exit (1);
     }
 
     char temp[1000];
     int iter;
     for (iter = 0; iter < 4; iter++) {
-	fgets (temp, 1000, fconfig);
+        fgets (temp, 1000, fconfig);
 
     }
 

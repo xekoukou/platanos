@@ -52,4 +52,3 @@ node_dup (node_t * node)
     memcpy (new_node, node, sizeof (node_t));
     return new_node;
 }
-

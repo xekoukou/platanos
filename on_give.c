@@ -71,6 +71,3 @@ on_gives_remove (zlist_t * on_gives, zlist_t * events, node_t * node)
     }
 
 }
-
-
-
