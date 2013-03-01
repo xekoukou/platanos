@@ -136,7 +136,7 @@ main ()
     sprintf (path, "/%s", octopus);
     result = zoo_create (zh, path, NULL, -1, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
     if (result != ZOK) {
-        if (result = ZNODEEXISTS) {
+        if (result == ZNODEEXISTS) {
             printf ("\nThere is another octopus with the same name");
             return 0;
         }
@@ -196,5 +196,5 @@ main ()
     }
 
     printf ("\n Octopus registered");
-
+return 0;
 }

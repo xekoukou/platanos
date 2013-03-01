@@ -89,7 +89,7 @@ events_possible (zlist_t * events, intervals_t * intervals)
                     sizeof (struct _hkey_t));
             memcpy (&(interval->end), &(iter->end), sizeof (struct _hkey_t));
             int circle;
-            intervals_t *is_contained =
+            interval_t *is_contained =
                 intervals_contained (intervals, interval, &circle);
             if (circle || is_contained) {
                 return iter;

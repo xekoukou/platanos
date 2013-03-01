@@ -72,7 +72,7 @@ event_possible (event_t * event, intervals_t * intervals)
 
     if (event->give) {
         int circle;
-        intervals_t *is_contained =
+        interval_t *is_contained =
             intervals_contained (intervals, interval, &circle);
         if (circle || is_contained) {
             return 1;

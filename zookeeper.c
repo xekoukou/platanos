@@ -970,7 +970,6 @@ void
 resources (ozookeeper_t * ozookeeper, char *path, int start)
 {
     int iter;
-    int siter;
     char spath[1000];
 
     char octopus[1000];
@@ -1137,7 +1136,6 @@ computers (ozookeeper_t * ozookeeper, int start)
 
 
     int iter;
-    int siter;
     char spath[1000];
     char octopus[1000];
     int result;

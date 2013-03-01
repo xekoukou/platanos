@@ -60,9 +60,10 @@ on_gives_remove (zlist_t * on_gives, zlist_t * events, node_t * node)
             zlist_remove (on_gives, iter);
             zlist_remove (events, iter->event);
             free (iter->event);
-            vertex_t *vertex;
-            while (vertex = zlist_pop (iter->unc_vertices)) {
+            vertex_t *vertex=zlist_pop (iter->unc_vertices);
+            while (vertex) {
                 free (vertex);
+                vertex = zlist_pop (iter->unc_vertices);
             }
             zlist_destroy (&(iter->unc_vertices));
             free (iter);

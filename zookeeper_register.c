@@ -279,8 +279,6 @@ main ()
         assert (ZOK == result);
 
 
-        zctx_t *ctx = zctx_new ();
-        void *router = zsocket_new (ctx, ZMQ_ROUTER);
         int port;
         char bind_search[1000];
         sprintf (bind_search, "tcp://%s:*", config[5]);
@@ -365,5 +363,5 @@ main ()
 
 
     printf ("\nAll have gone smoothly, exiting");
-
+return 0;
 }
