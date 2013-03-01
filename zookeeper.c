@@ -526,7 +526,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
     struct Stat stat;
 
 
-    if (online) {
+    if (online|self) {
 //obtain the resources and send them while setting wathcers on st_piece and n_pieces
 //we dont need to check if they exist since a resource goes online only after we have registered it.
 //we have to set the resource offline before we unregister it.
@@ -597,7 +597,6 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
 
 
     if (self) {
-        assert (online == 1);
         oz_updater_free_key (&(ozookeeper->updater));
         oz_updater_key (&(ozookeeper->updater), path);
 
@@ -633,6 +632,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
         }
         else {
 //this is the case where it was previously online but now it is offline
+//TODO Is this because there is a change we get a watch where the value remains the same?
             if (db) {
                 if (ozookeeper->updater.db_online[m][n] == 1) {
                     ozookeeper->updater.db_online[m][n] = 0;
@@ -1092,9 +1092,6 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
                     else {
                         assert (result == ZNONODE);
                         onlin = 0;
-                    }
-                    if (self) {
-                        onlin = 1;
                     }
                     online (ozookeeper, db, onlin, start, self, comp_name,
                             resources.data[iter]);
