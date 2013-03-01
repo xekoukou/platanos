@@ -1277,6 +1277,7 @@ worker_update (update_t * update, void *sub)
     if (memcmp (zframe_data (id), &(update->id), sizeof (unsigned int)) == 0) {
 //lazy pirate reconfirm update
         zframe_send (&id, update->dealer, 0);
+        zframe_destroy (&id);
         zmsg_destroy (&msg);
         fprintf (stderr,
                  "\nworker_update:It was a previous update, resending confirmation");
