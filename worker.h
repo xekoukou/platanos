@@ -54,13 +54,14 @@ void worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
                   char *comp_name, char *res_name);
 
 
-int64_t worker_timeout(balance_t *balance,sleep_t *sleep);
+int64_t worker_timeout (balance_t * balance, sleep_t * sleep);
 
 
 //returns the new interval or -1 on error
 int worker_new_interval (worker_t * worker, localdb_t * localdb);
 
-void worker_process_timer_events(worker_t *worker,balance_t *balance, sleep_t *sleep,compute_t *compute);
+void worker_process_timer_events (worker_t * worker, balance_t * balance,
+                                  sleep_t * sleep, compute_t * compute);
 
 //arg is a const integer  
 //great care not to change that integer

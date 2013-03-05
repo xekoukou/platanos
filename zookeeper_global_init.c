@@ -196,5 +196,5 @@ main ()
     }
 
     printf ("\n Octopus registered");
-return 0;
+    return 0;
 }

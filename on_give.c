@@ -61,7 +61,7 @@ on_gives_remove (zlist_t * on_gives, zlist_t * events, node_t * node)
             zlist_remove (on_gives, iter);
             zlist_remove (events, iter->event);
             free (iter->event);
-            vertex_t *vertex=zlist_pop (iter->unc_vertices);
+            vertex_t *vertex = zlist_pop (iter->unc_vertices);
             while (vertex) {
                 free (vertex);
                 vertex = zlist_pop (iter->unc_vertices);
@@ -73,16 +73,19 @@ on_gives_remove (zlist_t * on_gives, zlist_t * events, node_t * node)
     }
 
 }
+
 //linear search
 //since you give the id, it is unique, thus no need to search the key as well
-on_give_t* on_gives_search_id(zlist_t *on_gives,int id){
+on_give_t *
+on_gives_search_id (zlist_t * on_gives, int id)
+{
 
-       on_give_t *iter = zlist_first (on_gives);
-        while (iter) {
-            if (
-                 id==iter->un_id) {
-return iter;
-}}
+    on_give_t *iter = zlist_first (on_gives);
+    while (iter) {
+        if (id == iter->un_id) {
+            return iter;
+        }
+    }
 
-return NULL;
+    return NULL;
 }

@@ -318,5 +318,5 @@ main ()
         printf ("\nCouldnt delete config, delete it manually");
     }
 
-return 0;
+    return 0;
 }

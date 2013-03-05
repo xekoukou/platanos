@@ -137,7 +137,7 @@ worker_balance (balance_t * balance)
         exit (1);
     }
 
-balance_new_msg(balance,msg);
+    balance_new_msg (balance, msg);
 
 }
 
@@ -146,7 +146,7 @@ void
 worker_balance_lazy_pirate (balance_t * balance)
 {
 
-balance_lazy_pirate(balance);
+    balance_lazy_pirate (balance);
 
 
 
@@ -854,8 +854,7 @@ worker_fn (void *arg)
     compute_t *compute;
 
     compute_init (&compute, hash, router, balance->events, balance->intervals,
-                  socket_nb, self_nb, socket_wb, self_wb, localdb, worker
-                  );
+                  socket_nb, self_nb, socket_wb, self_wb, localdb, worker);
 
 //update object
 //used to update things, like the router object
@@ -864,9 +863,8 @@ worker_fn (void *arg)
 
     update_init (&update, dealer, router, balance, compute);
 
-    zmq_pollitem_t pollitems[4] =
-        { {sub, 0, ZMQ_POLLIN}, {self_bl, 0,
-                                                             ZMQ_POLLIN},
+    zmq_pollitem_t pollitems[4] = { {sub, 0, ZMQ_POLLIN}, {self_bl, 0,
+                                                           ZMQ_POLLIN},
     {self_wb, 0,
      ZMQ_POLLIN},
     {self_nb, 0, ZMQ_POLLIN}
@@ -874,10 +872,10 @@ worker_fn (void *arg)
     fprintf (stderr, "\nworker with id:%s ready.", worker->id);
 //main loop
     while (1) {
-        rc = zmq_poll (pollitems, 4, worker_timeout(balance,sleep));
+        rc = zmq_poll (pollitems, 4, worker_timeout (balance, sleep));
         assert (rc != -1);
 
-worker_process_timer_events(worker,balance,sleep,compute);
+        worker_process_timer_events (worker, balance, sleep, compute);
 
         if (pollitems[0].revents & ZMQ_POLLIN) {
             worker_update (update, sub);
@@ -896,41 +894,46 @@ worker_process_timer_events(worker,balance,sleep,compute);
 
 
 
-int64_t worker_timeout(balance_t *balance,sleep_t *sleep){
+int64_t
+worker_timeout (balance_t * balance, sleep_t * sleep)
+{
 //finding the minimum timeout
-int64_t time=zclock_time();
-        int64_t timeout=-1;
-        if (balance->next_time < 0) {
-        if(sleep->next_time>0){
+    int64_t time = zclock_time ();
+    int64_t timeout = -1;
+    if (balance->next_time < 0) {
+        if (sleep->next_time > 0) {
 
-timeout=time-sleep->next_time;
-}
+            timeout = time - sleep->next_time;
         }
+    }
 
 
-        else {
-       if(sleep->next_time>0){
-timeout=time-balance->next_time;
+    else {
+        if (sleep->next_time > 0) {
+            timeout = time - balance->next_time;
+        }
+    }
+
+    if (timeout < 0) {
+        timeout = -1;
+    }
+
+    return timeout;
 }
-            }
-
-if(timeout<0){
-timeout=-1;
-}
-
-return timeout;
-}
 
 
-void worker_process_timer_events(worker_t *worker,balance_t *balance, sleep_t *sleep,compute_t *compute){
-int64_t time=zclock_time();
+void
+worker_process_timer_events (worker_t * worker, balance_t * balance,
+                             sleep_t * sleep, compute_t * compute)
+{
+    int64_t time = zclock_time ();
 
-if(balance->next_time<time){
-worker_balance_lazy_pirate(balance);
-}
-if(sleep->next_time<time){
-worker_sleep(sleep,compute);
-}
+    if (balance->next_time < time) {
+        worker_balance_lazy_pirate (balance);
+    }
+    if (sleep->next_time < time) {
+        worker_sleep (sleep, compute);
+    }
 
 }
 

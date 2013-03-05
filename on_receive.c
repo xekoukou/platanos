@@ -22,18 +22,18 @@
 
 
 void
-on_receive_init (on_receive_t ** on_receive,int id,char *key, zmsg_t * msg)
+on_receive_init (on_receive_t ** on_receive, int id, char *key, zmsg_t * msg)
 {
     *on_receive = malloc (sizeof (on_receive_t));
 
     memcpy (&((*on_receive)->un_id), &id, sizeof (int));
 
-    action_minit (&((*on_receive)->action),key, msg);
+    action_minit (&((*on_receive)->action), key, msg);
 
     (*on_receive)->m_counters = zlist_new ();
-    zlist_autofree((*on_receive)->m_counters);
+    zlist_autofree ((*on_receive)->m_counters);
     (*on_receive)->counter = 0;
-    (*on_receive)->last_time = 0;  //should only be checked if theu are miising chunkes
+    (*on_receive)->last_time = 0;       //should only be checked if theu are miising chunkes
 
 }
 
@@ -113,17 +113,17 @@ on_receives_destroy (zlist_t * on_receives, balance_t * balance, node_t * node)
 }
 
 //on_receive events are not unique per id
-on_receive_t * on_receives_search(zlist_t *on_receives,int id,char *key){
+on_receive_t *
+on_receives_search (zlist_t * on_receives, int id, char *key)
+{
 
-on_receive_t *iter=zlist_first(on_receives);
-        while (iter) {
-            if (
-                 (id==iter->un_id) && (memcmp
-                 (key, iter->action->key, 7) == 0)  ) {
-return iter;
-}
-}
+    on_receive_t *iter = zlist_first (on_receives);
+    while (iter) {
+        if ((id == iter->un_id) && (memcmp (key, iter->action->key, 7) == 0)) {
+            return iter;
+        }
+    }
 
-return NULL;
+    return NULL;
 
 }

@@ -54,15 +54,12 @@ typedef struct balance_t balance_t;
 
 
 void balance_init (balance_t ** balance, khash_t (vertices) * hash,
-                   void *router_bl, void *self_bl, char *self_key
-                   );
+                   void *router_bl, void *self_bl, char *self_key);
 
 //update after an event to a specific on_give
-void
-balance_update_give_timer (balance_t * balance, on_give_t * on_give);
+void balance_update_give_timer (balance_t * balance, on_give_t * on_give);
 
-void
-balance_new_msg (balance_t * balance, zmsg_t * msg);
+void balance_new_msg (balance_t * balance, zmsg_t * msg);
 
 void balance_lazy_pirate (balance_t * balance);
 

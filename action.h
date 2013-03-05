@@ -41,7 +41,7 @@ typedef struct action_t action_t;
 #include "event.h"
 
 //action is only created by a received msg
-void action_minit (action_t ** action,char *key, zmsg_t * msg);
+void action_minit (action_t ** action, char *key, zmsg_t * msg);
 
 
 
