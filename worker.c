@@ -874,7 +874,7 @@ worker_fn (void *arg)
     fprintf (stderr, "\nworker with id:%s ready.", worker->id);
 //main loop
     while (1) {
-        rc = zmq_poll (pollitems, 5, worker_timeout(balance,sleep));
+        rc = zmq_poll (pollitems, 4, worker_timeout(balance,sleep));
         assert (rc != -1);
 
 worker_process_timer_events(worker,balance,sleep,compute);

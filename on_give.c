@@ -79,8 +79,8 @@ on_give_t* on_gives_search_id(zlist_t *on_gives,int id){
 
        on_give_t *iter = zlist_first (on_gives);
         while (iter) {
-            if ((memcmp
-                 (id, &(iter->un_id), sizeof (int)) == 0)) {
+            if (
+                 id==iter->un_id) {
 return iter;
 }}
 
