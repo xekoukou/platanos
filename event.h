@@ -34,7 +34,7 @@ struct event_t
     struct _hkey_t start;
     struct _hkey_t end;
     int give;
-    char key[100];
+    char key[7];
 };
 
 typedef struct event_t event_t;

@@ -24,6 +24,8 @@
 #include"balance.h"
 #include"events.h"
 
+struct balance_t;
+typedef struct balance_t balance_t;
 
 typedef struct
 {
@@ -47,7 +49,7 @@ on_receives_destroy (zlist_t * on_receives, balance_t * balance, node_t * node);
 void on_receive_destroy (on_receive_t * on_receive);
 
 //on_receive events are not unique per id
-on_receive_t * on_receives_search(zlist_t *on_receives,int id,char *key,int key_size);
+on_receive_t * on_receives_search(zlist_t *on_receives,int id,char *key);
 
 
 #endif

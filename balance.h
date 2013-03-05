@@ -28,10 +28,11 @@
 #include"vertex.h"
 #include"intervals.h"
 #include"on_give.h"
+#include"on_receive.h"
 
 
 
-typedef struct
+struct balance_t
 {
 
     khash_t (vertices) * hash;
@@ -47,7 +48,9 @@ typedef struct
     int64_t next_time;
     int64_t pr_time;
     char *self_key;             //used to send the interval of the on_gives
-} balance_t;
+};
+
+typedef struct balance_t balance_t;
 
 
 void balance_init (balance_t ** balance, khash_t (vertices) * hash,
@@ -61,6 +64,7 @@ balance_update_give_timer (balance_t * balance, on_give_t * on_give);
 void
 balance_new_msg (balance_t * balance, zmsg_t * msg);
 
+void balance_lazy_pirate (balance_t * balance);
 
 
 #endif

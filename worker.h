@@ -31,7 +31,10 @@
 #include"actions.h"
 #include"zookeeper.h"
 #include"sleep.h"
+#include"compute.h"
 
+struct compute_t;
+typedef struct compute_t compute_t;
 
 
 
@@ -51,14 +54,13 @@ void worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
                   char *comp_name, char *res_name);
 
 
-void worker_update_timeout (worker_t * worker, int new_next_time,
-                            int is_it_sleep, void *wake_nod);
-
+int64_t worker_timeout(balance_t *balance,sleep_t *sleep);
 
 
 //returns the new interval or -1 on error
 int worker_new_interval (worker_t * worker, localdb_t * localdb);
 
+void worker_process_timer_events(worker_t *worker,balance_t *balance, sleep_t *sleep,compute_t *compute);
 
 //arg is a const integer  
 //great care not to change that integer

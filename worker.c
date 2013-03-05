@@ -899,18 +899,18 @@ worker_process_timer_events(worker,balance,sleep,compute);
 int64_t worker_timeout(balance_t *balance,sleep_t *sleep){
 //finding the minimum timeout
 int64_t time=zclock_time();
-        int64_t timeouti=-1;
+        int64_t timeout=-1;
         if (balance->next_time < 0) {
         if(sleep->next_time>0){
 
-timeout=time-sleep->next_time();
+timeout=time-sleep->next_time;
 }
         }
 
 
         else {
        if(sleep->next_time>0){
-timeout=time-balance->next_time();
+timeout=time-balance->next_time;
 }
             }
 
@@ -949,9 +949,5 @@ worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
     (*worker)->id = malloc (strlen (comp_name) + strlen (res_name) + 1);
     sprintf ((*worker)->id, "%s%s", comp_name, res_name);
     (*worker)->config = config;
-    (*worker)->next_time = -1;
-    (*worker)->bnext_time = -1;
-    (*worker)->snext_time = -1;
-    (*worker)->is_it_sleep = 1;
 
 }

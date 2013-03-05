@@ -26,7 +26,7 @@ on_receive_init (on_receive_t ** on_receive,int id,char *key, zmsg_t * msg)
 {
     *on_receive = malloc (sizeof (on_receive_t));
 
-    memcpy (&((*on_receive)->un_id), id, sizeof (int));
+    memcpy (&((*on_receive)->un_id), &id, sizeof (int));
 
     action_minit (&((*on_receive)->action),key, msg);
 
@@ -95,7 +95,7 @@ on_receives_destroy (zlist_t * on_receives, balance_t * balance, node_t * node)
                 on_give_init (&on_give, event, balance->un_id);
 
 //update balance object
-                balance_update (balance, on_give);
+                balance_update_give_timer (balance, on_give);
 
 
 //put on_give event into the list
@@ -113,17 +113,17 @@ on_receives_destroy (zlist_t * on_receives, balance_t * balance, node_t * node)
 }
 
 //on_receive events are not unique per id
-on_receive_t * on_receives_search(zlist_t *on_receives,int id,char *key,int key_size){
+on_receive_t * on_receives_search(zlist_t *on_receives,int id,char *key){
 
 on_receive_t *iter=zlist_first(on_receives);
         while (iter) {
-            if ((memcmp
-                 (id, &(iter->un_id), sizeof (int)) == 0) && (memcmp
-                 (key, iter->action->key, key_size) == 0)  ) {
+            if (
+                 (id==iter->un_id) && (memcmp
+                 (key, iter->action->key, 7) == 0)  ) {
 return iter;
 }
-return NULL;
 }
 
+return NULL;
 
 }
