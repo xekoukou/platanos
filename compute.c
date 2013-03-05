@@ -24,7 +24,7 @@ void
 compute_init (compute_t ** compute, khash_t (vertices) * hash,
               router_t * router, zlist_t * events, intervals_t * intervals,
               void *socket_nb, void *self_nb, void *socket_wb, void *self_wb,
-              localdb_t * localdb, worker_t * worker, void *wake_nod)
+              localdb_t * localdb, worker_t * worker)
 {
 
     *compute = malloc (sizeof (compute_t));
@@ -38,7 +38,6 @@ compute_init (compute_t ** compute, khash_t (vertices) * hash,
     (*compute)->self_wb = self_wb;
     (*compute)->worker = worker;
     (*compute)->hash = hash;
-    (*compute)->wake_nod = wake_nod;
     (*compute)->localdb = localdb;
     (*compute)->interval = localdb_get_interval (localdb);
     (*compute)->counter = localdb_get_counter (localdb);

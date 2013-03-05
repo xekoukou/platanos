@@ -47,17 +47,19 @@ typedef struct
     int64_t next_time;
     int64_t pr_time;
     char *self_key;             //used to send the interval of the on_gives
-    void *wake_nod;             //socket to awake the worker poll
 } balance_t;
 
 
 void balance_init (balance_t ** balance, khash_t (vertices) * hash,
-                   void *router_bl, void *self_bl, char *self_key,
-                   void *wake_nod);
+                   void *router_bl, void *self_bl, char *self_key
+                   );
 
-void balance_update (balance_t * balance, on_give_t * on_give);
+//update after an event to a specific on_give
+void
+balance_update_give_timer (balance_t * balance, on_give_t * on_give);
 
-
+void
+balance_new_msg (balance_t * balance, zmsg_t * msg);
 
 
 

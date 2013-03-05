@@ -137,596 +137,16 @@ worker_balance (balance_t * balance)
         exit (1);
     }
 
-
-    zmsg_t *responce;
-
-    zframe_t *address;
-    zmsg_unwrap (msg);
-
-
-
-
-//clean this TODO
-    zframe_t *type_fr = zmsg_pop (msg);
-    zframe_t *id_frame = zmsg_first (msg);
-    zframe_t *key_frame = zmsg_next (msg);
-    zframe_t *frame = key_frame;
-
-    if (strcmp ((const char *) zframe_data (frame), balance->self_key) == 0) {
-// this is confirmation
-
-        //identify the on_give object
-        on_give_t *iter = zlist_first (balance->on_gives);
-        while (iter) {
-            if ((memcmp
-                 (zframe_data (id_frame), &(iter->un_id), sizeof (int)) == 0)) {
-                address =
-                    zframe_new (iter->event->key, strlen (iter->event->key));
-
-                if (memcmp (INTERVAL_RECEIVED, zframe_data (type_fr), 1) == 0) {
-                    // send the chunks
-
-                    iter->state = 1;
-
-                    fprintf (stderr,
-                             "\nworker:%s\nAn INTERVAL_RECEIVED confirmation has arrived for the on_give event with id:%d and receiving key:%s",
-                             balance->self_key, iter->un_id, iter->event->key);
-
-                    responce = zmsg_new ();
-                    frame = zframe_new (NEW_CHUNK, 1);
-                    zmsg_add (responce, frame);
-                    frame = zframe_dup (id_frame);
-                    zmsg_add (responce, frame);
-                    frame = zframe_dup (key_frame);
-                    zmsg_add (responce, frame);
-
-
-
-
-                    interval_t *interval;
-                    interval_init (&interval, &(iter->event->start),
-                                   &(iter->event->end));
-
-                    khint_t hiter;
-                    uint64_t key;
-                    vertex_t *vertex;
-                    uint64_t counter = 1;
-                    uint64_t vertices = 0;
-                    zmsg_t *responce_dup = zmsg_dup (responce);
-                    frame = zframe_new (&counter, sizeof (uint64_t));
-                    zmsg_add (responce_dup, frame);
-
-                    for (hiter = kh_begin (balance->hash);
-                         hiter != kh_end (balance->hash); ++hiter) {
-                        if (!kh_exist (balance->hash, hiter))
-                            continue;
-
-                        key = kh_key (balance->hash, hiter);
-                        if (interval_belongs (interval, key)) {
-                            vertices++;
-                            vertex_init (&vertex);
-                            memcpy (vertex, &(kh_val (balance->hash, hiter)),
-                                    sizeof (vertex_t));
-                            //add it to the list of sent vertices     
-                            zlist_append (iter->unc_vertices, vertex);
-                            //add it
-                            zmsg_add (responce_dup,
-                                      zframe_new (vertex, sizeof (vertex_t)));
-                            if (counter < 1 + vertices / COUNTER_SIZE) {
-                                zmsg_wrap (responce_dup, address);
-                                zmsg_send (&responce_dup, balance->router_bl);
-                                counter++;
-                                responce_dup = zmsg_dup (responce);
-                                frame =
-                                    zframe_new (&counter, sizeof (uint64_t));
-                                zmsg_add (responce_dup, frame);
-
-
-                            }
-
-
-
-
-                        }
-                    }
-                    if (responce_dup) {
-                        zmsg_wrap (responce_dup, address);
-                        zmsg_send (&responce_dup, balance->router_bl);
-
-                    }
-
-                    iter->state = 2;
-
-                    free (interval);
-                }
-                if (memcmp (CONFIRM_CHUNK, zframe_data (type_fr), 1) == 0) {
-                    //delete the vertices that have been verified  
-                    fprintf (stderr,
-                             "\nworker:%s\nA CONFIRM_CHUNK confirmation has arrived for the on_give event with id:%d and receiving key:%s",
-                             balance->self_key, iter->un_id, iter->event->key);
-                    frame = zmsg_next (msg);
-                    uint64_t counter;
-                    memcpy (&counter, zframe_data (frame), sizeof (uint64_t));
-                    if (counter != 0) {
-                        uint64_t diff;
-                        diff = counter - iter->rec_counter;
-                        iter->rec_counter = counter;
-                        int i;
-                        for (i = 0; i < diff * COUNTER_SIZE; i++) {
-                            free (zlist_pop (iter->unc_vertices));
-                        }
-
-                    }
-                    else {
-
-                        while (zlist_size (iter->unc_vertices)) {
-                            free (zlist_pop (iter->unc_vertices));
-                        }
-                        //remove the event form the event list
-                        zlist_remove (balance->events, iter->event);
-                        zlist_remove (balance->on_gives, iter);
-                        on_give_destroy (iter);
-
-                    }
-
-
-                }
-
-                if (memcmp (MISSED_CHUNKES, zframe_data (type_fr), 1) == 0) {
-                    fprintf (stderr,
-                             "\nworker:%s\nA MISSED_CHUNKES confirmation has arrived for the on_give event with id:%d and receiving key:%s",
-                             balance->self_key, iter->un_id, iter->event->key);
-                    responce = zmsg_new ();
-                    frame = zframe_new (NEW_CHUNK, 1);
-                    zmsg_add (responce, frame);
-                    frame = zframe_dup (id_frame);
-                    zmsg_add (responce, frame);
-                    frame = zframe_dup (key_frame);
-                    zmsg_add (responce, frame);
-
-
-
-
-
-                    //send the missed pieces
-                    uint64_t diff = 0;
-                    while ((frame = zmsg_next (msg))) {
-                        uint64_t counter;
-                        memcpy (&counter, zframe_data (frame),
-                                sizeof (uint64_t));
-
-                        zmsg_t *responce_dup = zmsg_dup (responce);
-                        zmsg_add (responce_dup, frame);
-
-                        //we expect the counter to be of increasing order
-                        diff = counter - diff - iter->rec_counter;
-                        vertex_t *vertex = zlist_first (iter->unc_vertices);
-                        if (diff > 1) {
-                            int i;
-                            for (i = 1; i < (diff - 1) * COUNTER_SIZE; i++) {
-                                zlist_next (iter->unc_vertices);
-                            }
-                            vertex = zlist_next (iter->unc_vertices);
-                        }
-                        zmsg_add (responce_dup,
-                                  zframe_new (vertex, sizeof (vertex_t)));
-                        int i;
-                        for (i = 1; i < COUNTER_SIZE; i++) {
-                            zmsg_add (responce_dup,
-                                      zframe_new (zlist_next
-                                                  (iter->unc_vertices),
-                                                  sizeof (vertex_t)));
-                        }
-
-
-                        zmsg_wrap (responce_dup, address);
-                        zmsg_send (&responce_dup, balance->router_bl);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    }
-                    zmsg_destroy (&responce);
-                }
-
-
-                break;
-            }
-            iter = zlist_next (balance->on_gives);
-        }
-    }
-    else {
-        if (memcmp (NEW_CHUNK, zframe_data (type_fr), 1) == 0) {
-
-//a previously initiated session(on_receive)
-
-            on_receive_t *iter = zlist_first (balance->on_receives);
-            while (iter) {
-                if ((strcmp
-                     ((const char *) zframe_data (key_frame),
-                      iter->action->key) == 0)
-                    &&
-                    (memcmp
-                     (zframe_data (id_frame), &(iter->un_id),
-                      sizeof (int)) == 0)) {
-                    address =
-                        zframe_new (iter->action->key,
-                                    strlen (iter->action->key));
-
-                    fprintf (stderr,
-                             "\nworker:%s\nA NEW_CHUNK has arrived for the on_receive event with id:%d and giving key:%s",
-                             balance->self_key, iter->un_id, iter->action->key);
-                    frame = zmsg_next (msg);
-
-                    uint64_t count;
-                    memcpy (&count, zframe_data (frame), sizeof (uint64_t));
-                    if (count == 0) {
-//EOTransm. signal
-//if there are missing chunks request them,otherwise free the event 
-
-                        if (0 == zlist_size (iter->m_counters)) {
-
-                            responce = zmsg_new ();
-                            frame = zframe_new (CONFIRM_CHUNK, 1);
-                            zmsg_add (responce, frame);
-                            frame = zframe_dup (id_frame);
-                            zmsg_add (responce, frame);
-                            frame = zframe_dup (key_frame);
-                            zmsg_add (responce, frame);
-                            uint64_t zero = 0;
-                            frame = zframe_new (&zero, sizeof (uint64_t));
-                            zmsg_add (responce, frame);
-                            zmsg_wrap (responce, address);
-                            zmsg_send (&responce, balance->router_bl);
-
-                            //erase event if it exists
-                            if (events_update (balance->events, iter->action)) {
-                                free (iter->action);
-                            }
-                            else {
-//add action to the list
-                                zlist_append (balance->actions, iter->action);
-
-                            }
-//check whether any of the events can occur due to this action
-
-                            event_t *event;
-                            while ((event =
-                                    events_possible (balance->events,
-                                                     balance->intervals))) {
-//perform this event
-
-//update the intervals
-
-                                interval_t *interval;
-                                interval_init (&interval,
-                                               &(event->start), &(event->end));
-                                intervals_remove (balance->intervals, interval);
-
-//update un_id;
-                                if (balance->un_id > 1000000000) {
-                                    balance->un_id = 1;
-                                }
-                                else {
-                                    balance->un_id++;
-                                }
-
-
-//create on_give object
-                                on_give_t *on_give;
-                                on_give_init (&on_give, event, balance->un_id);
-
-//update balance object
-                                balance_update (balance, on_give);
-
-
-//put on_give event into the list
-                                zlist_append (balance->on_gives, on_give);
-                            }
-
-
-
-
-                            zlist_remove (balance->on_receives, iter);
-                            //destroy on_receive
-                            on_receive_destroy (iter);
-
-
-
-
-                        }
-                        else {
-
-
-                            responce = zmsg_new ();
-                            frame = zframe_new (MISSED_CHUNKES, 1);
-                            zmsg_add (responce, frame);
-                            frame = zframe_dup (id_frame);
-                            zmsg_add (responce, frame);
-                            frame = zframe_dup (key_frame);
-                            zmsg_add (responce, frame);
-
-                            uint64_t *citer = zlist_first (iter->m_counters);
-                            while (citer) {
-                                frame = zframe_new (citer, sizeof (uint64_t));
-                                zmsg_add (responce, frame);
-                                citer = zlist_next (iter->m_counters);
-
-                            }
-
-                            zmsg_wrap (responce, address);
-                            zmsg_send (&responce, balance->router_bl);
-
-
-
-
-
-                        }
-
-
-
-
-//this is necessary  or put an else {}
-                        break;
-                    }
-
-                    if (count - iter->counter > 1) {
-//I have missed the previous chunck
-
-                        uint64_t *counter = malloc (sizeof (uint64_t));
-                        memcpy (counter, zframe_data (frame),
-                                sizeof (uint64_t));
-                        zlist_append (iter->m_counters, counter);
-                    }
-
-                    int resent = 0;     //all ready got it
-
-                    if (count - iter->counter < 1) {
-//I received a lost chunk
-                        resent = 1;
-
-//remove the counter TODO not very efficient
-                        uint64_t *citer = zlist_first (iter->m_counters);
-                        while (citer) {
-                            if (count == *citer) {
-                                zlist_remove (iter->m_counters, citer);
-                                free (citer);
-                                resent = 0;
-                                break;
-                            }
-                            citer = zlist_next (iter->m_counters);
-                        }
-                    }
-                    if (count - iter->counter == 1) {
-                        iter->counter++;
-
-
-//send confirmation
-                        responce = zmsg_new ();
-                        frame = zframe_new (CONFIRM_CHUNK, 1);
-                        zmsg_add (responce, frame);
-                        frame = zframe_dup (id_frame);
-                        zmsg_add (responce, frame);
-                        frame = zframe_dup (key_frame);
-                        zmsg_add (responce, frame);
-                        frame =
-                            zframe_new (&(iter->counter), sizeof (uint64_t));
-                        zmsg_add (responce, frame);
-                        zmsg_wrap (responce, address);
-                        zmsg_send (&responce, balance->router_bl);
-
-                    }
-
-                    if (resent == 0) {
-//save the new data
-                        frame = zmsg_next (msg);
-                        while (frame) {
-                            int ret;
-                            uint64_t key;
-                            memcpy (&key, zframe_data (frame),
-                                    sizeof (uint64_t));
-                            khiter_t k =
-                                kh_put (vertices, balance->hash, key, &ret);
-                            assert (ret != 0);
-                            frame = zmsg_next (msg);
-                            memcpy (&kh_value (balance->hash, k),
-                                    zframe_data (frame), sizeof (vertex_t));
-                            frame = zmsg_next (msg);
-                        }
-
-
-                    }
-
-
-                    break;
-                }
-                iter = zlist_next (balance->on_receives);
-            }
-            //in case no on_receive events exists, drop things
-
-        }
-        else {
-//TODO check if I had already received that NEW_INTERVAL
-//after all we use lazy pirate
-
-            assert (memcmp (NEW_INTERVAL, zframe_data (type_fr), 1) == 0);
-//this is an interval initiation msg
-
-            int already_received = 0;
-            on_receive_t *iter = zlist_first (balance->on_receives);
-            while (iter) {
-                if ((strcmp
-                     ((const char *) zframe_data (frame),
-                      iter->action->key) == 0)
-                    &&
-                    (memcmp
-                     (zframe_data (id_frame), &(iter->un_id),
-                      sizeof (int)) == 0)) {
-                    already_received = 1;
-                    break;
-                }
-                iter = zlist_next (balance->on_receives);
-            }
-
-
-            if (already_received == 0) {
-//update intervals, now the node has taken responsibility of the interval
-                interval_t *interval;
-                interval_minit (&interval, msg);
-                intervals_add (balance->intervals, interval);
-
-
-                on_receive_t *on_receive;
-                on_receive_init (&on_receive, msg);
-                zlist_append (balance->on_receives, on_receive);
-                iter = on_receive;
-
-                fprintf (stderr,
-                         "\nworker:%s\nA NEW_INTERVAL has arrived for the on_receive event with id:%d and giving key:%s",
-                         balance->self_key, on_receive->un_id,
-                         on_receive->action->key);
-            }
-
-            address =
-                zframe_new (iter->action->key, strlen (iter->action->key));
-
-//send confirmation
-            responce = zmsg_new ();
-            frame = zframe_new (INTERVAL_RECEIVED, 1);
-            zmsg_add (responce, frame);
-            frame = zframe_dup (id_frame);
-            zmsg_add (responce, frame);
-            frame = zframe_dup (key_frame);
-            zmsg_add (responce, frame);
-            zmsg_wrap (responce, address);
-            zmsg_send (&responce, balance->router_bl);
-
-
-
-
-        }
-
-
-    }
-    zframe_destroy (&type_fr);
-    zmsg_destroy (&msg);
+balance_new_msg(balance,msg);
 
 }
 
 
 void
-worker_balance_update (balance_t * balance)
+worker_balance_lazy_pirate (balance_t * balance)
 {
 
-
-    on_give_t *iter = zlist_first (balance->on_gives);
-
-    if (iter == NULL) {
-
-        balance->next_time = -1;
-    }
-
-    while (iter) {
-
-        zmsg_t *msg = zmsg_new ();
-        zframe_t *frame;
-        zframe_t *address;
-
-        int64_t time = zclock_time ();
-
-        if (iter->state != 1) {
-
-            if (time - iter->last_time > ONGOING_TIMEOUT) {
-                if (iter->state == 0) {
-
-                    fprintf (stderr,
-                             "\nSending NEW_INTERVAL msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
-                             iter->event->key, iter->event->start.prefix,
-                             iter->event->start.suffix,
-                             iter->event->end.prefix, iter->event->end.suffix);
-
-
-                    frame = zframe_new (NEW_INTERVAL, 1);
-                    zmsg_add (msg, frame);
-                    frame = zframe_new (&(iter->un_id), sizeof (int));
-                    zmsg_add (msg, frame);
-                    frame = zframe_new (balance->self_key, strlen (balance->self_key) + 1);     //this also contains the null char
-                    zmsg_add (msg, frame);      //because it is not used as address
-                    frame =
-                        zframe_new (&(iter->event->start),
-                                    sizeof (struct _hkey_t));
-                    zmsg_add (msg, frame);
-                    frame =
-                        zframe_new (&(iter->event->end),
-                                    sizeof (struct _hkey_t));
-                    zmsg_add (msg, frame);
-
-
-                    address =
-                        zframe_new (iter->event->key,
-                                    strlen (iter->event->key));
-
-                    zmsg_wrap (msg, address);
-
-                    zmsg_send (&msg, balance->router_bl);
-                }
-
-                if (iter->state == 2) {
-                    fprintf (stderr,
-                             "\nSending EOT msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
-                             iter->event->key, iter->event->start.prefix,
-                             iter->event->start.suffix,
-                             iter->event->end.prefix, iter->event->end.suffix);
-
-
-                    frame = zframe_new (NEW_CHUNK, 1);
-                    zmsg_add (msg, frame);
-                    frame = zframe_new (&(iter->un_id), sizeof (int));
-                    zmsg_add (msg, frame);
-                    frame = zframe_new (balance->self_key, strlen (balance->self_key) + 1);     //this also contains the null char
-                    zmsg_add (msg, frame);      //because it is not used as address
-
-
-                    uint64_t counter = 0;
-
-                    frame = zframe_new (&counter, sizeof (uint64_t));
-                    zmsg_add (msg, frame);
-
-
-
-                    address =
-                        zframe_new (&(iter->event->key),
-                                    strlen (iter->event->key));
-
-                    zmsg_wrap (msg, address);
-
-                    zmsg_send (&msg, balance->router_bl);
-
-                }
-            }
-            else {
-//update the timeout
-                if (balance->next_time > iter->last_time) {
-                    balance->next_time = iter->last_time;
-                }
-            }
-
-        }
-
-
-        iter = zlist_next (balance->on_gives);
-    }
+balance_lazy_pirate(balance);
 
 
 
@@ -793,7 +213,7 @@ update_n_pieces (update_t * update, zmsg_t * msg)
                 on_give_init (&on_give, event, update->balance->un_id);
 
 //update balance object
-                balance_update (update->balance, on_give);
+                balance_update_give_timer (update->balance, on_give);
 
 //put event into the events list
 //not necessary
@@ -886,7 +306,7 @@ update_st_piece (update_t * update, zmsg_t * msg)
                 on_give_init (&on_give, event, update->balance->un_id);
 
 //update balance object
-                balance_update (update->balance, on_give);
+                balance_update_give_timer (update->balance, on_give);
 
 //put event into the events list
 //not necessary
@@ -1132,7 +552,7 @@ add_node (update_t * update, zmsg_t * msg)
                     on_give_init (&on_give, event, update->balance->un_id);
 
 //update balance object
-                    balance_update (update->balance, on_give);
+                    balance_update_give_timer (update->balance, on_give);
 
 //put event into the events list
 //not necessary
@@ -1420,18 +840,10 @@ worker_fn (void *arg)
 
     router_init (&router, 0);
 
-//create sockets that awake the poll in case of an event
-    void *self_wake = zsocket_new (ctx, ZMQ_PULL);
-    rc = zsocket_bind (self_wake, "inproc://self-%s", worker->id);
-    assert (rc == 0);
-    void *wake_nod = zsocket_new (ctx, ZMQ_PUSH);
-    rc = zsocket_connect (wake_nod, "inproc://self-%s", worker->id);
-    assert (rc == 0);
-
 //balance object
     balance_t *balance;
 
-    balance_init (&balance, hash, router_bl, self_bl, worker->id, wake_nod);
+    balance_init (&balance, hash, router_bl, self_bl, worker->id);
 
 //localdb object
 //used to save the counter used to create new vertices
@@ -1442,8 +854,8 @@ worker_fn (void *arg)
     compute_t *compute;
 
     compute_init (&compute, hash, router, balance->events, balance->intervals,
-                  socket_nb, self_nb, socket_wb, self_wb, localdb, worker,
-                  wake_nod);
+                  socket_nb, self_nb, socket_wb, self_wb, localdb, worker
+                  );
 
 //update object
 //used to update things, like the router object
@@ -1452,8 +864,8 @@ worker_fn (void *arg)
 
     update_init (&update, dealer, router, balance, compute);
 
-    zmq_pollitem_t pollitems[5] =
-        { {self_wake, 0, ZMQ_POLLIN}, {sub, 0, ZMQ_POLLIN}, {self_bl, 0,
+    zmq_pollitem_t pollitems[4] =
+        { {sub, 0, ZMQ_POLLIN}, {self_bl, 0,
                                                              ZMQ_POLLIN},
     {self_wb, 0,
      ZMQ_POLLIN},
@@ -1462,84 +874,65 @@ worker_fn (void *arg)
     fprintf (stderr, "\nworker with id:%s ready.", worker->id);
 //main loop
     while (1) {
-//finding the minimum timeout
-        int64_t timeout;
-        if (worker->next_time < 0) {
-            timeout = -1;
-        }
-        else {
-            timeout = worker->next_time - zclock_time ();
-            if (timeout < 0) {
-                timeout = 0;
-            }
-        }
-        rc = zmq_poll (pollitems, 5, timeout);
+        rc = zmq_poll (pollitems, 5, worker_timeout(balance,sleep));
         assert (rc != -1);
 
-//sends all msgs that their delay has expired
-        if (worker->is_it_sleep) {
-            worker_sleep (sleep, compute);
-        }
-        else {
-            worker_balance_update (balance);
-            worker_update_timeout (worker, balance->next_time, 0, wake_nod);
-        }
+worker_process_timer_events(worker,balance,sleep,compute);
+
         if (pollitems[0].revents & ZMQ_POLLIN) {
-            zframe_t *temp_frame = zframe_recv (self_wake);
-            zframe_destroy (&temp_frame);
+            worker_update (update, sub);
         }
         if (pollitems[1].revents & ZMQ_POLLIN) {
-            worker_update (update, sub);
-            worker_update_timeout (worker, balance->next_time, 0, wake_nod);
+            worker_balance (balance);
         }
         if (pollitems[2].revents & ZMQ_POLLIN) {
-            worker_balance (balance);
-            worker_update_timeout (worker, balance->next_time, 0, wake_nod);
+
         }
         if (pollitems[3].revents & ZMQ_POLLIN) {
 
         }
-        if (pollitems[4].revents & ZMQ_POLLIN) {
+    }
+}
 
+
+
+int64_t worker_timeout(balance_t *balance,sleep_t *sleep){
+//finding the minimum timeout
+int64_t time=zclock_time();
+        int64_t timeouti=-1;
+        if (balance->next_time < 0) {
+        if(sleep->next_time>0){
+
+timeout=time-sleep->next_time();
+}
         }
 
 
+        else {
+       if(sleep->next_time>0){
+timeout=time-balance->next_time();
+}
+            }
 
-
-    }
-
-
-
-
-
+if(timeout<0){
+timeout=-1;
 }
 
-void
-worker_update_timeout (worker_t * worker, int new_next_time, int is_it_sleep,
-                       void *wake_nod)
-{
-    if (is_it_sleep) {
-        worker->snext_time = new_next_time;
-    }
-    else {
-        worker->bnext_time = new_next_time;
-    }
-    if ((worker->bnext_time == -1) && (worker->bnext_time == -1)) {
-        worker->next_time = -1;
-    }
-    else {
-
-        if (((new_next_time > 0) && (new_next_time < worker->next_time))
-            || (worker->next_time < 0)) {
-            worker->next_time = new_next_time;
-            worker->is_it_sleep = is_it_sleep;
-            zframe_send (wake_nod, zframe_new ("", 0), 0);
-        }
-    }
-
-
+return timeout;
 }
 
+
+void worker_process_timer_events(worker_t *worker,balance_t *balance, sleep_t *sleep,compute_t *compute){
+int64_t time=zclock_time();
+
+if(balance->next_time<time){
+worker_balance_lazy_pirate(balance);
+}
+if(sleep->next_time<time){
+worker_sleep(sleep,compute);
+}
+
+}
 
 
 void

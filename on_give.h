@@ -38,10 +38,13 @@ typedef struct
     uint64_t last_time;         //last_time till I sent the interval(initial msg) or last time till
 //i sent the ending msg(0 counter)
 //those operations will be repeated until they succeed
-    int state;
-//state 0 giving the interval
-//state 1 giving the main body              //state 1 never happends really
-//state 2 sending the ending msg
+int state;    //0 for interval send
+              //1 for ending msg
+//last counter is used for the last chunk plus to see if I have already received an Interval_received before
+//due to possible duplicates (lazy pirate)
+//must be set to zero
+    uint64_t last_counter;
+
 } on_give_t;                    //ongoing event
 
 void on_give_init (on_give_t ** on_give, event_t * event, int un_id);
@@ -56,5 +59,7 @@ void on_give_destroy (on_give_t * on_give);
 //used when we receive a remove_node event
 void on_gives_remove (zlist_t * on_gives, zlist_t * events, node_t * node);
 
+//linear search
+on_give_t* on_gives_search_id(zlist_t *on_gives,int id);
 
 #endif

@@ -526,7 +526,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
     struct Stat stat;
 
 
-    if (online|self) {
+    if (online||self) {
 //obtain the resources and send them while setting wathcers on st_piece and n_pieces
 //we dont need to check if they exist since a resource goes online only after we have registered it.
 //we have to set the resource offline before we unregister it.

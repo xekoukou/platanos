@@ -43,10 +43,6 @@ struct worker_t
     char *id;                   //comp_name +res_name
     char *res_name;
     char *comp_name;
-    int64_t bnext_time;
-    int64_t snext_time;
-    int is_it_sleep;
-    int64_t next_time;
 };
 
 typedef struct worker_t worker_t;

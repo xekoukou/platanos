@@ -27,13 +27,13 @@
 //the key is the key of the node that will take part in the event /action
 //there is only the exception for the first node that will go online
 //its first event will have NULL as key
-
+//TODO ????
 
 struct action_t
 {                               //actions are only vertices that are received
     struct _hkey_t start;
     struct _hkey_t end;
-    char key[100];
+    char key[7];
 };
 
 typedef struct action_t action_t;
@@ -41,7 +41,7 @@ typedef struct action_t action_t;
 #include "event.h"
 
 //action is only created by a received msg
-void action_minit (action_t ** action, zmsg_t * msg);
+void action_minit (action_t ** action,char *key, zmsg_t * msg);
 
 
 

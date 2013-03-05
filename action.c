@@ -21,15 +21,13 @@
 
 //action is only created by a received msg
 void
-action_minit (action_t ** action, zmsg_t * msg)
+action_minit (action_t ** action,char *key, zmsg_t * msg)
 {
 
-    *action = malloc (sizeof (action_t));
+    *action = calloc (1,sizeof (action_t));
 
-    zframe_t *frame = zmsg_first (msg);
-    frame = zmsg_next (msg);
-    memcpy ((*action)->key, zframe_data (frame), zframe_size (frame));
-    frame = zmsg_next (msg);
+    memcpy ((*action)->key, key, 7 );
+    frame = zmsg_first (msg);
     memcpy (&((*action)->start), zframe_data (frame), zframe_size (frame));
     frame = zmsg_next (msg);
     memcpy (&((*action)->end), zframe_data (frame), zframe_size (frame));

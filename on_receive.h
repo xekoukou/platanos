@@ -32,9 +32,10 @@ typedef struct
 //they are ordered
     int un_id;                  //set by the giver to distinguish the confirmation msgs
     uint64_t counter;           //counter of the last received data
+    uint64_t last_time;    //used to indicate the last time it requested for the missed chunkes 
 } on_receive_t;                 //ongoing event
 
-void on_receive_init (on_receive_t ** on_receive, zmsg_t * msg);
+void on_receive_init (on_receive_t ** on_receive,int id,char *key, zmsg_t * msg);
 
 //used when we receive a remove_node event
 void
@@ -45,7 +46,8 @@ on_receives_destroy (zlist_t * on_receives, balance_t * balance, node_t * node);
 //or removed the corresponding event
 void on_receive_destroy (on_receive_t * on_receive);
 
-
+//on_receive events are not unique per id
+on_receive_t * on_receives_search(zlist_t *on_receives,int id,char *key,int key_size);
 
 
 #endif

@@ -28,9 +28,10 @@ on_give_init (on_give_t ** on_give, event_t * event, int un_id)
     (*on_give)->event = event;
     (*on_give)->unc_vertices = zlist_new ();
     (*on_give)->rec_counter = 0;
+    (*on_give)->last_counter = 0;
+    (*on_give)->state = 0;
     (*on_give)->un_id = un_id;
     (*on_give)->last_time = zclock_time ();
-    (*on_give)->state = 0;
 }
 
 
@@ -71,4 +72,17 @@ on_gives_remove (zlist_t * on_gives, zlist_t * events, node_t * node)
         iter = zlist_next (on_gives);
     }
 
+}
+//linear search
+//since you give the id, it is unique, thus no need to search the key as well
+on_give_t* on_gives_search_id(zlist_t *on_gives,int id){
+
+       on_give_t *iter = zlist_first (on_gives);
+        while (iter) {
+            if ((memcmp
+                 (id, &(iter->un_id), sizeof (int)) == 0)) {
+return iter;
+}}
+
+return NULL;
 }

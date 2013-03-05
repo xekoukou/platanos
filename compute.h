@@ -43,7 +43,6 @@ struct compute_t
     worker_t *worker;           //this is the object given to the thread, it also has
     //the zookeeper handle used to set the worker online or get
     //get the interval 
-    void *wake_nod;
 
 };
 
@@ -54,7 +53,7 @@ void compute_init (compute_t ** compute, khash_t (vertices) * hash,
                    router_t * router, zlist_t * events,
                    intervals_t * intervals, void *socket_nb, void *self_nb,
                    void *socket_wb, void *self_wb, localdb_t * localdb,
-                   worker_t * worker, void *wake_nod);
+                   worker_t * worker);
 
 
 
