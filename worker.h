@@ -63,11 +63,7 @@ int worker_new_interval (worker_t * worker, localdb_t * localdb);
 void worker_process_timer_events (worker_t * worker, balance_t * balance,
                                   sleep_t * sleep, compute_t * compute);
 
-//arg is a const integer  
-//great care not to change that integer
-//it is used in the sub and dealer socket (subscription, identity)
 //max 1000 workers per computer
-//worker ids are from 0 till size-1
 void *worker_fn (void *arg);
 
 

@@ -1,5 +1,5 @@
 127.0.0.1:2181  -->zookeeper servers   (it cannot have spaces in the end) 
 3000  --> timeout
 octopus -->octopus name
-c3po --> computer name
+c3po --> computer name(up to 7 chars) (must not end in db wb or nb)
 50000 --> an increasing number that tells the zookeeper_register which ports are free

@@ -811,7 +811,7 @@ worker_fn (void *arg)
     void *self_wb = zsocket_new (ctx, ZMQ_DEALER);
     void *self_nb = zsocket_new (ctx, ZMQ_DEALER);
 
-    char *identity = malloc (1000);
+    char identity[17];
 
     sprintf (identity, "%swb", worker->id);
     zmq_setsockopt (self_wb, ZMQ_IDENTITY, identity, strlen (identity));
@@ -823,9 +823,6 @@ worker_fn (void *arg)
     void *router_bl = zsocket_new (ctx, ZMQ_ROUTER);
     void *self_bl = zsocket_new (ctx, ZMQ_DEALER);
     zmq_setsockopt (self_bl, ZMQ_IDENTITY, worker->id, strlen (worker->id));
-
-//cleaning
-    free (identity);
 
 //hash of vertices
     khash_t (vertices) * hash = kh_init (vertices);

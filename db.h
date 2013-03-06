@@ -17,26 +17,39 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-
-
 #ifndef OCTOPUS_DB_H_
 #define OCTOPUS_DB_H_
 
+
+#include"on_give.h"
+#include"on_receive.h"
+#include"update.h"
+#include"balance.h"
+#include"events.h"
+#include"nodes.h"
+#include"actions.h"
 #include"zookeeper.h"
+#include"sleep.h"
+#include"compute.h"
 
-struct ozookeeper_t;
 
-struct dbs_t
+
+struct db_t
 {
-    pthread_t *pthread;
-    char **id;                  //has null at the end
-    int size;
+    oconfig_t *config;
+    char *id;                   //comp_name +res_name
+    char *res_name;
+    char *comp_name;
 };
 
-typedef struct dbs_t dbs_t;
+typedef struct db_t db_t;
 
-void dbs_init (dbs_t ** dbs, struct ozookeeper_t *ozookeeper);
+void db_init (db_t ** db, oconfig_t * config,
+                  char *comp_name, char *res_name);
 
+
+
+//max 1000 dbs per computer
+void *db_fn (void *arg);
 
 #endif
