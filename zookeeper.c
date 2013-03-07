@@ -130,6 +130,7 @@ ozookeeper_zhandle (ozookeeper_t * ozookeeper, zhandle_t ** zh)
 }
 
 
+//TODO both is not destroyed
 void
 ozookeeper_destroy (ozookeeper_t * ozookeeper)
 {
@@ -146,7 +147,7 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 
     workers_t *thread_list;
     if (db) {
-        thread_list = (workers_t *) ozookeeper->dbs;
+        thread_list = ozookeeper->both;
     }
     else {
         thread_list = ozookeeper->workers;
@@ -301,18 +302,30 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 
 //init ozookeeper with the workers
 void
-ozookeeper_init_workers (ozookeeper_t * ozookeeper, workers_t * workers)
+ozookeeper_init_both (ozookeeper_t * ozookeeper, workers_t * workers,
+                      dbs_t * dbs)
 {
     ozookeeper->workers = workers;
-}
-
-//init ozookeeper with the workers
-void
-ozookeeper_init_dbs (ozookeeper_t * ozookeeper, dbs_t * dbs)
-{
     ozookeeper->dbs = dbs;
-}
 
+    workers_t *both = malloc (sizeof (workers_t));
+    both->id = malloc (workers->size + dbs->size);
+    int iter;
+    for (iter = 0; iter < workers->size; iter++) {
+        both->id[iter] = malloc (strlen (workers->id[iter]) + 1);
+        memcpy (both->id[iter], workers->id[iter],
+                strlen (workers->id[iter]) + 1);
+    }
+    for (iter = 0; iter < dbs->size; iter++) {
+        both->id[workers->size + iter] = malloc (strlen (dbs->id[iter]) + 1);
+        memcpy (both->id[workers->size + iter], dbs->id[iter],
+                strlen (dbs->id[iter]) + 1);
+    }
+    both->size = workers->size + dbs->size;
+
+ozookeeper->both=both;
+
+}
 
 //one node update
 void
