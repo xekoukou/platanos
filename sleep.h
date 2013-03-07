@@ -19,6 +19,8 @@
 
 
 
+#ifndef OCTOPUS_SLEEP_H_
+#define OCTOPUS_SLEEP_H_
 
 
 #include"tree/tree.h"
@@ -57,3 +59,5 @@ void sleep_add (sleep_t * sleep, zmsg_t * msg, int64_t delay,
 //returns null when there are no more msgs to give
 //dont give null msgs, it will brake it
 zmsg_t *sleep_awake (sleep_t * sleep, unsigned short *wb);
+
+#endif

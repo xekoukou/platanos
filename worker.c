@@ -677,8 +677,235 @@ go_online (worker_t * worker)
 
 }
 
+void
+db_add_node (update_t * update, zmsg_t * msg)
+{
+    int start;
+    node_t *node;
+    char key[100];
+    int n_pieces;
+    unsigned long st_piece;
+    char bind_point_db[50];
+
+    zframe_t *frame = zmsg_first (msg);
+    memcpy (&start, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (key, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (&n_pieces, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (&st_piece, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (bind_point_db, zframe_data (frame), zframe_size (frame));
 
 
+    zmsg_destroy (&msg);
+
+//connect to the node
+
+    int rc;
+    rc = zsocket_connect (update->compute->socket_nb, "%s", bind_point_db);
+    assert (rc == 0);
+    rc = zsocket_connect (update->compute->socket_wb, "%s", bind_point_db);
+    assert (rc == 0);
+
+
+
+
+    fprintf (stderr,
+             "\nworker_add_node\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
+             start, key, n_pieces, st_piece);
+
+    db_node_init (&node, key, n_pieces, st_piece, bind_point_db);
+
+//update router object
+//this should always happen after the prev step
+    assert (1 == router_add (update->db_router, node));
+}
+
+void
+db_update_st_piece (update_t * update, zmsg_t * msg)
+{
+    node_t *node;
+    char key[100];
+    unsigned long st_piece;
+
+    zframe_t *frame = zmsg_first (msg);
+
+    memcpy (key, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (&st_piece, zframe_data (frame), zframe_size (frame));
+
+    zmsg_destroy (&msg);
+    node_t *prev_node;
+    node = node_dup (prev_node = nodes_search (update->router->nodes, key));
+    assert (prev_node != NULL);
+    node->st_piece = st_piece;
+
+//update router object
+//this should always happen after the prev step
+
+    router_delete (update->db_router, prev_node);
+    router_add (update->db_router, node);
+
+}
+
+void
+db_update_n_pieces (update_t * update, zmsg_t * msg)
+{
+    node_t *node;
+    char key[100];
+    int n_pieces;
+
+    zframe_t *frame = zmsg_first (msg);
+
+    memcpy (key, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (&n_pieces, zframe_data (frame), zframe_size (frame));
+
+    zmsg_destroy (&msg);
+    node_t *prev_node;
+    node = node_dup (prev_node = nodes_search (update->router->nodes, key));
+    assert (prev_node != NULL);
+    node->n_pieces = n_pieces;
+
+//update router object
+//this should always happen after the prev step
+
+    router_delete (update->router, prev_node);
+    router_add (update->router, node);
+}
+
+
+void
+db_remove_node (update_t * update, zmsg_t * msg)
+{
+    node_t *node;
+    char key[100];
+
+    zframe_t *frame = zmsg_first (msg);
+
+    memcpy (key, zframe_data (frame), zframe_size (frame));
+
+    zmsg_destroy (&msg);
+
+    node = nodes_search (update->db_router->nodes, key);
+
+    assert (node != NULL);
+
+    node_set_alive (node, 0);
+
+
+}
+
+
+void
+db_delete_node (update_t * update, zmsg_t * msg)
+{
+    node_t *node;
+    char key[100];
+
+    zframe_t *frame = zmsg_first (msg);
+
+    memcpy (key, zframe_data (frame), zframe_size (frame));
+
+    zmsg_destroy (&msg);
+
+    node = nodes_search (update->db_router->nodes, key);
+
+    assert (node != NULL);
+
+//update router object
+//this should always happen after the prev step
+    router_delete (update->db_router, node);
+
+
+}
+
+
+//this only updates the router object of the database
+//thus it rejects the add_self data
+//and the get_online data
+void
+worker_update_db (update_t * update, zmsg_t * msg)
+{
+
+    zframe_t *id = zmsg_pop (msg);
+    if (memcmp (zframe_data (id), &(update->id), sizeof (unsigned int)) == 0) {
+//lazy pirate reconfirm update
+        zframe_send (&id, update->dealer, 0);
+        zframe_destroy (&id);
+        zmsg_destroy (&msg);
+        fprintf (stderr,
+                 "\nworker_update_db:It was a previous update, resending confirmation");
+
+    }
+    else {
+        zframe_t *frame = zmsg_pop (msg);
+        if (memcmp (zframe_data (frame), "add_self", zframe_size (frame)) == 0) {
+            zmsg_destroy (&msg);
+        }
+        else {
+            if (memcmp
+                (zframe_data (frame), "delete_node",
+                 zframe_size (frame)) == 0) {
+                db_delete_node (update, msg);
+            }
+            else {
+
+                if (memcmp
+                    (zframe_data (frame), "remove_node",
+                     zframe_size (frame)) == 0) {
+                    db_remove_node (update, msg);
+                }
+                else {
+                    if (memcmp
+                        (zframe_data (frame), "add_node",
+                         zframe_size (frame)) == 0) {
+                        db_add_node (update, msg);
+                    }
+                    else {
+                        if (memcmp
+                            (zframe_data (frame), "st_piece",
+                             zframe_size (frame)) == 0) {
+                            db_update_st_piece (update, msg);
+                        }
+                        else {
+                            if (memcmp
+                                (zframe_data (frame), "n_pieces",
+                                 zframe_size (frame)) == 0) {
+                                db_update_n_pieces (update, msg);
+                            }
+                            else {
+                                if (memcmp
+                                    (zframe_data (frame), "go_online",
+                                     zframe_size (frame)) == 0) {
+                                    zmsg_destroy (&msg);
+
+                                }
+
+
+
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        zframe_destroy (&frame);
+
+
+        zframe_send (&id, update->dealer, 0);
+        fprintf (stderr, "\nworker_update:I have sent confirmation to sub msg");
+
+    }
+
+
+
+}
 
 int
 worker_update (update_t * update, void *sub)
@@ -693,68 +920,81 @@ worker_update (update_t * update, void *sub)
     fprintf (stderr, "\nworker_update:I have received a sub msg");
     zframe_t *sub_frame = zmsg_pop (msg);
     zframe_destroy (&sub_frame);
-    zframe_t *id = zmsg_pop (msg);
-    if (memcmp (zframe_data (id), &(update->id), sizeof (unsigned int)) == 0) {
-//lazy pirate reconfirm update
-        zframe_send (&id, update->dealer, 0);
-        zframe_destroy (&id);
-        zmsg_destroy (&msg);
-        fprintf (stderr,
-                 "\nworker_update:It was a previous update, resending confirmation");
 
+    zframe_t *db = zmsg_pop (msg);
+    if (strcmp ("db", (char *) zframe_data (db)) == 0) {
+        zframe_destroy (&db);
+        worker_update_db (update, msg);
     }
     else {
-        zframe_t *frame = zmsg_pop (msg);
-        if (memcmp (zframe_data (frame), "add_self", zframe_size (frame)) == 0) {
-            add_self (update, msg);
+        zframe_destroy (&db);
+
+        zframe_t *id = zmsg_pop (msg);
+        if (memcmp (zframe_data (id), &(update->id), sizeof (unsigned int)) ==
+            0) {
+//lazy pirate reconfirm update
+            zframe_send (&id, update->dealer, 0);
+            zframe_destroy (&id);
+            zmsg_destroy (&msg);
+            fprintf (stderr,
+                     "\nworker_update:It was a previous update, resending confirmation");
+
         }
         else {
-            if (memcmp
-                (zframe_data (frame), "remove_node",
-                 zframe_size (frame)) == 0) {
-                remove_node (update, msg);
+            zframe_t *frame = zmsg_pop (msg);
+            if (memcmp (zframe_data (frame), "add_self", zframe_size (frame)) ==
+                0) {
+                add_self (update, msg);
             }
             else {
                 if (memcmp
-                    (zframe_data (frame), "add_node",
+                    (zframe_data (frame), "remove_node",
                      zframe_size (frame)) == 0) {
-                    add_node (update, msg);
+                    remove_node (update, msg);
                 }
                 else {
                     if (memcmp
-                        (zframe_data (frame), "st_piece",
+                        (zframe_data (frame), "add_node",
                          zframe_size (frame)) == 0) {
-                        update_st_piece (update, msg);
+                        add_node (update, msg);
                     }
                     else {
                         if (memcmp
-                            (zframe_data (frame), "n_pieces",
+                            (zframe_data (frame), "st_piece",
                              zframe_size (frame)) == 0) {
-                            update_n_pieces (update, msg);
+                            update_st_piece (update, msg);
                         }
                         else {
                             if (memcmp
-                                (zframe_data (frame), "go_online",
+                                (zframe_data (frame), "n_pieces",
                                  zframe_size (frame)) == 0) {
-                                go_online (update->compute->worker);
+                                update_n_pieces (update, msg);
                             }
+                            else {
+                                if (memcmp
+                                    (zframe_data (frame), "go_online",
+                                     zframe_size (frame)) == 0) {
+                                    go_online (update->compute->worker);
+                                }
 
 
 
 
+                            }
                         }
                     }
                 }
             }
+
+
+            zframe_destroy (&frame);
+
+
+            zframe_send (&id, update->dealer, 0);
+            fprintf (stderr,
+                     "\nworker_update:I have sent confirmation to sub msg");
+
         }
-
-
-        zframe_destroy (&frame);
-
-
-        zframe_send (&id, update->dealer, 0);
-        fprintf (stderr, "\nworker_update:I have sent confirmation to sub msg");
-
     }
 
     return 0;
@@ -837,6 +1077,13 @@ worker_fn (void *arg)
 
     router_init (&router, 0);
 
+//router object
+//used to find where each msg goes
+    router_t *db_router;
+
+    router_init (&db_router, 1);
+
+
 //balance object
     balance_t *balance;
 
@@ -850,15 +1097,16 @@ worker_fn (void *arg)
 //compute object
     compute_t *compute;
 
-    compute_init (&compute, hash, router, balance->events, balance->intervals,
-                  socket_nb, self_nb, socket_wb, self_wb, localdb, worker);
+    compute_init (&compute, hash, router, db_router, balance->events,
+                  balance->intervals, socket_nb, self_nb, socket_wb, self_wb,
+                  localdb, worker);
 
 //update object
 //used to update things, like the router object
     update_t *update;
 
 
-    update_init (&update, dealer, router, balance, compute);
+    update_init (&update, dealer, router, db_router, balance, compute);
 
     zmq_pollitem_t pollitems[4] = { {sub, 0, ZMQ_POLLIN}, {self_bl, 0,
                                                            ZMQ_POLLIN},

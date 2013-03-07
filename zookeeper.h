@@ -42,10 +42,8 @@ struct ozookeeper_t
 {
     zhandle_t *zh;
     oconfig_t *config;
-    void *w_pub;
-    void *w_router;
-    void *db_pub;
-    void *db_router;
+    void *pub;
+    void *router;
     oz_updater_t updater;
     struct workers_t *workers;
     dbs_t *dbs;
@@ -57,8 +55,7 @@ typedef struct ozookeeper_t ozookeeper_t;
 
 //initialize the ozookeeper object
 void
-ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
-                 void *w_pub, void *w_router, void *db_pub, void *db_router);
+ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config, zctx_t * ctx);
 
 
 int ozookeeper_not_corrupt (ozookeeper_t ** ozookeep);

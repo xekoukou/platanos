@@ -33,20 +33,31 @@
 
 //initialize the ozookeeper object
 void
-ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config,
-                 void *w_pub, void *w_router, void *db_pub, void *db_router)
+ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config, zctx_t * ctx)
 {
 //USED TO DEBUG ,revert
 //zoo_set_debug_level(ZOO_LOG_LEVEL_DEBUG);
+
+    void *pub = zsocket_new (ctx, ZMQ_PUB);
+    void *router = zsocket_new (ctx, ZMQ_ROUTER);
+
+//bind to the apropriate location
+    int rc;
+
+    rc = zsocket_bind (pub, "tcp://127.0.0.1:49152");
+    assert (rc == 49152);
+    rc = zsocket_bind (router, "tcp://127.0.0.1:49153");
+    assert (rc == 49153);
+
+
+
 
 
     *ozookeeper = malloc (sizeof (ozookeeper_t));
 
     (*ozookeeper)->config = config;
-    (*ozookeeper)->w_pub = w_pub;
-    (*ozookeeper)->w_router = w_router;
-    (*ozookeeper)->db_pub = db_pub;
-    (*ozookeeper)->db_router = db_router;
+    (*ozookeeper)->pub = pub;
+    (*ozookeeper)->router = router;
 
     oz_updater_init (&((*ozookeeper)->updater));
 
@@ -132,21 +143,17 @@ ozookeeper_destroy (ozookeeper_t * ozookeeper)
 void
 ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 {
-    void *pub;
-    void *router;
 
     workers_t *thread_list;
     if (db) {
-        pub = ozookeeper->db_pub;
-        router = ozookeeper->db_router;
         thread_list = (workers_t *) ozookeeper->dbs;
     }
     else {
-        pub = ozookeeper->w_pub;
-        router = ozookeeper->w_router;
         thread_list = ozookeeper->workers;
     }
 
+    void *pub = ozookeeper->pub;
+    void *router = ozookeeper->router;
 
 
 
@@ -164,6 +171,12 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
     zmsg_t *msg_to_send = zmsg_dup (*msg);
     zmsg_push (msg_to_send,
                zframe_new (&(ozookeeper->updater.id), sizeof (unsigned int)));
+    if (db) {
+        zmsg_push (msg_to_send, zframe_new ("db", strlen ("db") + 1));
+    }
+    else {
+        zmsg_push (msg_to_send, zframe_new ("w", strlen ("w") + 1));
+    }
     zmsg_push (msg_to_send, zframe_new ("all", strlen ("all") + 1));
 
     zmsg_send (&msg_to_send, pub);
@@ -177,7 +190,8 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
     size_t time = zclock_time ();
     zframe_t *iter;
 
-    zmq_pollitem_t pollitems[1] = { {router, 0, ZMQ_POLLIN} };
+    zmq_pollitem_t pollitems[1] = { {router, 0, ZMQ_POLLIN}
+    };
 
     while (1) {
         //TODO the timeout is not the correct
@@ -262,6 +276,15 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
                     zmsg_push (msg_to_send,
                                zframe_new (&(ozookeeper->updater.id),
                                            sizeof (unsigned int)));
+                    if (db) {
+                        zmsg_push (msg_to_send,
+                                   zframe_new ("db", strlen ("db") + 1));
+                    }
+                    else {
+                        zmsg_push (msg_to_send,
+                                   zframe_new ("w", strlen ("w") + 1));
+                    }
+
                     zmsg_push (msg_to_send,
                                zframe_new (thread_list->id[it],
                                            strlen (thread_list->id[it])));
@@ -297,14 +320,8 @@ ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 {
     void *pub;
     void *router;
-    if (db) {
-        pub = ozookeeper->db_pub;
-        router = ozookeeper->db_router;
-    }
-    else {
-        pub = ozookeeper->w_pub;
-        router = ozookeeper->w_router;
-    }
+    pub = ozookeeper->pub;
+    router = ozookeeper->router;
 
     fprintf (stderr, "\nrecipient resource:%s", ozookeeper->updater.key);
 
@@ -330,6 +347,13 @@ ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
             zmsg_push (msg_to_send,
                        zframe_new (&(ozookeeper->updater.id),
                                    sizeof (unsigned int)));
+            if (db) {
+                zmsg_push (msg_to_send, zframe_new ("db", strlen ("db") + 1));
+            }
+            else {
+                zmsg_push (msg_to_send, zframe_new ("w", strlen ("w") + 1));
+            }
+
             zmsg_push (msg_to_send,
                        zframe_new (ozookeeper->updater.key,
                                    strlen (ozookeeper->updater.key)));

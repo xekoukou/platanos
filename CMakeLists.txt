@@ -47,6 +47,7 @@ cmake_minimum_required (VERSION 2.8)
                 vertex.c
                 worker.c
                 workers.c
+                dbs.c
                 compute.c
                 db.c balance.c
                 on_give.c on_receive.c update.c zookeeper.c zk_updater.c main.c)

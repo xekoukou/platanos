@@ -36,6 +36,7 @@
 
 struct db_t
 {
+    zhandle_t *zh;
     oconfig_t *config;
     char *id;                   //comp_name +res_name
     char *res_name;
@@ -44,8 +45,8 @@ struct db_t
 
 typedef struct db_t db_t;
 
-void db_init (db_t ** db, oconfig_t * config,
-                  char *comp_name, char *res_name);
+void db_init (db_t ** db, zhandle_t * zh, oconfig_t * config, char *comp_name,
+              char *res_name);
 
 
 

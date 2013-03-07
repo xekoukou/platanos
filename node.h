@@ -58,6 +58,10 @@ void node_init (node_t ** node, char *key, int n_pieces,
                 unsigned long st_piece, char *bind_point_nb,
                 char *bind_point_wb, char *bind_point_bl);
 
+void
+db_node_init (node_t ** node, char *key, int n_pieces,
+              unsigned long st_piece, char *bind_point_db);
+
 node_t *node_dup (node_t * node);
 
 // only used in a db_routing 
