@@ -396,10 +396,13 @@ ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
                 (zframe_data (frame), &(ozookeeper->updater.id),
                  sizeof (unsigned int)) == 0) {
                 if (zframe_streq (address, ozookeeper->updater.key)) {
-                    break;
+            zmsg_destroy (&resp);
+            zframe_destroy(&address);
+            break;
                 }
             }
             zmsg_destroy (&resp);
+            zframe_destroy(&address);
         }
     }
 
@@ -459,7 +462,6 @@ ozookeeper_update_add_node (ozookeeper_t * ozookeeper, int db, int start,
     fprintf (stderr,
              "\nzookeeper_add_node\nkey:%s\nn_pieces:%d\nst_piece:%lu", key,
              n_pieces, st_piece);
-    zclock_sleep (1000);
     ozookeeper_update (ozookeeper, &msg, db);
 }
 

@@ -713,7 +713,7 @@ db_add_node (update_t * update, zmsg_t * msg)
 
 
     fprintf (stderr,
-             "\nworker_add_node\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
+             "\nworker_db_add_node\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
              start, key, n_pieces, st_piece);
 
     db_node_init (&node, key, n_pieces, st_piece, bind_point_db);
@@ -738,7 +738,7 @@ db_update_st_piece (update_t * update, zmsg_t * msg)
 
     zmsg_destroy (&msg);
     node_t *prev_node;
-    node = node_dup (prev_node = nodes_search (update->router->nodes, key));
+    node = node_dup (prev_node = nodes_search (update->db_router->nodes, key));
     assert (prev_node != NULL);
     node->st_piece = st_piece;
 
@@ -765,15 +765,15 @@ db_update_n_pieces (update_t * update, zmsg_t * msg)
 
     zmsg_destroy (&msg);
     node_t *prev_node;
-    node = node_dup (prev_node = nodes_search (update->router->nodes, key));
+    node = node_dup (prev_node = nodes_search (update->db_router->nodes, key));
     assert (prev_node != NULL);
     node->n_pieces = n_pieces;
 
 //update router object
 //this should always happen after the prev step
 
-    router_delete (update->router, prev_node);
-    router_add (update->router, node);
+    router_delete (update->db_router, prev_node);
+    router_add (update->db_router, node);
 }
 
 
