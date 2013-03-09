@@ -178,7 +178,6 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
     else {
         zmsg_push (msg_to_send, zframe_new ("w", strlen ("w") + 1));
     }
-    zmsg_push (msg_to_send, zframe_new ("all", strlen ("all") + 1));
 
     zmsg_send (&msg_to_send, pub);
 
@@ -323,7 +322,7 @@ ozookeeper_init_both (ozookeeper_t * ozookeeper, workers_t * workers,
     }
     both->size = workers->size + dbs->size;
 
-ozookeeper->both=both;
+    ozookeeper->both = both;
 
 }
 
@@ -360,16 +359,16 @@ ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
             zmsg_push (msg_to_send,
                        zframe_new (&(ozookeeper->updater.id),
                                    sizeof (unsigned int)));
+
+            char identity[17];
             if (db) {
-                zmsg_push (msg_to_send, zframe_new ("db", strlen ("db") + 1));
+                sprintf (identity, "%sdb", ozookeeper->updater.key);
             }
             else {
-                zmsg_push (msg_to_send, zframe_new ("w", strlen ("w") + 1));
+                sprintf (identity, "%sw", ozookeeper->updater.key);
             }
 
-            zmsg_push (msg_to_send,
-                       zframe_new (ozookeeper->updater.key,
-                                   strlen (ozookeeper->updater.key)));
+            zmsg_push (msg_to_send, zframe_new (identity, strlen (identity)));
             zmsg_send (&msg_to_send, pub);
 
             fprintf (stderr, "\nzookeeper_update_one: I Have sent a sub msg");
@@ -395,14 +394,12 @@ ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
             if (memcmp
                 (zframe_data (frame), &(ozookeeper->updater.id),
                  sizeof (unsigned int)) == 0) {
-                if (zframe_streq (address, ozookeeper->updater.key)) {
-            zmsg_destroy (&resp);
-            zframe_destroy(&address);
-            break;
-                }
+                zmsg_destroy (&resp);
+                zframe_destroy (&address);
+                break;
             }
             zmsg_destroy (&resp);
-            zframe_destroy(&address);
+            zframe_destroy (&address);
         }
     }
 

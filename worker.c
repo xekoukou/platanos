@@ -918,9 +918,6 @@ worker_update (update_t * update, void *sub)
     }
 
     fprintf (stderr, "\nworker_update:I have received a sub msg");
-    zframe_t *sub_frame = zmsg_pop (msg);
-    zframe_destroy (&sub_frame);
-
     zframe_t *db = zmsg_pop (msg);
     if (strcmp ("db", (char *) zframe_data (db)) == 0) {
         zframe_destroy (&db);
@@ -1029,10 +1026,12 @@ worker_fn (void *arg)
     void *sub = zsocket_new (ctx, ZMQ_SUB);
     void *dealer = zsocket_new (ctx, ZMQ_DEALER);
 
-
-    zmq_setsockopt (dealer, ZMQ_IDENTITY, worker->id, strlen (worker->id));
-    zmq_setsockopt (sub, ZMQ_SUBSCRIBE, worker->id, strlen (worker->id));
-    zmq_setsockopt (sub, ZMQ_SUBSCRIBE, "all", strlen ("all") + 1);
+    char identity[17];
+    sprintf (identity, "%sw", worker->id);
+    zmq_setsockopt (dealer, ZMQ_IDENTITY, identity, strlen (identity));
+    zmq_setsockopt (sub, ZMQ_SUBSCRIBE, identity, strlen (identity));
+    zmq_setsockopt (sub, ZMQ_SUBSCRIBE, "w", strlen ("w") + 1);
+    zmq_setsockopt (sub, ZMQ_SUBSCRIBE, "db", strlen ("db") + 1);
 
 
     rc = zsocket_connect (sub, "tcp://127.0.0.1:49152");
@@ -1051,7 +1050,6 @@ worker_fn (void *arg)
     void *self_wb = zsocket_new (ctx, ZMQ_DEALER);
     void *self_nb = zsocket_new (ctx, ZMQ_DEALER);
 
-    char identity[17];
 
     sprintf (identity, "%swb", worker->id);
     zmq_setsockopt (self_wb, ZMQ_IDENTITY, identity, strlen (identity));

@@ -51,7 +51,7 @@ main ()
     dbs_t *dbs;
     dbs_init (&dbs, ozookeeper);
 
-    ozookeeper_init_both (ozookeeper, workers,dbs);
+    ozookeeper_init_both (ozookeeper, workers, dbs);
 
     ozookeeper_getconfig (ozookeeper);
 
