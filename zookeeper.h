@@ -48,8 +48,6 @@ struct ozookeeper_t
     oz_updater_t updater;
     workers_t *workers;
     dbs_t *dbs;
-    workers_t *both;            //both workers and dbs together
-
 };
 
 typedef struct ozookeeper_t ozookeeper_t;

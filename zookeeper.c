@@ -145,17 +145,12 @@ void
 ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 {
 
-    workers_t *thread_list;
-    if (db) {
-        thread_list = ozookeeper->both;
-    }
-    else {
-        thread_list = ozookeeper->workers;
-    }
+    int size = ozookeeper->workers->size + ozookeeper->dbs->size;
 
     void *pub = ozookeeper->pub;
     void *router = ozookeeper->router;
 
+    char identity[17];
 
 
     int rc;
@@ -243,7 +238,7 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
         }
 
 
-        if (zlist_size (ok_list) == thread_list->size) {
+        if (zlist_size (ok_list) == size) {
 //destroy things
             iter = zlist_first (ok_list);
             while (iter) {
@@ -259,13 +254,20 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
             time = zclock_time ();
 
             int it;
-            for (it = 0; it < thread_list->size; it++) {
+            for (it = 0; it < size; it++) {
+                if (it < ozookeeper->workers->size) {
+                    sprintf (identity, "%sw", ozookeeper->workers->id[it]);
+                }
+                else {
+                    sprintf (identity, "%sdb",
+                             ozookeeper->dbs->id[size - it - 1]);
+                }
                 int exists = 0;
                 iter = zlist_first (ok_list);
                 while (iter) {
                     if (memcmp
-                        (zframe_data (address), thread_list->id[it],
-                         strlen (thread_list->id[it])) == 0) {
+                        (zframe_data (address), identity,
+                         strlen (identity)) == 0) {
                         exists = 1;
                         break;
                     }
@@ -276,6 +278,7 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
                     zmsg_push (msg_to_send,
                                zframe_new (&(ozookeeper->updater.id),
                                            sizeof (unsigned int)));
+
                     if (db) {
                         zmsg_push (msg_to_send,
                                    zframe_new ("db", strlen ("db") + 1));
@@ -286,8 +289,7 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
                     }
 
                     zmsg_push (msg_to_send,
-                               zframe_new (thread_list->id[it],
-                                           strlen (thread_list->id[it])));
+                               zframe_new (identity, strlen (identity)));
                     zmsg_send (&msg_to_send, pub);
 
                 }
@@ -306,23 +308,6 @@ ozookeeper_init_both (ozookeeper_t * ozookeeper, workers_t * workers,
 {
     ozookeeper->workers = workers;
     ozookeeper->dbs = dbs;
-
-    workers_t *both = malloc (sizeof (workers_t));
-    both->id = malloc (workers->size + dbs->size);
-    int iter;
-    for (iter = 0; iter < workers->size; iter++) {
-        both->id[iter] = malloc (strlen (workers->id[iter]) + 1);
-        memcpy (both->id[iter], workers->id[iter],
-                strlen (workers->id[iter]) + 1);
-    }
-    for (iter = 0; iter < dbs->size; iter++) {
-        both->id[workers->size + iter] = malloc (strlen (dbs->id[iter]) + 1);
-        memcpy (both->id[workers->size + iter], dbs->id[iter],
-                strlen (dbs->id[iter]) + 1);
-    }
-    both->size = workers->size + dbs->size;
-
-    ozookeeper->both = both;
 
 }
 
