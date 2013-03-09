@@ -280,8 +280,7 @@ main ()
 
 
         int port;
-        char bind_search[1000];
-        sprintf (bind_search, "tcp://%s:*", config[5]);
+
         char bind_location[1000];
         if (db) {
             port = oconfig_incr_port (fconfig);
