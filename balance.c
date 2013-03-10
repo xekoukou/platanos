@@ -577,6 +577,9 @@ void
 balance_new_msg (balance_t * balance, zmsg_t * msg)
 {
 
+    //destroying the zero frame
+    zframe_t *zero = zmsg_pop (msg);
+    zframe_destroy (&zero);
     zframe_t *address = zmsg_pop (msg);
     zframe_t *type_fr = zmsg_pop (msg);
 
