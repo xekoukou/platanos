@@ -390,15 +390,16 @@ remove_node (update_t * update, zmsg_t * msg)
     router_delete (update->router, node);
 
     fprintf (stderr, "\n%s:remove_node:size of event list: %lu",
-             update->router->self->key,zlist_size (events));
+             update->router->self->key, zlist_size (events));
     event_t *event = zlist_first (events);
     int iter = 0;
     while (event) {
         iter++;
         fprintf (stderr,
                  "\n%s:remove_node: event %d \n start: %lu %lu \n end: %lu %lu \n key: %s \n give: %d",
-                 update->router->self->key,iter, event->start.prefix, event->start.suffix,
-                 event->end.prefix, event->end.suffix, event->key, event->give);
+                 update->router->self->key, iter, event->start.prefix,
+                 event->start.suffix, event->end.prefix, event->end.suffix,
+                 event->key, event->give);
         event = zlist_next (events);
     }
 
@@ -485,7 +486,7 @@ add_node (update_t * update, zmsg_t * msg)
 
     fprintf (stderr,
              "\n%s:add_node: added node with\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
-             update->balance->self_key,start, key, n_pieces, st_piece);
+             update->balance->self_key, start, key, n_pieces, st_piece);
 
     node_init (&node, key, n_pieces, st_piece, bind_point_nb, bind_point_wb,
                bind_point_bl);
@@ -508,17 +509,17 @@ add_node (update_t * update, zmsg_t * msg)
     assert (1 == router_add (update->router, node));
 
     if (!start) {
-        fprintf (stderr, "\n%s:add_node:size of event list: %lu",update->balance->self_key,
-                 zlist_size (events));
+        fprintf (stderr, "\n%s:add_node:size of event list: %lu",
+                 update->balance->self_key, zlist_size (events));
         event_t *event = zlist_first (events);
         int iter = 0;
         while (event) {
             iter++;
             fprintf (stderr,
                      "\n%s:add_node:event %d \n start: %lu %lu \n end: %lu %lu \n key: %s \n give: %d",
-                     update->balance->self_key,iter, event->start.prefix, event->start.suffix,
-                     event->end.prefix, event->end.suffix, event->key,
-                     event->give);
+                     update->balance->self_key, iter, event->start.prefix,
+                     event->start.suffix, event->end.prefix, event->end.suffix,
+                     event->key, event->give);
             event = zlist_next (events);
         }
         event = zlist_pop (events);
@@ -546,7 +547,8 @@ add_node (update_t * update, zmsg_t * msg)
                         update->balance->un_id++;
                     }
 
-                    fprintf (stderr, "\n%s:add_node:creating on_give_event",update->balance->self_key);
+                    fprintf (stderr, "\n%s:add_node:creating on_give_event",
+                             update->balance->self_key);
 
 //create on_give object
                     on_give_t *on_give;
@@ -620,7 +622,7 @@ add_self (update_t * update, zmsg_t * msg)
     zmsg_destroy (&msg);
 
     fprintf (stderr, "\n%s:add_self:\nkey:%s\nn_pieces:%d\nst_piece:%lu",
-             key,key, n_pieces, st_piece);
+             key, key, n_pieces, st_piece);
 
     node_init (&self, key, n_pieces, st_piece, bind_point_nb, bind_point_wb,
                bind_point_bl);
@@ -715,7 +717,7 @@ db_add_node (update_t * update, zmsg_t * msg)
 
     fprintf (stderr,
              "\n%s:db_add_node:\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
-             update->balance->self_key,start, key, n_pieces, st_piece);
+             update->balance->self_key, start, key, n_pieces, st_piece);
 
     db_node_init (&node, key, n_pieces, st_piece, bind_point_db);
 
@@ -838,7 +840,8 @@ worker_update_db (update_t * update, zmsg_t * msg)
         zframe_destroy (&id);
         zmsg_destroy (&msg);
         fprintf (stderr,
-                 "\n%s:update_db: It was a previous update, resending confirmation",update->balance->self_key);
+                 "\n%s:update_db: It was a previous update, resending confirmation",
+                 update->balance->self_key);
 
     }
     else {
@@ -900,7 +903,8 @@ worker_update_db (update_t * update, zmsg_t * msg)
 
 
         zframe_send (&id, update->dealer, 0);
-        fprintf (stderr, "\n%s:update_db:I have sent confirmation to sub msg",update->balance->self_key);
+        fprintf (stderr, "\n%s:update_db:I have sent confirmation to sub msg",
+                 update->balance->self_key);
 
     }
 
@@ -918,7 +922,8 @@ worker_update (update_t * update, void *sub)
         exit (1);
     }
 
-    fprintf (stderr, "\n%s:update:I have received a sub msg",update->balance->self_key);
+    fprintf (stderr, "\n%s:update:I have received a sub msg",
+             update->balance->self_key);
     zframe_t *db = zmsg_pop (msg);
     if (strcmp ("db", (char *) zframe_data (db)) == 0) {
         zframe_destroy (&db);
@@ -935,7 +940,8 @@ worker_update (update_t * update, void *sub)
             zframe_destroy (&id);
             zmsg_destroy (&msg);
             fprintf (stderr,
-                     "\n%s:update:It was a previous update, resending confirmation",update->balance->self_key);
+                     "\n%s:update:It was a previous update, resending confirmation",
+                     update->balance->self_key);
 
         }
         else {
@@ -990,7 +996,8 @@ worker_update (update_t * update, void *sub)
 
             zframe_send (&id, update->dealer, 0);
             fprintf (stderr,
-                     "\n%s:update:I have sent confirmation to sub msg",update->balance->self_key);
+                     "\n%s:update:I have sent confirmation to sub msg",
+                     update->balance->self_key);
 
         }
     }
@@ -1173,7 +1180,8 @@ worker_timeout (balance_t * balance, sleep_t * sleep)
         timeout = -1;
     }
 
-    fprintf (stderr, "\n:%s:timeout:The new timeout is: %ld.\n",balance->self_key, timeout);
+    fprintf (stderr, "\n:%s:timeout:The new timeout is: %ld.\n",
+             balance->self_key, timeout);
 
     return timeout;
 }

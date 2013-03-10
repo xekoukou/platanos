@@ -122,7 +122,7 @@ on_receives_search (zlist_t * on_receives, int id, char *key)
         if ((id == iter->un_id) && (memcmp (key, iter->action->key, 7) == 0)) {
             return iter;
         }
-    iter=zlist_next(on_receives);
+        iter = zlist_next (on_receives);
     }
 
     return NULL;

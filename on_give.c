@@ -85,6 +85,7 @@ on_gives_search_id (zlist_t * on_gives, int id)
         if (id == iter->un_id) {
             return iter;
         }
+        iter = zlist_next (on_gives);
     }
 
     return NULL;
