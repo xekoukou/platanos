@@ -32,7 +32,7 @@
 
 //id is the address/id of the thread/node
 void
-localdb_init (localdb_t ** localdb, char *id)
+localdb_init (localdb_t ** localdb)
 {
     *localdb = malloc (sizeof (localdb_t));
 
@@ -53,10 +53,7 @@ localdb_init (localdb_t ** localdb, char *id)
 
     leveldb_writeoptions_set_sync (writeoptions, 1);
 
-    char path[1000];
-
-    sprintf (path, "/mnt/localdb/%s", id);
-    (*localdb)->db = leveldb_open (options, path, &errptr);
+    (*localdb)->db = leveldb_open (options, "/mnt/localdb", &errptr);
     if (errptr) {
         printf ("\n%s", errptr);
         exit (1);
@@ -73,14 +70,15 @@ localdb_close (localdb_t * localdb)
 }
 
 void
-localdb_incr_counter (localdb_t * localdb, unsigned long counter)
+localdb_incr_counter (localdb_t * localdb, char *key, unsigned long counter)
 {
 
     char *errptr = NULL;
-
+    char lkey[18];
+    sprintf (lkey, "%s0", key);
     leveldb_put (localdb->db,
                  localdb->writeoptions,
-                 "\0", 1,
+                 lkey, strlen (lkey),
                  (const char *) &counter, sizeof (unsigned long), &errptr);
 
     if (errptr) {
@@ -95,16 +93,18 @@ localdb_incr_counter (localdb_t * localdb, unsigned long counter)
 //this means that things work fine but its just the beginning
 
 unsigned long
-localdb_get_counter (localdb_t * localdb)
+localdb_get_counter (localdb_t * localdb, char *key)
 {
 
     char *errptr = NULL;
     unsigned long counter;
     size_t vallen;
 
+    char lkey[18];
+    sprintf (lkey, "%s0", key);
     char *result = leveldb_get (localdb->db,
                                 localdb->readoptions,
-                                "\0", 1,
+                                lkey, strlen (lkey),
                                 &vallen,
                                 &errptr);
 
@@ -128,14 +128,18 @@ localdb_get_counter (localdb_t * localdb)
 }
 
 void
-localdb_set_interval (localdb_t * localdb, int interval)
+localdb_set_interval (localdb_t * localdb, char *key, int interval)
 {
 
     char *errptr = NULL;
 
+    char lkey[18];
+    sprintf (lkey, "%s1", key);
+
     leveldb_put (localdb->db,
                  localdb->writeoptions,
-                 "\1", 1, (const char *) &interval, sizeof (int), &errptr);
+                 lkey, strlen (lkey), (const char *) &interval, sizeof (int),
+                 &errptr);
 
     if (errptr) {
         printf ("\n%s", errptr);
@@ -147,16 +151,18 @@ localdb_set_interval (localdb_t * localdb, int interval)
 
 
 int
-localdb_get_interval (localdb_t * localdb)
+localdb_get_interval (localdb_t * localdb, char *key)
 {
 
     char *errptr = NULL;
     int interval;
     size_t vallen;
 
+    char lkey[18];
+    sprintf (lkey, "%s1", key);
     char *result = leveldb_get (localdb->db,
                                 localdb->readoptions,
-                                "\1", 1,
+                                lkey, strlen (lkey),
                                 &vallen,
                                 &errptr);
 

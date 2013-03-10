@@ -46,12 +46,13 @@ struct worker_t
     char *id;                   //comp_name +res_name
     char *res_name;
     char *comp_name;
+    localdb_t *localdb;
 };
 
 typedef struct worker_t worker_t;
 
 void worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
-                  char *comp_name, char *res_name);
+                  char *comp_name, char *res_name, localdb_t * localdb);
 
 
 int64_t worker_timeout (balance_t * balance, sleep_t * sleep);

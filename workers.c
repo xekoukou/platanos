@@ -47,6 +47,11 @@ workers_init (workers_t ** workers, ozookeeper_t * ozookeeper)
 
 //create the threads
 
+//localdb object
+//used to save the counter used to create new vertices
+        localdb_t *localdb;
+        localdb_init (&localdb);
+
         int iter;
         if (worker_children.count < 1000) {
             worker_t *worker;
@@ -60,7 +65,7 @@ workers_init (workers_t ** workers, ozookeeper_t * ozookeeper)
 
                 worker_init (&worker, ozookeeper->zh, ozookeeper->config,
                              comp_name, worker_children.data[iter]
-                    );
+                             , localdb);
 
                 pthread_create (&((*workers)->pthread[iter]), NULL, worker_fn,
                                 worker);

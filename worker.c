@@ -104,7 +104,7 @@ worker_new_interval (worker_t * worker, localdb_t * localdb)
             assert (result == ZOK);
 
 
-            localdb_set_interval (localdb, buffer);
+            localdb_set_interval (localdb, worker->id, buffer);
             return buffer;
         }
 
@@ -1095,17 +1095,12 @@ worker_fn (void *arg)
 
     balance_init (&balance, hash, router_bl, self_bl, worker->id);
 
-//localdb object
-//used to save the counter used to create new vertices
-    localdb_t *localdb;
-    localdb_init (&localdb, worker->id);
-
 //compute object
     compute_t *compute;
 
     compute_init (&compute, hash, router, db_router, balance->events,
                   balance->intervals, socket_nb, self_nb, socket_wb, self_wb,
-                  localdb, worker);
+                  worker->localdb, worker);
 
 //update object
 //used to update things, like the router object
@@ -1205,7 +1200,7 @@ worker_process_timer_events (worker_t * worker, balance_t * balance,
 
 void
 worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
-             char *comp_name, char *res_name)
+             char *comp_name, char *res_name, localdb_t * localdb)
 {
 
     *worker = malloc (sizeof (worker_t));
@@ -1217,5 +1212,6 @@ worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
     (*worker)->id = malloc (strlen (comp_name) + strlen (res_name) + 1);
     sprintf ((*worker)->id, "%s%s", comp_name, res_name);
     (*worker)->config = config;
+    (*worker)->localdb = localdb;
 
 }

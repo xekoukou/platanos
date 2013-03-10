@@ -41,13 +41,13 @@ compute_init (compute_t ** compute, khash_t (vertices) * hash,
     (*compute)->worker = worker;
     (*compute)->hash = hash;
     (*compute)->localdb = localdb;
-    (*compute)->interval = localdb_get_interval (localdb);
-    (*compute)->counter = localdb_get_counter (localdb);
+    (*compute)->interval = localdb_get_interval (localdb, worker->id);
+    (*compute)->counter = localdb_get_counter (localdb, worker->id);
 //in case we just started
     if ((*compute)->interval == -1) {
         (*compute)->interval = worker_new_interval (worker, localdb);
 //init counter
-        localdb_incr_counter (localdb, 1);
+        localdb_incr_counter (localdb, worker->id, 1);
         (*compute)->counter = 1;
     }
 
