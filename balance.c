@@ -602,8 +602,7 @@ balance_lazy_pirate (balance_t * balance)
     int remove_timer = 1;
 
 //on_receives
-fprintf (stderr,
-                     "\nInside lazy pirate\n");
+    fprintf (stderr, "\nInside lazy pirate\n");
 
     on_receive_t *iter = zlist_first (balance->on_receives);
 
@@ -612,11 +611,11 @@ fprintf (stderr,
             remove_timer = 0;
             if (time - iter->last_time > ON_TIMEOUT) {
 //request missing chunkes
-            fprintf (stderr,
-                     "\nRequesting missing chunkes from worker %s\n for action  with\nstart: %lu %lu \n end: %lu %lu",
-                     iter->action->key, iter->action->start.prefix,
-                     iter->action->start.suffix,
-                     iter->action->end.prefix, iter->action->end.suffix);
+                fprintf (stderr,
+                         "\nRequesting missing chunkes from worker %s\n for action  with\nstart: %lu %lu \n end: %lu %lu",
+                         iter->action->key, iter->action->start.prefix,
+                         iter->action->start.suffix,
+                         iter->action->end.prefix, iter->action->end.suffix);
 
 
                 zmsg_t *responce = zmsg_new ();

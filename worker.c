@@ -1115,11 +1115,13 @@ worker_fn (void *arg)
     fprintf (stderr, "\nworker with id:%s ready.", worker->id);
 //main loop
     while (1) {
-        rc = zmq_poll (pollitems, 4, worker_timeout (balance, sleep));
+        int64_t timeout = worker_timeout (balance, sleep);
+        rc = zmq_poll (pollitems, 4, timeout);
         assert (rc != -1);
 
-        worker_process_timer_events (worker, balance, sleep, compute);
-
+        if (timeout > 0) {
+            worker_process_timer_events (worker, balance, sleep, compute);
+        }
         if (pollitems[0].revents & ZMQ_POLLIN) {
             worker_update (update, sub);
         }
