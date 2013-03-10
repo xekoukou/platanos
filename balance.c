@@ -97,7 +97,7 @@ balance_interval_received (balance_t * balance, zmsg_t * msg,
     zmsg_destroy (&msg);
 
     fprintf (stderr,
-             "\nworker:%s\nAn INTERVAL_RECEIVED confirmation has arrived for the on_give event with id:%d and receiving key:%s",
+             "\n%s:balance:\nAn INTERVAL_RECEIVED confirmation has arrived for the on_give event with id:%d and receiving key:%s",
              balance->self_key, on_give->un_id, on_give->event->key);
 
 
@@ -199,7 +199,7 @@ balance_confirm_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
 
     //delete the vertices that have been verified  
     fprintf (stderr,
-             "\nworker:%s\nA CONFIRM_CHUNK confirmation has arrived for the on_give event with id:%d and receiving key:%s",
+             "\n%s:balance:\nA CONFIRM_CHUNK confirmation has arrived for the on_give event with id:%d and receiving key:%s",
              balance->self_key, on_give->un_id, on_give->event->key);
 
     zframe_t *frame = zmsg_pop (msg);
@@ -246,7 +246,7 @@ balance_missed_chunkes (balance_t * balance, zmsg_t * msg, zframe_t * address)
     on_give_t *on_give = on_gives_search_id (balance->on_gives, id);
 
     fprintf (stderr,
-             "\nworker:%s\nA MISSED_CHUNKES confirmation has arrived for the on_give event with id:%d and receiving key:%s",
+             "\n%s:balance:\nA MISSED_CHUNKES confirmation has arrived for the on_give event with id:%d and receiving key:%s",
              balance->self_key, on_give->un_id, on_give->event->key);
 
     zmsg_t *responce = zmsg_new ();
@@ -318,7 +318,7 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
         on_receives_search (balance->on_receives, id, key);
 
     fprintf (stderr,
-             "\nworker:%s\nA NEW_CHUNK has arrived for the on_receive event with id:%d and giving key:%s",
+             "\n%s:balance\nA NEW_CHUNK has arrived for the on_receive event with id:%d and giving key:%s",
              balance->self_key, on_receive->un_id, on_receive->action->key);
 
     zmsg_t *responce = zmsg_new ();
@@ -431,6 +431,7 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
             interval_t *interval;
             interval_init (&interval, &(event->start), &(event->end));
             intervals_remove (balance->intervals, interval);
+            intervals_print (balance->intervals);
 
 //update un_id;
             if (balance->un_id > 1000000000) {
@@ -556,7 +557,7 @@ balance_new_interval (balance_t * balance, zmsg_t * msg, zframe_t * address)
 
 
         fprintf (stderr,
-                 "\nworker:%s\nA NEW_INTERVAL has arrived for the on_receive event with id:%d and giving key:%s",
+                 "\n%s:balance\nA NEW_INTERVAL has arrived for the on_receive event with id:%d and giving key:%s",
                  balance->self_key, on_receive->un_id, on_receive->action->key);
 
 
@@ -622,7 +623,7 @@ balance_lazy_pirate (balance_t * balance)
     balance_clear_timer (balance);
 
 //on_receives
-    fprintf (stderr, "\nInside lazy pirate\n");
+    fprintf (stderr, "\n%s:balance:Inside lazy pirate\n", balance->self_key);
 
     on_receive_t *iter = zlist_first (balance->on_receives);
 
@@ -631,9 +632,9 @@ balance_lazy_pirate (balance_t * balance)
             if (time - iter->last_time > ON_TIMEOUT) {
 //request missing chunkes
                 fprintf (stderr,
-                         "\nRequesting missing chunkes from worker %s\n for action  with\nstart: %lu %lu \n end: %lu %lu",
-                         iter->action->key, iter->action->start.prefix,
-                         iter->action->start.suffix,
+                         "\n%s:balance:Requesting missing chunkes from worker %s\n for action  with\nstart: %lu %lu \n end: %lu %lu",
+                         balance->self_key, iter->action->key,
+                         iter->action->start.prefix, iter->action->start.suffix,
                          iter->action->end.prefix, iter->action->end.suffix);
 
 
@@ -681,9 +682,9 @@ balance_lazy_pirate (balance_t * balance)
         if (siter->state == 0) {
 
             fprintf (stderr,
-                     "\nSending NEW_INTERVAL msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
-                     siter->event->key, siter->event->start.prefix,
-                     siter->event->start.suffix,
+                     "\n%s:balance: Sending NEW_INTERVAL msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
+                     balance->self_key, siter->event->key,
+                     siter->event->start.prefix, siter->event->start.suffix,
                      siter->event->end.prefix, siter->event->end.suffix);
 
             zmsg_t *msg = zmsg_new ();
@@ -711,9 +712,9 @@ balance_lazy_pirate (balance_t * balance)
         else {
 
             fprintf (stderr,
-                     "\nSending EOT msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
-                     siter->event->key, siter->event->start.prefix,
-                     siter->event->start.suffix,
+                     "\n%s:balance:Sending EOT msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
+                     balance->self_key, siter->event->key,
+                     siter->event->start.prefix, siter->event->start.suffix,
                      siter->event->end.prefix, siter->event->end.suffix);
 
 
@@ -738,7 +739,8 @@ balance_lazy_pirate (balance_t * balance)
 
 
         }
-        fprintf (stderr, "\nUpdating on_give timer");
+        fprintf (stderr, "\n%s:balance:Updating on_give timer",
+                 balance->self_key);
         siter->last_time = time;
         balance_update_give_timer (balance, siter);
         siter = zlist_next (balance->on_gives);
