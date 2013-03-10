@@ -51,8 +51,6 @@ interval_minit (interval_t ** interval, zmsg_t * msg)
     *interval = malloc (sizeof (interval_t));
 
     zframe_t *frame = zmsg_first (msg);
-    frame = zmsg_next (msg);
-    frame = zmsg_next (msg);
     memcpy (&((*interval)->start), zframe_data (frame), zframe_size (frame));
     frame = zmsg_next (msg);
     memcpy (&((*interval)->end), zframe_data (frame), zframe_size (frame));
