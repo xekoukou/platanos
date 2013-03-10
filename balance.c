@@ -55,6 +55,14 @@ balance_init (balance_t ** balance, khash_t (vertices) * hash,
 
 //update after an event to a specific on_give
 void
+balance_clear_timer (balance_t * balance)
+{
+    balance->next_time = -1;
+}
+
+
+//update after an event to a specific on_give
+void
 balance_update_give_timer (balance_t * balance, on_give_t * on_give)
 {
 
@@ -599,7 +607,7 @@ balance_lazy_pirate (balance_t * balance)
 {
 
     int64_t time = zclock_time ();
-    int remove_timer = 1;
+    balance_clear_timer (balance);
 
 //on_receives
     fprintf (stderr, "\nInside lazy pirate\n");
@@ -608,7 +616,6 @@ balance_lazy_pirate (balance_t * balance)
 
     while (iter) {
         if (zlist_size (iter->m_counters) != 0) {
-            remove_timer = 0;
             if (time - iter->last_time > ON_TIMEOUT) {
 //request missing chunkes
                 fprintf (stderr,
@@ -655,7 +662,6 @@ balance_lazy_pirate (balance_t * balance)
 
     while (siter) {
 
-        remove_timer = 0;
         if (siter->state == 0) {
 
             fprintf (stderr,
@@ -711,18 +717,10 @@ balance_lazy_pirate (balance_t * balance)
 
 
         }
-
+        fprintf (stderr, "\nUpdating on_give timer");
+        siter->last_time = time;
+        balance_update_give_timer (balance, siter);
         siter = zlist_next (balance->on_gives);
 
     }
-
-    if (remove_timer) {
-
-        balance->next_time = -1;
-
-    }
-
-
-
-
 }

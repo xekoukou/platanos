@@ -546,6 +546,7 @@ add_node (update_t * update, zmsg_t * msg)
                         update->balance->un_id++;
                     }
 
+                    fprintf (stderr, "\nworker_update:creating on_give_event");
 
 //create on_give object
                     on_give_t *on_give;
@@ -1148,20 +1149,31 @@ worker_timeout (balance_t * balance, sleep_t * sleep)
     if (balance->next_time < 0) {
         if (sleep->next_time > 0) {
 
-            timeout = time - sleep->next_time;
+            timeout = sleep->next_time - time;
         }
     }
 
 
     else {
-        if (sleep->next_time > 0) {
-            timeout = time - balance->next_time;
+        if (sleep->next_time < 0) {
+            timeout = balance->next_time - time;
+        }
+        else {
+
+            if (balance->next_time > sleep->next_time) {
+                timeout = sleep->next_time - time;
+            }
+            else {
+                timeout = balance->next_time - time;
+            }
         }
     }
 
     if (timeout < 0) {
         timeout = -1;
     }
+
+    fprintf (stderr, "\nThe new timeout is: %ld.\n", timeout);
 
     return timeout;
 }
