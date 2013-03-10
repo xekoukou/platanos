@@ -169,9 +169,9 @@ balance_interval_received (balance_t * balance, zmsg_t * msg,
     on_give->last_counter = counter;
     counter = 0;
     frame = zframe_new (&counter, sizeof (uint64_t));
-    zmsg_add (responce_dup, frame);
+    zmsg_add (responce, frame);
     frame = zframe_new (&(on_give->last_counter), sizeof (uint64_t));
-    zmsg_add (responce_dup, frame);
+    zmsg_add (responce, frame);
 
 
     zmsg_wrap (responce, address);
@@ -521,9 +521,6 @@ balance_new_interval (balance_t * balance, zmsg_t * msg, zframe_t * address)
     memcpy (&id, zframe_data (id_frame), sizeof (int));
     char key[17] = { 0 };
     memcpy (key, zframe_data (address), zframe_size (address));
-
-    fprintf (stderr,
-             "\nworker:%s\nkey: %s", balance->self_key, zframe_data (address));
 
     on_receive_t *on_receive =
         on_receives_search (balance->on_receives, id, key);
