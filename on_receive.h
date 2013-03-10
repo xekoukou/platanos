@@ -35,6 +35,7 @@ typedef struct
     int un_id;                  //set by the giver to distinguish the confirmation msgs
     uint64_t counter;           //counter of the last received data
     uint64_t last_time;         //used to indicate the last time it requested for the missed chunkes 
+    interval_t *interval;       //at the end of the receive it is added to the rest of the intervals
 } on_receive_t;                 //ongoing event
 
 void on_receive_init (on_receive_t ** on_receive, int id, char *key,

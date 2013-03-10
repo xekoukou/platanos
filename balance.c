@@ -399,6 +399,9 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
         zmsg_wrap (responce, address);
         zmsg_send (&responce, balance->router_bl);
 
+//add the interval with the others
+        intervals_add (balance->intervals, on_receive->interval);
+        intervals_print (balance->intervals);
 
         //erase event if it exists
         if (events_update (balance->events, on_receive->action)) {
@@ -545,12 +548,6 @@ balance_new_interval (balance_t * balance, zmsg_t * msg, zframe_t * address)
         zmsg_destroy (&msg);
     }
     else {
-
-
-//update intervals, now the node has taken responsibility of the interval
-        interval_t *interval;
-        interval_minit (&interval, msg);
-        intervals_add (balance->intervals, interval);
 
 
         on_receive_t *on_receive;

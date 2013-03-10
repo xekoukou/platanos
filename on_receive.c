@@ -28,6 +28,8 @@ on_receive_init (on_receive_t ** on_receive, int id, char *key, zmsg_t * msg)
 
     (*on_receive)->un_id = id;
 
+
+    interval_minit (&((*on_receive)->interval), msg);
     action_minit (&((*on_receive)->action), key, msg);
 
     (*on_receive)->m_counters = zlist_new ();
