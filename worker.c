@@ -241,7 +241,7 @@ update_n_pieces (update_t * update, zmsg_t * msg)
 
     intervals_print (update->balance->intervals);
 
-    fprintf (stderr, "\nWorker with id: %s has updated its n_pieces to %d.",
+    fprintf (stderr, "\n%s:update_n_pieces: n_pieces set to %d.",
              update->balance->self_key, n_pieces);
 }
 
@@ -336,7 +336,7 @@ update_st_piece (update_t * update, zmsg_t * msg)
     intervals_print (update->balance->intervals);
 
     fprintf (stderr,
-             "\nWorker with id: %s has incremented the st_piece of the worker with id:%s to: %lu.",
+             "\n%s:update_st_piece:incremented st_piece of the worker with id:%s to: %lu.",
              update->balance->self_key, node->key, st_piece);
 
 }
@@ -389,15 +389,15 @@ remove_node (update_t * update, zmsg_t * msg)
 //this should always happen after the prev step
     router_delete (update->router, node);
 
-    fprintf (stderr, "\nremove_node:worker_update:size of event list: %lu",
-             zlist_size (events));
+    fprintf (stderr, "\n%s:remove_node:size of event list: %lu",
+             update->router->self->key,zlist_size (events));
     event_t *event = zlist_first (events);
     int iter = 0;
     while (event) {
         iter++;
         fprintf (stderr,
-                 "\nevent %d \n start: %lu %lu \n end: %lu %lu \n key: %s \n give: %d",
-                 iter, event->start.prefix, event->start.suffix,
+                 "\n%s:remove_node: event %d \n start: %lu %lu \n end: %lu %lu \n key: %s \n give: %d",
+                 update->router->self->key,iter, event->start.prefix, event->start.suffix,
                  event->end.prefix, event->end.suffix, event->key, event->give);
         event = zlist_next (events);
     }
@@ -427,7 +427,7 @@ remove_node (update_t * update, zmsg_t * msg)
 
     intervals_print (update->balance->intervals);
 
-    fprintf (stderr, "\nWorker with id: %s has removed the node with id %s.",
+    fprintf (stderr, "\n%s:remove_node: has removed the node with id %s.",
              update->balance->self_key, key);
 
 }
@@ -484,8 +484,8 @@ add_node (update_t * update, zmsg_t * msg)
 
 
     fprintf (stderr,
-             "\nworker_add_node\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
-             start, key, n_pieces, st_piece);
+             "\n%s:add_node: added node with\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
+             update->balance->self_key,start, key, n_pieces, st_piece);
 
     node_init (&node, key, n_pieces, st_piece, bind_point_nb, bind_point_wb,
                bind_point_bl);
@@ -508,15 +508,15 @@ add_node (update_t * update, zmsg_t * msg)
     assert (1 == router_add (update->router, node));
 
     if (!start) {
-        fprintf (stderr, "\nworker_update:size of event list: %lu",
+        fprintf (stderr, "\n%s:add_node:size of event list: %lu",update->balance->self_key,
                  zlist_size (events));
         event_t *event = zlist_first (events);
         int iter = 0;
         while (event) {
             iter++;
             fprintf (stderr,
-                     "\nevent %d \n start: %lu %lu \n end: %lu %lu \n key: %s \n give: %d",
-                     iter, event->start.prefix, event->start.suffix,
+                     "\n%s:add_node:event %d \n start: %lu %lu \n end: %lu %lu \n key: %s \n give: %d",
+                     update->balance->self_key,iter, event->start.prefix, event->start.suffix,
                      event->end.prefix, event->end.suffix, event->key,
                      event->give);
             event = zlist_next (events);
@@ -546,7 +546,7 @@ add_node (update_t * update, zmsg_t * msg)
                         update->balance->un_id++;
                     }
 
-                    fprintf (stderr, "\nworker_update:creating on_give_event");
+                    fprintf (stderr, "\n%s:add_node:creating on_give_event",update->balance->self_key);
 
 //create on_give object
                     on_give_t *on_give;
@@ -584,7 +584,7 @@ add_node (update_t * update, zmsg_t * msg)
     }
     intervals_print (update->balance->intervals);
 
-    fprintf (stderr, "\nWorker with id: %s has added the node with id %s.",
+    fprintf (stderr, "\n%s:add_node: added the node with id %s.",
              update->balance->self_key, key);
 
 }
@@ -619,8 +619,8 @@ add_self (update_t * update, zmsg_t * msg)
 
     zmsg_destroy (&msg);
 
-    fprintf (stderr, "\nworker_add_self\nkey:%s\nn_pieces:%d\nst_piece:%lu",
-             key, n_pieces, st_piece);
+    fprintf (stderr, "\n%s:add_self:\nkey:%s\nn_pieces:%d\nst_piece:%lu",
+             key,key, n_pieces, st_piece);
 
     node_init (&self, key, n_pieces, st_piece, bind_point_nb, bind_point_wb,
                bind_point_bl);
@@ -645,7 +645,7 @@ add_self (update_t * update, zmsg_t * msg)
     rc = zsocket_connect (update->balance->router_bl, "%s", bind_point_bl);
     assert (rc == 0);
 
-    fprintf (stderr, "\nWorker with id: %s has received its configuration",
+    fprintf (stderr, "\n%s:add_self: received its configuration",
              update->balance->self_key);
 
 
@@ -673,7 +673,7 @@ go_online (worker_t * worker)
                              0);
     assert (result == ZOK);
 
-    fprintf (stderr, "\nWorker with id: %s has gone online", worker->id);
+    fprintf (stderr, "\n%s:go_online: has gone online", worker->id);
 
 
 }
@@ -714,8 +714,8 @@ db_add_node (update_t * update, zmsg_t * msg)
 
 
     fprintf (stderr,
-             "\nworker_db_add_node\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
-             start, key, n_pieces, st_piece);
+             "\n%s:db_add_node:\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
+             update->balance->self_key,start, key, n_pieces, st_piece);
 
     db_node_init (&node, key, n_pieces, st_piece, bind_point_db);
 
@@ -838,7 +838,7 @@ worker_update_db (update_t * update, zmsg_t * msg)
         zframe_destroy (&id);
         zmsg_destroy (&msg);
         fprintf (stderr,
-                 "\nworker_update_db:It was a previous update, resending confirmation");
+                 "\n%s:update_db: It was a previous update, resending confirmation",update->balance->self_key);
 
     }
     else {
@@ -900,7 +900,7 @@ worker_update_db (update_t * update, zmsg_t * msg)
 
 
         zframe_send (&id, update->dealer, 0);
-        fprintf (stderr, "\nworker_update:I have sent confirmation to sub msg");
+        fprintf (stderr, "\n%s:update_db:I have sent confirmation to sub msg",update->balance->self_key);
 
     }
 
@@ -918,7 +918,7 @@ worker_update (update_t * update, void *sub)
         exit (1);
     }
 
-    fprintf (stderr, "\nworker_update:I have received a sub msg");
+    fprintf (stderr, "\n%s:update:I have received a sub msg",update->balance->self_key);
     zframe_t *db = zmsg_pop (msg);
     if (strcmp ("db", (char *) zframe_data (db)) == 0) {
         zframe_destroy (&db);
@@ -935,7 +935,7 @@ worker_update (update_t * update, void *sub)
             zframe_destroy (&id);
             zmsg_destroy (&msg);
             fprintf (stderr,
-                     "\nworker_update:It was a previous update, resending confirmation");
+                     "\n%s:update:It was a previous update, resending confirmation",update->balance->self_key);
 
         }
         else {
@@ -990,7 +990,7 @@ worker_update (update_t * update, void *sub)
 
             zframe_send (&id, update->dealer, 0);
             fprintf (stderr,
-                     "\nworker_update:I have sent confirmation to sub msg");
+                     "\n%s:update:I have sent confirmation to sub msg",update->balance->self_key);
 
         }
     }
@@ -1113,7 +1113,7 @@ worker_fn (void *arg)
      ZMQ_POLLIN},
     {self_nb, 0, ZMQ_POLLIN}
     };
-    fprintf (stderr, "\nworker with id:%s ready.", worker->id);
+    fprintf (stderr, "\n%s:worker: ready.", worker->id);
 //main loop
     while (1) {
         int64_t timeout = worker_timeout (balance, sleep);
@@ -1173,7 +1173,7 @@ worker_timeout (balance_t * balance, sleep_t * sleep)
         timeout = -1;
     }
 
-    fprintf (stderr, "\nThe new timeout is: %ld.\n", timeout);
+    fprintf (stderr, "\n:%s:timeout:The new timeout is: %ld.\n",balance->self_key, timeout);
 
     return timeout;
 }
