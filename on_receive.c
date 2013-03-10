@@ -26,7 +26,7 @@ on_receive_init (on_receive_t ** on_receive, int id, char *key, zmsg_t * msg)
 {
     *on_receive = malloc (sizeof (on_receive_t));
 
-    memcpy (&((*on_receive)->un_id), &id, sizeof (int));
+    (*on_receive)->un_id = id;
 
     action_minit (&((*on_receive)->action), key, msg);
 

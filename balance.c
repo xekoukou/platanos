@@ -109,6 +109,8 @@ balance_interval_received (balance_t * balance, zmsg_t * msg,
     }
 
     zmsg_t *responce = zmsg_new ();
+    frame = zframe_new (balance->self_key, strlen (balance->self_key));
+    zmsg_add (responce, frame);
     zframe_t *frame = zframe_new (NEW_CHUNK, 1);
     zmsg_add (responce, frame);
     zmsg_add (responce, id_frame);
@@ -247,6 +249,8 @@ balance_missed_chunkes (balance_t * balance, zmsg_t * msg, zframe_t * address)
              balance->self_key, on_give->un_id, on_give->event->key);
 
     zmsg_t *responce = zmsg_new ();
+    frame = zframe_new (balance->self_key, strlen (balance->self_key));
+    zmsg_add (responce, frame);
     zframe_t *frame = zframe_new (NEW_CHUNK, 1);
     zmsg_add (responce, frame);
     zmsg_add (responce, id_frame);
@@ -316,7 +320,9 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
              balance->self_key, on_receive->un_id, on_receive->action->key);
 
     zmsg_t *responce = zmsg_new ();
-    zframe_t *frame = zframe_new (NEW_CHUNK, 1);
+    frame = zframe_new (balance->self_key, strlen (balance->self_key));
+    zmsg_add (responce, frame);
+    zframe_t *frame = zframe_new (CONFIRM_CHUNK, 1);
     zmsg_add (responce, frame);
     zmsg_add (responce, id_frame);
 
@@ -513,12 +519,17 @@ balance_new_interval (balance_t * balance, zmsg_t * msg, zframe_t * address)
     char key[17] = { 0 };
     memcpy (key, zframe_data (address), zframe_size (address));
 
+    fprintf (stderr,
+             "\nworker:%s\nkey: %s", balance->self_key, zframe_data (address));
+
     on_receive_t *on_receive =
         on_receives_search (balance->on_receives, id, key);
 
 //send confirmation
     zmsg_t *responce = zmsg_new ();
-    zframe_t *frame = zframe_new (NEW_INTERVAL, 1);
+    frame = zframe_new (balance->self_key, strlen (balance->self_key));
+    zmsg_add (responce, frame);
+    zframe_t *frame = zframe_new (INTERVAL_RECEIVED, 1);
     zmsg_add (responce, frame);
     zmsg_add (responce, id_frame);
     zmsg_wrap (responce, address);
@@ -529,7 +540,7 @@ balance_new_interval (balance_t * balance, zmsg_t * msg, zframe_t * address)
 
 
     if (on_receive) {
-//duplicate interval received
+//duplicate new_interval
         zmsg_destroy (&msg);
     }
     else {
@@ -562,7 +573,7 @@ void
 balance_new_msg (balance_t * balance, zmsg_t * msg)
 {
 
-    zframe_t *address = zmsg_unwrap (msg);
+    zframe_t *address = zmsg_pop (msg);
     zframe_t *type_fr = zmsg_pop (msg);
 
     if (memcmp (INTERVAL_RECEIVED, zframe_data (type_fr), 1) == 0) {
@@ -626,6 +637,9 @@ balance_lazy_pirate (balance_t * balance)
 
 
                 zmsg_t *responce = zmsg_new ();
+                frame =
+                    zframe_new (balance->self_key, strlen (balance->self_key));
+                zmsg_add (responce, frame);
                 zframe_t *frame = zframe_new (MISSED_CHUNKES, 1);
                 zmsg_add (responce, frame);
 
@@ -640,7 +654,8 @@ balance_lazy_pirate (balance_t * balance)
                     counter = zlist_next (iter->m_counters);
                 }
 
-                frame = zframe_new (iter->action->key, 17);
+                frame =
+                    zframe_new (iter->action->key, strlen (iter->action->key));
                 zmsg_wrap (responce, frame);
 
                 zmsg_send (&responce, balance->router_bl);
@@ -671,6 +686,8 @@ balance_lazy_pirate (balance_t * balance)
                      siter->event->end.prefix, siter->event->end.suffix);
 
             zmsg_t *msg = zmsg_new ();
+            frame = zframe_new (balance->self_key, strlen (balance->self_key));
+            zmsg_add (responce, frame);
             zframe_t *frame = zframe_new (NEW_INTERVAL, 1);
             zmsg_add (msg, frame);
             frame = zframe_new (&(siter->un_id), sizeof (int));
@@ -683,7 +700,6 @@ balance_lazy_pirate (balance_t * balance)
 
 
             frame = zframe_new (siter->event->key, strlen (siter->event->key));
-
             zmsg_wrap (msg, frame);
 
             zmsg_send (&msg, balance->router_bl);
@@ -700,6 +716,8 @@ balance_lazy_pirate (balance_t * balance)
 
 
             zmsg_t *msg = zmsg_new ();
+            frame = zframe_new (balance->self_key, strlen (balance->self_key));
+            zmsg_add (responce, frame);
             zframe_t *frame = zframe_new (NEW_CHUNK, 1);
             zmsg_add (msg, frame);
             frame = zframe_new (&(siter->un_id), sizeof (int));
