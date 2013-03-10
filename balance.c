@@ -88,15 +88,17 @@ balance_interval_received (balance_t * balance, zmsg_t * msg,
     on_give_t *on_give = on_gives_search_id (balance->on_gives, id);
     zmsg_destroy (&msg);
 
+    fprintf (stderr,
+             "\nworker:%s\nAn INTERVAL_RECEIVED confirmation has arrived for the on_give event with id:%d and receiving key:%s",
+             balance->self_key, on_give->un_id, on_give->event->key);
+
+
     if (on_give->last_counter > 0) {
 //duplicate confirmation
         zframe_destroy (&id_frame);
         zframe_destroy (&address);
+        return;
     }
-
-    fprintf (stderr,
-             "\nworker:%s\nAn INTERVAL_RECEIVED confirmation has arrived for the on_give event with id:%d and receiving key:%s",
-             balance->self_key, on_give->un_id, on_give->event->key);
 
     zmsg_t *responce = zmsg_new ();
     zframe_t *frame = zframe_new (NEW_CHUNK, 1);
@@ -295,7 +297,7 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
     zframe_t *id_frame = zmsg_pop (msg);
     int id;
     memcpy (&id, zframe_data (id_frame), sizeof (int));
-    char key[7] = { 0 };
+    char key[17] = { 0 };
     memcpy (key, zframe_data (address), zframe_size (address));
 
     on_receive_t *on_receive =
@@ -500,7 +502,7 @@ balance_new_interval (balance_t * balance, zmsg_t * msg, zframe_t * address)
     zframe_t *id_frame = zmsg_pop (msg);
     int id;
     memcpy (&id, zframe_data (id_frame), sizeof (int));
-    char key[7] = { 0 };
+    char key[17] = { 0 };
     memcpy (key, zframe_data (address), zframe_size (address));
 
     on_receive_t *on_receive =
@@ -600,7 +602,8 @@ balance_lazy_pirate (balance_t * balance)
     int remove_timer = 1;
 
 //on_receives
-
+fprintf (stderr,
+                     "\nInside lazy pirate\n");
 
     on_receive_t *iter = zlist_first (balance->on_receives);
 
@@ -609,6 +612,12 @@ balance_lazy_pirate (balance_t * balance)
             remove_timer = 0;
             if (time - iter->last_time > ON_TIMEOUT) {
 //request missing chunkes
+            fprintf (stderr,
+                     "\nRequesting missing chunkes from worker %s\n for action  with\nstart: %lu %lu \n end: %lu %lu",
+                     iter->action->key, iter->action->start.prefix,
+                     iter->action->start.suffix,
+                     iter->action->end.prefix, iter->action->end.suffix);
+
 
                 zmsg_t *responce = zmsg_new ();
                 zframe_t *frame = zframe_new (MISSED_CHUNKES, 1);
@@ -625,7 +634,7 @@ balance_lazy_pirate (balance_t * balance)
                     counter = zlist_next (iter->m_counters);
                 }
 
-                frame = zframe_new (iter->action->key, 7);
+                frame = zframe_new (iter->action->key, 17);
                 zmsg_wrap (responce, frame);
 
                 zmsg_send (&responce, balance->router_bl);
