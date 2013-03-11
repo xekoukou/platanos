@@ -39,7 +39,7 @@ on_give_init (on_give_t ** on_give, balance_t * balance, event_t * event,
     interval_init (&((*on_give)->interval), &((*on_give)->event->start),
                    &((*on_give)->event->end));
 
-    (*on_give)->hiter = kh_begin (balance->hash);
+    (*on_give)->hiter = kh_begin (balance->hash) - 1;
 
     (*on_give)->responce = zmsg_new ();
     zframe_t *frame =
