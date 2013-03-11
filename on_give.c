@@ -20,9 +20,12 @@
 
 #include "on_give.h"
 
+#define NEW_CHUNK    "\002"
+
 
 void
-on_give_init (on_give_t ** on_give, event_t * event, int un_id)
+on_give_init (on_give_t ** on_give, balance_t * balance, event_t * event,
+              int un_id)
 {
     *on_give = malloc (sizeof (on_give_t));
     (*on_give)->event = event;
@@ -30,8 +33,23 @@ on_give_init (on_give_t ** on_give, event_t * event, int un_id)
     (*on_give)->rec_counter = 0;
     (*on_give)->last_counter = 0;
     (*on_give)->state = 0;
+    (*on_give)->pending_confirmations = 0;
     (*on_give)->un_id = un_id;
     (*on_give)->last_time = zclock_time ();
+    interval_init (&((*on_give)->interval), &((*on_give)->event->start),
+                   &((*on_give)->event->end));
+
+    (*on_give)->hiter = kh_begin (balance->hash);
+
+    (*on_give)->responce = zmsg_new ();
+    zframe_t *frame =
+        zframe_new (balance->self_key, strlen (balance->self_key));
+    zmsg_add ((*on_give)->responce, frame);
+    frame = zframe_new (NEW_CHUNK, 1);
+    zmsg_add ((*on_give)->responce, frame);
+    zmsg_add ((*on_give)->responce,
+              zframe_new (&((*on_give)->un_id), sizeof (int)));
+
 }
 
 

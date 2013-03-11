@@ -52,6 +52,9 @@ struct balance_t
 
 typedef struct balance_t balance_t;
 
+struct on_give_t;
+typedef struct on_give_t on_give_t;
+
 
 void balance_init (balance_t ** balance, khash_t (vertices) * hash,
                    void *router_bl, void *self_bl, char *self_key);

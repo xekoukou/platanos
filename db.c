@@ -52,7 +52,7 @@ db_fn (void *arg)
 
     zmq_pollitem_t pollitem[1] = { {dealer, 0, ZMQ_POLLIN} };
 
-    fprintf (stderr, "\ndb with id:%s ready.", db->id);
+    fprintf (stderr, "\ndb:%s ready.", db->id);
 
     while (1) {
         rc = zmq_poll (pollitem, 1, -1);

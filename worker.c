@@ -210,7 +210,8 @@ update_n_pieces (update_t * update, zmsg_t * msg)
 
 //create on_give object
                 on_give_t *on_give;
-                on_give_init (&on_give, event, update->balance->un_id);
+                on_give_init (&on_give, update->balance, event,
+                              update->balance->un_id);
 
 //update balance object
                 balance_update_give_timer (update->balance, on_give);
@@ -303,7 +304,8 @@ update_st_piece (update_t * update, zmsg_t * msg)
 
 //create on_give object
                 on_give_t *on_give;
-                on_give_init (&on_give, event, update->balance->un_id);
+                on_give_init (&on_give, update->balance, event,
+                              update->balance->un_id);
 
 //update balance object
                 balance_update_give_timer (update->balance, on_give);
@@ -552,7 +554,8 @@ add_node (update_t * update, zmsg_t * msg)
 
 //create on_give object
                     on_give_t *on_give;
-                    on_give_init (&on_give, event, update->balance->un_id);
+                    on_give_init (&on_give, update->balance, event,
+                                  update->balance->un_id);
 
 //update balance object
                     balance_update_give_timer (update->balance, on_give);

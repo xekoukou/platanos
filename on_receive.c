@@ -94,7 +94,7 @@ on_receives_destroy (zlist_t * on_receives, balance_t * balance, node_t * node)
 
 //create on_give object
                 on_give_t *on_give;
-                on_give_init (&on_give, event, balance->un_id);
+                on_give_init (&on_give, balance, event, balance->un_id);
 
 //update balance object
                 balance_update_give_timer (balance, on_give);

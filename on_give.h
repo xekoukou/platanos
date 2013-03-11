@@ -24,10 +24,11 @@
 #include"event.h"
 #include"node.h"
 #include"vertex.h"
+#include"hash/khash.h"
+#include "balance.h"
 
 
-
-typedef struct
+struct on_give_t
 {
     event_t *event;             //the event that is happening, must also be removed from events list before freed
     zlist_t *unc_vertices;      //vertices that have been send but not confirmed
@@ -43,11 +44,22 @@ typedef struct
 //last counter is used for the last chunk plus to see if I have already received an Interval_received before
 //due to possible duplicates (lazy pirate)
 //must be set to zero
+
+    interval_t *interval;       //used to fetch only the keys inside the event
+    khint_t hiter;              //the last location of the iterator in the hash
+    zmsg_t *responce;           //the first common frames of the new_chunk responce
+    int pending_confirmations;
     uint64_t last_counter;
 
-} on_give_t;                    //ongoing event
+};                              //ongoing event
 
-void on_give_init (on_give_t ** on_give, event_t * event, int un_id);
+typedef struct on_give_t on_give_t;
+
+struct balance_t;
+typedef struct balance_t balance_t;
+
+void on_give_init (on_give_t ** on_give, balance_t * balance, event_t * event,
+                   int un_id);
 
 //destroy this after you have removed the event from the events list
 //this will free the event

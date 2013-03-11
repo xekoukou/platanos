@@ -28,8 +28,7 @@
 #define INTERVAL_RECEIVED "\003"
 #define CONFIRM_CHUNK    "\004"
 #define MISSED_CHUNKES    "\005"
-
-
+#define MAX_PENDING_CONFIRMATIONS 8
 
 void
 balance_init (balance_t ** balance, khash_t (vertices) * hash,
@@ -83,7 +82,82 @@ balance_update_receive_timer (balance_t * balance, on_receive_t * on_receive)
     }
 }
 
+void
+balance_send_next_chunk (balance_t * balance, on_give_t * on_give,
+                         zframe_t * address)
+{
 
+
+    on_give->pending_confirmations++;
+
+    khint_t hiter;
+    uint64_t key;
+    vertex_t *vertex;
+    uint64_t counter = on_give->last_counter + 1;
+    uint64_t vertices = 0;
+
+    zmsg_t *responce_dup = zmsg_dup (on_give->responce);
+    zframe_t *frame = zframe_new (&counter, sizeof (uint64_t));
+    zmsg_add (responce_dup, frame);
+
+    for (hiter = on_give->hiter + 1; hiter != kh_end (balance->hash); ++hiter) {
+        if (!kh_exist (balance->hash, hiter))
+            continue;
+
+        key = kh_key (balance->hash, hiter);
+        if (interval_belongs (on_give->interval, key)) {
+            vertices++;
+            vertex_init (&vertex);
+            memcpy (vertex, &(kh_val (balance->hash, hiter)),
+                    sizeof (vertex_t));
+            //delete it from the hash
+            kh_del (vertices, balance->hash, hiter);
+
+            //add it to the list of sent vertices     
+            zlist_append (on_give->unc_vertices, vertex);
+            //add it
+            zmsg_add (responce_dup, zframe_new (vertex, sizeof (vertex_t)));
+            if (vertices == COUNTER_SIZE) {
+                zframe_t *address_dup = zframe_dup (address);
+                zmsg_wrap (responce_dup, address_dup);
+                zmsg_send (&responce_dup, balance->router_bl);
+                on_give->last_counter++;
+                on_give->hiter = hiter;
+                break;
+            }
+        }
+    }
+    if (vertices < COUNTER_SIZE) {
+        //this is the last address frame
+        zframe_t *address_dup = zframe_dup (address);
+        zmsg_wrap (responce_dup, address_dup);
+
+        zmsg_send (&responce_dup, balance->router_bl);
+
+//zero counter /last msgs also gives the total/last counter 
+        counter = 0;
+        frame = zframe_new (&counter, sizeof (uint64_t));
+        zmsg_add (on_give->responce, frame);
+        frame = zframe_new (&(on_give->last_counter), sizeof (uint64_t));
+        zmsg_add (on_give->responce, frame);
+
+
+        zmsg_wrap (on_give->responce, address);
+        zmsg_send (&(on_give->responce), balance->router_bl);
+
+//state set to 1
+//and update clock
+        on_give->state = 1;
+        free (on_give->interval);
+
+    }
+    else {
+        zframe_destroy (&address);
+
+    }
+    on_give->last_time = zclock_time ();
+    balance_update_give_timer (balance, on_give);
+}
 
 void
 balance_interval_received (balance_t * balance, zmsg_t * msg,
@@ -108,82 +182,11 @@ balance_interval_received (balance_t * balance, zmsg_t * msg,
         return;
     }
 
-    zmsg_t *responce = zmsg_new ();
-    zframe_t *frame =
-        zframe_new (balance->self_key, strlen (balance->self_key));
-    zmsg_add (responce, frame);
-    frame = zframe_new (NEW_CHUNK, 1);
-    zmsg_add (responce, frame);
-    zmsg_add (responce, id_frame);
-
-    interval_t *interval;
-    interval_init (&interval, &(on_give->event->start), &(on_give->event->end));
-
-
-    khint_t hiter;
-    uint64_t key;
-    vertex_t *vertex;
-    uint64_t counter = 1;
-    uint64_t vertices = 0;
-
-    zmsg_t *responce_dup = zmsg_dup (responce);
-    frame = zframe_new (&counter, sizeof (uint64_t));
-    zmsg_add (responce_dup, frame);
-
-    for (hiter = kh_begin (balance->hash);
-         hiter != kh_end (balance->hash); ++hiter) {
-        if (!kh_exist (balance->hash, hiter))
-            continue;
-
-        key = kh_key (balance->hash, hiter);
-        if (interval_belongs (interval, key)) {
-            vertices++;
-            vertex_init (&vertex);
-            memcpy (vertex, &(kh_val (balance->hash, hiter)),
-                    sizeof (vertex_t));
-            //delete it from the hash
-            kh_del (vertices, balance->hash, hiter);
-
-            //add it to the list of sent vertices     
-            zlist_append (on_give->unc_vertices, vertex);
-            //add it
-            zmsg_add (responce_dup, zframe_new (vertex, sizeof (vertex_t)));
-            if (counter < 1 + vertices / COUNTER_SIZE) {
-                zframe_t *address_dup = zframe_dup (address);
-                zmsg_wrap (responce_dup, address_dup);
-                zmsg_send (&responce_dup, balance->router_bl);
-                counter++;
-                responce_dup = zmsg_dup (responce);
-                frame = zframe_new (&counter, sizeof (uint64_t));
-                zmsg_add (responce_dup, frame);
-            }
-        }
-    }                           //this is the last address frame
-    zframe_t *address_dup = zframe_dup (address);
-    zmsg_wrap (responce_dup, address_dup);
-
-    zmsg_send (&responce_dup, balance->router_bl);
-
-
-//zero counter /last msgs also gives the total/last counter 
-    on_give->last_counter = counter;
-    counter = 0;
-    frame = zframe_new (&counter, sizeof (uint64_t));
-    zmsg_add (responce, frame);
-    frame = zframe_new (&(on_give->last_counter), sizeof (uint64_t));
-    zmsg_add (responce, frame);
-
-
-    zmsg_wrap (responce, address);
-    zmsg_send (&responce, balance->router_bl);
-
-//stat set to 1
-//and update clock
-    on_give->state = 1;
-    on_give->last_time = zclock_time ();
-    balance_update_give_timer (balance, on_give);
-
-    free (interval);
+    on_give->state = 2;
+    int i;
+    for (i = 0; i < MAX_PENDING_CONFIRMATIONS; i++) {
+        balance_send_next_chunk (balance, on_give, address);
+    }
 
 }
 
@@ -217,7 +220,11 @@ balance_confirm_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
                 free (zlist_pop (on_give->unc_vertices));
             }
         }
-
+        on_give->pending_confirmations--;
+//send_next_chunk
+        if (on_give->pending_confirmations < MAX_PENDING_CONFIRMATIONS) {
+            balance_send_next_chunk (balance, on_give, address);
+        }
     }
     else {
 //in case a confirmation never arrives
@@ -444,7 +451,7 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
 
 //create on_give object
             on_give_t *on_give;
-            on_give_init (&on_give, event, balance->un_id);
+            on_give_init (&on_give, balance, event, balance->un_id);
 
 //update balance object
             balance_update_give_timer (balance, on_give);
@@ -710,34 +717,52 @@ balance_lazy_pirate (balance_t * balance)
 
         }
         else {
+            if (siter->state == 1) {
 
-            fprintf (stderr,
-                     "\n%s:balance:Sending EOT msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
-                     balance->self_key, siter->event->key,
-                     siter->event->start.prefix, siter->event->start.suffix,
-                     siter->event->end.prefix, siter->event->end.suffix);
-
-
-            zmsg_t *msg = zmsg_new ();
-            zframe_t *frame =
-                zframe_new (balance->self_key, strlen (balance->self_key));
-            zmsg_add (msg, frame);
-            frame = zframe_new (NEW_CHUNK, 1);
-            zmsg_add (msg, frame);
-            frame = zframe_new (&(siter->un_id), sizeof (int));
-            zmsg_add (msg, frame);
-            uint64_t counter = 0;
-            frame = zframe_new (&counter, sizeof (uint64_t));
-            zmsg_add (msg, frame);
-            frame =
-                zframe_new (&(siter->event->key), strlen (siter->event->key));
-
-            zmsg_wrap (msg, frame);
-
-            zmsg_send (&msg, balance->router_bl);
+                fprintf (stderr,
+                         "\n%s:balance:Sending EOT msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
+                         balance->self_key, siter->event->key,
+                         siter->event->start.prefix, siter->event->start.suffix,
+                         siter->event->end.prefix, siter->event->end.suffix);
 
 
+                zmsg_t *msg = zmsg_new ();
+                zframe_t *frame =
+                    zframe_new (balance->self_key, strlen (balance->self_key));
+                zmsg_add (msg, frame);
+                frame = zframe_new (NEW_CHUNK, 1);
+                zmsg_add (msg, frame);
+                frame = zframe_new (&(siter->un_id), sizeof (int));
+                zmsg_add (msg, frame);
+                uint64_t counter = 0;
+                frame = zframe_new (&counter, sizeof (uint64_t));
+                zmsg_add (msg, frame);
+                frame =
+                    zframe_new (&(siter->event->key),
+                                strlen (siter->event->key));
 
+                zmsg_wrap (msg, frame);
+
+                zmsg_send (&msg, balance->router_bl);
+
+
+
+            }
+            else {
+
+                fprintf (stderr,
+                         "\n%s:balance:Sending next_chunk to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
+                         balance->self_key, siter->event->key,
+                         siter->event->start.prefix, siter->event->start.suffix,
+                         siter->event->end.prefix, siter->event->end.suffix);
+
+                zframe_t *address = zframe_new (&(siter->event->key),
+                                                strlen (siter->event->key));
+
+                balance_send_next_chunk (balance, siter, address);
+
+
+            }
         }
         fprintf (stderr, "\n%s:balance:Updating on_give timer",
                  balance->self_key);
