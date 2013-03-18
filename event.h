@@ -23,6 +23,8 @@
 
 #include "intervals.h"
 #include "hkey.h"
+#include "hash/khash.h"
+
 
 
 //the key is the key of the node that will take part in the event /action
@@ -35,6 +37,7 @@ struct event_t
     struct _hkey_t end;
     int give;
     char key[17];
+    int dead;  //the node is dead, skip balancing
 };
 
 typedef struct event_t event_t;
@@ -43,6 +46,8 @@ void event_init (event_t ** event, struct _hkey_t start, struct _hkey_t end,
                  int give, char *key);
 
 int event_possible (event_t * event, intervals_t * intervals);
+
+void event_clean(event_t *event, khash_t (vertices) * hash);
 
 #include"action.h"
 

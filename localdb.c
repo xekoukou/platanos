@@ -30,7 +30,6 @@
 
 
 
-//id is the address/id of the thread/node
 void
 localdb_init (localdb_t ** localdb)
 {

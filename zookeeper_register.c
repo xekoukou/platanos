@@ -123,6 +123,12 @@ main ()
     if (db) {
         printf ("\n Provide the full path of the location of the database:");
         scanf ("%s", config[7]);
+ 
+    if(0!=zfile_mkdir(config[7])){
+
+printf("\n There has been an error at creating the database directory,exiting...");
+
+}
     }
 
 
@@ -295,7 +301,15 @@ main ()
 
 
             assert (ZOK == result);
+            sprintf (path, "/%s/computers/%s/%s/%s/db_location", config[6],
+                     config[2], root, config[3]);
+            result =
+                zoo_create (zh, path, config[7],
+                            strlen (config[7])+1,
+                            &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
 
+
+            assert (ZOK == result);
 
         }
         else {
@@ -343,21 +357,7 @@ main ()
 
         }
 
-        if (db == 0) {
 
-
-
-        }
-        else {
-            assert (ZOK == result);
-            sprintf (path, "/%s/computers/%s/%s/%s/db_point", config[6],
-                     config[2], root, config[3]);
-            result =
-                zoo_create (zh, path, config[7],
-                            strlen (config[7]),
-                            &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
-
-        }
     }
 
 

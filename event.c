@@ -52,6 +52,7 @@ event_init (event_t ** event, struct _hkey_t start, struct _hkey_t end,
 
     *event = malloc (sizeof (event_t));
     (*event)->give = give;
+    (*event)->dead = 0;
     memcpy (&((*event)->start), &start, sizeof (struct _hkey_t));
     memcpy (&((*event)->end), &end, sizeof (struct _hkey_t));
     if (key) {
@@ -82,4 +83,27 @@ event_possible (event_t * event, intervals_t * intervals)
     free (interval);
     return 0;
 
+}
+
+
+void event_clean(event_t *event, khash_t (vertices) * hash){
+
+interval_t * interval;
+interval_init(&interval,&(event->start),&(event->end));
+
+khint_t hiter;
+
+for (hiter = kh_begin (balance->hash); hiter != kh_end (balance->hash);
+             ++hiter) {
+            if (!kh_exist (balance->hash, hiter))
+                continue;
+
+            key = kh_key (balance->hash, hiter);
+            if (interval_belongs (on_give->interval, key)) {
+                
+                //delete it from the hash
+                kh_del (vertices, balance->hash, hiter);
+
+
+}}
 }

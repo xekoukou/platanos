@@ -20,8 +20,8 @@
 
 
 
-#ifndef _OCTOPUS_BALANCE_H_
-#define _OCTOPUS_BALANCE_H_
+#ifndef _OCTOPUS_DB_BALANCE_H_
+#define _OCTOPUS_DB_BALANCE_H_
 
 #include"hash/khash.h"
 #include<czmq.h>
@@ -32,10 +32,10 @@
 
 
 
-struct balance_t
+struct db_balance_t
 {
 
-    khash_t (vertices) * hash;
+    dbo_t * dbo;
     void *router_bl;            //used to tranfer nodes to the apropriate nodes if necessary
     void *self_bl;
     intervals_t *intervals;
@@ -49,13 +49,13 @@ struct balance_t
     char *self_key;             //used to send the interval of the on_gives
 };
 
-typedef struct balance_t balance_t;
+typedef struct db_balance_t db_balance_t;
 
 struct on_give_t;
 typedef struct on_give_t on_give_t;
 
 
-void balance_init (balance_t ** balance, khash_t (vertices) * hash,
+void balance_init (balance_t ** balance, dbo_t *dbo,
                    void *router_bl, void *self_bl, char *self_key);
 
 //update after an event to a specific on_give

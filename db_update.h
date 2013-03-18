@@ -20,39 +20,30 @@
 
 
 
+#ifndef _OCTOPUS_UPDATE_H_
+#define _OCTOPUS_UPDATE_H_
+
+#include"db_balance.h"
 
 
-#ifndef _OCTOPUS_LOCALDB_H_
-#define _OCTOPUS_LOCALDB_H_
-
-
-//leveldb
-#include<leveldb/c.h>
-
-
-typedef struct
+struct db_update_t
 {
-    leveldb_t *db;
-    leveldb_options_t *options;
-    leveldb_readoptions_t *readoptions;
-    leveldb_writeoptions_t *writeoptions;
+    unsigned int id;            //the id of the previous update
+    void *dealer;               //used to confirm the updates to the ozookeeper object
+    db_balance_t *balance;
+    db_t *db;
+    void *in;
+    void *out;
+    void *db_router;
+};
 
-} localdb_t;
+typedef struct db_update_t db_update_t;
+
+void db_update_init (db_update_t ** update, void *dealer,router_t *db_router,
+                  db_balance_t * balance,db_t *db,void *in, void * out
+                  );
 
 
-void localdb_init (localdb_t ** localdb);
-
-//sleep a few seconds after
-void localdb_close (localdb_t * localdb);
-
-void localdb_incr_counter (localdb_t * localdb, char *key,
-                           unsigned long counter);
-
-unsigned long localdb_get_counter (localdb_t * localdb, char *key);
-
-void localdb_set_interval (localdb_t * localdb, char *key, int interval);
-
-int localdb_get_interval (localdb_t * localdb, char *key);
 
 
 #endif

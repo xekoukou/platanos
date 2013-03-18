@@ -22,12 +22,16 @@
 
 
 
-#ifndef _OCTOPUS_LOCALDB_H_
-#define _OCTOPUS_LOCALDB_H_
+#ifndef _OCTOPUS_DBO_H_
+#define _OCTOPUS_DBO_H_
 
 
 //leveldb
 #include<leveldb/c.h>
+#include<leveldb/c.h>
+#include<string.h>
+#include<stdlib.h>
+#include<stdio.h>
 
 
 typedef struct
@@ -36,23 +40,20 @@ typedef struct
     leveldb_options_t *options;
     leveldb_readoptions_t *readoptions;
     leveldb_writeoptions_t *writeoptions;
+    char *location;
 
-} localdb_t;
+} dbo_t;
 
 
-void localdb_init (localdb_t ** localdb);
+//id is the address/id of the thread/node
+void dbo_init (dbo_t ** dbo);
 
 //sleep a few seconds after
-void localdb_close (localdb_t * localdb);
+void dbo_close (dbo_t * dbo);
 
-void localdb_incr_counter (localdb_t * localdb, char *key,
-                           unsigned long counter);
+void dbo_open(dbo_t *dbo,char *location);
 
-unsigned long localdb_get_counter (localdb_t * localdb, char *key);
-
-void localdb_set_interval (localdb_t * localdb, char *key, int interval);
-
-int localdb_get_interval (localdb_t * localdb, char *key);
-
+void
+dbo_destroy(dbo_t **dbo);
 
 #endif

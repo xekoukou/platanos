@@ -364,10 +364,17 @@ remove_node (update_t * update, zmsg_t * msg)
 
     on_receives_destroy (update->balance->on_receives, update->balance, node);
 
-//remove all previous events by this node. they will never happen
-//the node is dead
+//mark all previous events as dead so as to skip balancing
+//
 
-    events_remove (update->balance->events, node);
+    event_t *event=events_remove (update->balance->events, node,1);
+while(event){
+
+    event->dead=1;
+
+    event_t *event=events_remove (update->balance->events, node,0);
+}
+
 
     //  int rc;
     //  rc = zsocket_disconnect (update->compute->socket_nb, "%s",
@@ -393,7 +400,7 @@ remove_node (update_t * update, zmsg_t * msg)
 
     fprintf (stderr, "\n%s:remove_node:size of event list: %lu",
              update->router->self->key, zlist_size (events));
-    event_t *event = zlist_first (events);
+    event = zlist_first (events);
     int iter = 0;
     while (event) {
         iter++;
@@ -647,8 +654,6 @@ add_self (update_t * update, zmsg_t * msg)
     assert (rc == 0);
     rc = zsocket_bind (update->balance->self_bl, "%s", bind_point_bl);
     assert (rc != -1);
-    rc = zsocket_connect (update->balance->router_bl, "%s", bind_point_bl);
-    assert (rc == 0);
 
     fprintf (stderr, "\n%s:add_self: received its configuration",
              update->balance->self_key);
@@ -665,13 +670,11 @@ go_online (worker_t * worker)
 
     char path[1000];
     char octopus[1000];
-    char comp_name[1000];
 
     oconfig_octopus (worker->config, octopus);
-    oconfig_comp_name (worker->config, comp_name);
 
     sprintf (path, "/%s/computers/%s/worker_nodes/%s/online", octopus,
-             comp_name, worker->res_name);
+             worker->comp_name, worker->res_name);
 
     int result = zoo_create (worker->zh, path, NULL,
                              -1, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL,

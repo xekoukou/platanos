@@ -452,7 +452,7 @@ void
 ozookeeper_update_add_self (ozookeeper_t * ozookeeper, int db, char *key,
                             int n_pieces, unsigned long st_piece,
                             char *bind_point_nb, char *bind_point_wb,
-                            char *bind_point_bl)
+                            char *bind_point_bl,char *db_location)
 {
     zmsg_t *msg = zmsg_new ();
     zmsg_add (msg, zframe_new ("add_self", strlen ("add_self") + 1));
@@ -463,7 +463,9 @@ ozookeeper_update_add_self (ozookeeper_t * ozookeeper, int db, char *key,
     if (!db) {
         zmsg_add (msg, zframe_new (bind_point_wb, strlen (bind_point_wb) + 1));
         zmsg_add (msg, zframe_new (bind_point_bl, strlen (bind_point_bl) + 1));
-    }
+    }else{
+        zmsg_add (msg, zframe_new (db_location, strlen (db_location) + 1));
+}
     fprintf (stderr,
              "\nzookeeper_add_self\nkey:%s\nn_pieces:%d\nst_piece:%lu", key,
              n_pieces, st_piece);
@@ -544,6 +546,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
     char bind_point_nb[50];
     char bind_point_wb[50];
     char bind_point_bl[50];
+    char db_location[1000];
     struct Stat stat;
 
 
@@ -578,6 +581,15 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
                      octopus, comp_name, res_name);
             result =
                 zoo_get (ozookeeper->zh, path, 0, bind_point_nb, &buffer_len,
+                         &stat);
+
+            assert (result == ZOK);
+
+           buffer_len = 1000;
+            sprintf (path, "/%s/computers/%s/db_nodes/%s/db_location",
+                     octopus, comp_name, res_name);
+            result =
+                zoo_get (ozookeeper->zh, path, 0, db_location, &buffer_len,
                          &stat);
 
             assert (result == ZOK);
@@ -623,7 +635,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
 
         ozookeeper_update_add_self (ozookeeper, db, path, n_pieces, st_piece,
                                     bind_point_nb, bind_point_wb,
-                                    bind_point_bl);
+                                    bind_point_bl,db_location);
 
 
     }

@@ -35,22 +35,24 @@ events_search (zlist_t * events, action_t * action)
 
 }
 
-void
-events_remove (zlist_t * events, node_t * node)
+event_t *
+events_remove (zlist_t * events, node_t * node,int reset)
 {
-
+if(reset){
     event_t *iter = zlist_first (events);
-
+}
     while (iter) {
 
         if (strcmp (node->key, iter->key) == 0) {
             zlist_remove (events, iter);
-            free (iter);
+            return iter;
         }
 
 
         iter = zlist_next (events);
     }
+
+return NULL;
 
 
 

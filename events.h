@@ -28,7 +28,9 @@
 event_t *events_search (zlist_t * events, action_t * action);
 
 //this is used when a node dies and we need to clean the previous events
-void events_remove (zlist_t * events, node_t * node);
+//reset is used to start searching and removing from the beginning
+
+void events_remove (zlist_t * events, node_t * node,int reset);
 
 //returns 1 if there was an event that was erased by this action
 int events_update (zlist_t * events, action_t * action);

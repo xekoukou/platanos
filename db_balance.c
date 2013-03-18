@@ -18,7 +18,7 @@
 */
 
 
-#include "balance.h"
+#include "db_balance.h"
 
 
 #define ON_TIMEOUT 4000
@@ -31,12 +31,12 @@
 #define MAX_PENDING_CONFIRMATIONS 8
 
 void
-balance_init (balance_t ** balance, khash_t (vertices) * hash,
+db_balance_init (db_balance_t ** balance, dbo_t * dbo,
               void *router_bl, void *self_bl, char *self_key)
 {
 
     *balance = malloc (sizeof (balance_t));
-    (*balance)->hash = hash;
+    (*balance)->dbo = dbo;
     (*balance)->router_bl = router_bl;
     (*balance)->self_bl = self_bl;
     intervals_init (&((*balance)->intervals));
@@ -46,6 +46,7 @@ balance_init (balance_t ** balance, khash_t (vertices) * hash,
     (*balance)->on_receives = zlist_new ();
     (*balance)->un_id = 0;
     (*balance)->next_time = -1;
+    (*balance)->pr_time = zclock_time ();
     (*balance)->self_key = self_key;
 
 
@@ -115,7 +116,7 @@ balance_send_next_chunk (balance_t * balance, on_give_t * on_give,
                 //delete it from the hash
                 kh_del (vertices, balance->hash, hiter);
 
-                //add it to the list of sent vertices
+                //add it to the list of sent vertices     
                 zlist_append (on_give->unc_vertices, vertex);
                 //add it
                 zmsg_add (responce_dup, zframe_new (vertex, sizeof (vertex_t)));
@@ -444,8 +445,6 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
             intervals_remove (balance->intervals, interval);
             intervals_print (balance->intervals);
 
-//if the node is dead, we drop all the vertices that corresponds to this event
-if(!(event->dead)){
 //update un_id;
             if (balance->un_id > 1000000000) {
                 balance->un_id = 1;
@@ -465,10 +464,7 @@ if(!(event->dead)){
 
 
 //put on_give event into the list
-            zlist_append (balance->on_gives, on_give);}
-else{
-event_clean(event,balance->hash);
-}
+            zlist_append (balance->on_gives, on_give);
         }
 
 
