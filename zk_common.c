@@ -17,10 +17,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include<string.h>
+#include"zk_common.h"
 
 //returned pointer to the same memory
-const char *
+char *
 last_path (const char *path)
 {
 
@@ -28,7 +28,7 @@ last_path (const char *path)
     int iter;
     for (iter = size - 1; iter >= 0; iter--) {
         if (path[iter] == '/') {
-            return &(path[iter + 1]);
+            return (char *) &(path[iter + 1]);
         }
     }
     return NULL;
@@ -65,7 +65,7 @@ part_path (char *path, int location, char **start, int *siz)
 
 //the initial struct is given
 void
-duplicate_String_vector (String_vector * duplicate, String_vector * vector)
+duplicate_String_vector (struct String_vector * duplicate, struct String_vector * vector)
 {
 
     allocate_String_vector (duplicate, vector->count);

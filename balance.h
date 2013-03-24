@@ -33,7 +33,9 @@
 #include"worker.h"
 #include<zookeeper/zookeeper.h>
 
+struct worker_t;
 
+typedef struct worker_t worker_t;
 
 struct balance_t
 {

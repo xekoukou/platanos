@@ -357,7 +357,7 @@ sync_remove (update_t * update, zmsg_t * msg)
 //all previous events that are marked as dead delete them and take responsibility of the 
 //interval
 
-    event_t *event = zlist_first (balance->events);
+    event_t *event = zlist_first (update->balance->events);
 
     while (event) {
 
@@ -366,8 +366,8 @@ sync_remove (update_t * update, zmsg_t * msg)
             interval_t *interval;
             interval_init (&interval, &(event->start), &(event->end));
             //add the interval with the others
-            intervals_add (balance->intervals, interval);
-            intervals_print (balance->intervals);
+            intervals_add (update->balance->intervals, interval);
+            intervals_print (update->balance->intervals);
 
 //TODO worker_ask_db();
             assert (event->give == 0);
@@ -376,7 +376,7 @@ sync_remove (update_t * update, zmsg_t * msg)
 
 
         }
-        event = zlist_next (balance->events);
+        event = zlist_next (update->balance->events);
     }
 
 
@@ -400,49 +400,49 @@ remove_node (update_t * update, zmsg_t * msg)
 
 //remove all on_recieves for this node, these events have already started
 //and do not require synchronization
-    on_receive_t *on_receive = zlist_first (balance->on_receives);
+    on_receive_t *on_receive = zlist_first (update->balance->on_receives);
     while (on_receive) {
         if (strcmp (on_receive->action->key, key) == 0) {
 
             //add the interval with the others
-            intervals_add (balance->intervals, on_receive->interval);
-            intervals_print (balance->intervals);
+            intervals_add (update->balance->intervals, on_receive->interval);
+            intervals_print (update->balance->intervals);
 
             //erase event if it exists
             int rc;
-            rc = events_update (balance->events, on_receive->action);
+            rc = events_update (update->balance->events, on_receive->action);
 //since we received a remove_node event, all previous events from this node must be already here
             assert (rc == 1);
 //TODO worker_ask_db(); 
             free (on_receive->action);
-            zlist_remove (balance->on_receives, on_receive);
+            zlist_remove (update->balance->on_receives, on_receive);
             on_receive_destroy (&on_receive);
         }
 
-        on_receive = zlist_next (balance->on_receives);
+        on_receive = zlist_next (update->balance->on_receives);
     }
 
 //remove all on_gives 
-    on_give_t *on_give = zlist_first (balance->on_gives);
+    on_give_t *on_give = zlist_first (update->balance->on_gives);
 
     while (on_give) {
 
         if (strcmp (on_give->event->key, key) == 0) {
 
             //remove the event form the event list
-            zlist_remove (balance->events, on_give->event);
-            zlist_remove (balance->on_gives, on_give);
-            event_clean (on_give->event, balance->hash);
+            zlist_remove (update->balance->events, on_give->event);
+            zlist_remove (update->balance->on_gives, on_give);
+            event_clean (on_give->event, update->balance->hash);
             on_give_destroy (&on_give);
 
         }
-        on_give = zlist_next (balance->on_gives);
+        on_give = zlist_next (update->balance->on_gives);
     }
 
 
 //mark all previous events as dead so as to skip balancing
 //
-    event_t *event = zlist_first (balance->events);
+    event_t *event = zlist_first (update->balance->events);
 
     while (event) {
 
@@ -450,10 +450,10 @@ remove_node (update_t * update, zmsg_t * msg)
 
             event->dead = 1;
         }
-        event = zlist_next (balance->events);
+        event = zlist_next (update->balance->events);
     }
 
-    balance_sync (balance, key);
+    balance_sync (update->balance, key);
 
 
 

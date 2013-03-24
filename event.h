@@ -24,6 +24,7 @@
 #include "intervals.h"
 #include "hkey.h"
 #include "hash/khash.h"
+#include "vertex.h"
 
 
 

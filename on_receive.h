@@ -48,7 +48,7 @@ on_receives_destroy (zlist_t * on_receives, balance_t * balance, node_t * node);
 
 //destroy this after you have inserted the action to the actions list
 //or removed the corresponding event
-void on_receive_destroy (on_receive_t * on_receive);
+void on_receive_destroy (on_receive_t ** on_receive);
 
 //on_receive events are not unique per id
 on_receive_t *on_receives_search (zlist_t * on_receives, int id, char *key);
