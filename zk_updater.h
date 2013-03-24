@@ -35,6 +35,7 @@ struct oz_updater_t
 //these are used to find the changes that happened to the children
     struct String_vector computers;
     struct String_vector *w_resources;
+    int32_t *w_sync_version;
     int **w_online;             //this is used tocheck whether a previous watch event has set a resource
 //offline (used by w_st_piece ,w_n_pieces)
 

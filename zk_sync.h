@@ -17,32 +17,38 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _OCTOPUS_ZK_SYNC_H_
+#define _OCTOPUS_ZK_SYNC_H_
+
+#include<zookeeper/zookeeper.h>
+#include"zk_common.h"
+#include<czmq.h>
 
 
-
-#ifndef _OCTOPUS_UPDATE_H_
-#define _OCTOPUS_UPDATE_H_
-
-#include"db_balance.h"
-
-
-struct db_update_t
+struct comp_res_t
 {
-    unsigned int id;            //the id of the previous update
-    void *dealer;               //used to confirm the updates to the ozookeeper object
-    db_balance_t *balance;
-    db_t *db;
-    void *in;
-    void *out;
-    void *db_router;
-};
+    char name[8];
+    zlist_t *res_list;
+}
 
-typedef struct db_update_t db_update_t;
+void comp_res_init (comp_res_t ** comp_res, char *comp_name);
+void comp_res_add (comp_res_t * comp_res, char *res_name);
+int comp_res_remove (comp_res_t * comp_res, char *res_name);
+void comp_res_destroy (comp_res_t ** comp_res);
 
-void db_update_init (db_update_t ** update, void *dealer, router_t * db_router,
-                     db_balance_t * balance, db_t * db, void *in, void *out);
+typedef struct comp_res_t comp_res_t;
 
+struct sync_t
+{
+    int old;
+    char key[16];
+    zlist_t *comp_res_list;
+}
 
+typedef struct sync_t sync_t;
 
-
-#endif
+void sync_init (sync_t ** sync, char *key, oz_updater_t * updater, int old);
+int sync_remove_comp (sync_t * sync, char *comp_name);
+int
+sync_remove_res (sync_t * sync, char *comp_name, char res_name)
+     int sync_ready (sync_t * sync);

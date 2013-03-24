@@ -31,10 +31,13 @@
 #define MAX_PENDING_CONFIRMATIONS 8
 
 void
-balance_init (balance_t ** balance, khash_t (vertices) * hash,
-              void *router_bl, void *self_bl, char *self_key)
+balance_init (balance_t ** balance, worker_t * worker,
+              khash_t (vertices) * hash, void *router_bl, void *self_bl,
+              char *self_key)
 {
 
+
+    (*balance)->worker = worker;
     *balance = malloc (sizeof (balance_t));
     (*balance)->hash = hash;
     (*balance)->router_bl = router_bl;
@@ -231,15 +234,15 @@ balance_confirm_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
         }
     }
     else {
-//in case a confirmation never arrives
-//the data have been passed safely
+
+
         while (zlist_size (on_give->unc_vertices)) {
             free (zlist_pop (on_give->unc_vertices));
         }
         //remove the event form the event list
         zlist_remove (balance->events, on_give->event);
         zlist_remove (balance->on_gives, on_give);
-        on_give_destroy (on_give);
+        on_give_destroy (&on_give);
 
     }
     zmsg_destroy (&msg);
@@ -394,15 +397,13 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
 
     }
 
+//If there are missed chunkes, a request for them is done in balance_lazy_pirate
+//that is why we update the clock
 
-
-//send missed chunkes confirm
-//dont send a finished confirmation (counter=0)
-//TODO must be done in a timely manner
     on_receive->last_time = zclock_time ();
     balance_update_receive_timer (balance, on_receive);
 
-    if ((counter == 0) && zlist_size (on_receive->m_counters) == 0) {
+    if ((counter == 0) && (zlist_size (on_receive->m_counters) == 0)) {
 
         frame = zframe_new (&counter, sizeof (uint64_t));
         zmsg_add (responce, frame);
@@ -427,7 +428,7 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
 
         //destroy on_receive
         zlist_remove (balance->on_receives, on_receive);
-        on_receive_destroy (on_receive);
+        on_receive_destroy (&on_receive);
 
 
 
@@ -445,30 +446,34 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
             intervals_print (balance->intervals);
 
 //if the node is dead, we drop all the vertices that corresponds to this event
-if(!(event->dead)){
+            if (!(event->dead)) {
 //update un_id;
-            if (balance->un_id > 1000000000) {
-                balance->un_id = 1;
-            }
-            else {
-                balance->un_id++;
-            }
+                if (balance->un_id > 1000000000) {
+                    balance->un_id = 1;
+                }
+                else {
+                    balance->un_id++;
+                }
 
 
 //create on_give object
-            on_give_t *on_give;
-            on_give_init (&on_give, balance, event, balance->un_id);
+                on_give_t *on_give;
+                on_give_init (&on_give, balance, event, balance->un_id);
 
 //update balance object
-            balance_update_give_timer (balance, on_give);
+                balance_update_give_timer (balance, on_give);
 
 
 
 //put on_give event into the list
-            zlist_append (balance->on_gives, on_give);}
-else{
-event_clean(event,balance->hash);
-}
+                zlist_append (balance->on_gives, on_give);
+            }
+            else {
+                event_clean (event, balance->hash);
+                zlist_remove (balance->events, event);
+                balance_sync (balance, event->key);
+                free (event);
+            }
         }
 
 
@@ -693,6 +698,7 @@ balance_lazy_pirate (balance_t * balance)
 
     on_give_t *siter = zlist_first (balance->on_gives);
 
+
     while (siter) {
 
         if (siter->state == 0) {
@@ -773,11 +779,90 @@ balance_lazy_pirate (balance_t * balance)
 
             }
         }
+
         fprintf (stderr, "\n%s:balance:Updating on_give timer",
                  balance->self_key);
         siter->last_time = time;
         balance_update_give_timer (balance, siter);
         siter = zlist_next (balance->on_gives);
+
+
+    }
+}
+
+void
+balance_sync (balance_t * balance, char *key)
+{
+
+//only set a synchronization signal if all the give events have finished
+    int sync = 1;
+
+    event_t *event = zlist_first (balance->events);
+
+    while (event) {
+
+        if ((strcmp (event->key, key) == 0) && (event->give == 1)) {
+
+//do the sync
+            sync = 0;
+            break;
+        }
+        event = zlist_next (balance->events);
+    }
+
+    if (sync) {
+        char octopus[8];
+        oconfig_octopus (balance->worker->config, octopus);
+
+        char *pointer;
+        int size;
+
+        char my_res_name[8] = { 0 };
+        char my_comp_name[8] = { 0 };
+
+        part_path (balance->self_key, 1, pointer, &size);
+        memcpy (my_res_name, pointer, size);
+        memcpy (my_comp_name, balance->self_key,
+                strlen (balance->self_key) - size - 1);
+
+        char path[1000];
+
+        sprintf (path, "/%s/computers/%s/worker_nodes/%s/sync", octopus,
+                 my_comp_name, my_res_name);
+        int result;
+
+        char str_array[16000] = { 0 };  //maximum 1000 deaths 
+        int str_array_length = 16000;
+        Stat stat;
+
+        result =
+            zoo_get (balance->worker->id, path, 0, str_array, &str_array_length,
+                     &stat);
+
+        assert (result == ZOK);
+
+        if ((str_array_length == 16000) || (str_array_length == -1)) {
+
+            str_array = {
+            0};
+            memcpy (string_array, key, 16);
+
+        }
+        else {
+            memcpy (string_array + str_array_length, key, 16);
+        }
+
+        result =
+            zoo_set (balance->worker->zh, path, str_array,
+                     str_array_length + 16, stat.version);
+
+
+        assert (ZOK == result);
+
+
+
+
+
 
     }
 }

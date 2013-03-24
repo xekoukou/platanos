@@ -21,8 +21,8 @@
 #include "db_update.h"
 
 void
-db_update_init (db_update_t ** update, void *dealer,router_t *db_router,
-             balance_t * balance,db_t *db,void *in, void *out)
+db_update_init (db_update_t ** update, void *dealer, router_t * db_router,
+                balance_t * balance, db_t * db, void *in, void *out)
 {
     *update = malloc (sizeof (update_t));
     (*update)->id = 0;

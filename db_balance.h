@@ -35,7 +35,7 @@
 struct db_balance_t
 {
 
-    dbo_t * dbo;
+    dbo_t *dbo;
     void *router_bl;            //used to tranfer nodes to the apropriate nodes if necessary
     void *self_bl;
     intervals_t *intervals;
@@ -55,7 +55,7 @@ struct on_give_t;
 typedef struct on_give_t on_give_t;
 
 
-void balance_init (balance_t ** balance, dbo_t *dbo,
+void balance_init (balance_t ** balance, dbo_t * dbo,
                    void *router_bl, void *self_bl, char *self_key);
 
 //update after an event to a specific on_give

@@ -43,11 +43,12 @@ on_receive_init (on_receive_t ** on_receive, int id, char *key, zmsg_t * msg)
 //destroy this after you have inserted the action to the actions list
 //or removed the corresponding event
 void
-on_receive_destroy (on_receive_t * on_receive)
+on_receive_destroy (on_receive_t ** on_receive)
 {
-    assert (on_receive->m_counters != NULL);
-    zlist_destroy (&(on_receive->m_counters));
-    free (on_receive);
+    assert ((*on_receive)->m_counters != NULL);
+    zlist_destroy (&((*on_receive)->m_counters));
+    free (*on_receive);
+    on_receive = NULL;
 }
 
 

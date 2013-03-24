@@ -57,12 +57,13 @@ on_give_init (on_give_t ** on_give, balance_t * balance, event_t * event,
 //this will free the event
 //also all the vertices need to be freed before destroying this
 void
-on_give_destroy (on_give_t * on_give)
+on_give_destroy (on_give_t ** on_give)
 {
-    free (on_give->event);
-    assert (on_give->unc_vertices != NULL);
-    zlist_destroy (&(on_give->unc_vertices));
-    free (on_give);
+    free ((*on_give)->event);
+    assert ((*on_give)->unc_vertices != NULL);
+    zlist_destroy (&((*on_give)->unc_vertices));
+    free (*on_give);
+    on_give = NULL;
 }
 
 

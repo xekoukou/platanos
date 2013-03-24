@@ -49,10 +49,12 @@ dbo_init (dbo_t ** dbo)
 
 }
 
-void dbo_open(dbo_t *dbo,char *location){
+void
+dbo_open (dbo_t * dbo, char *location)
+{
 
-    dbo->location=malloc(strlen(location)+1);
-     strcpy(dbo->location,location);
+    dbo->location = malloc (strlen (location) + 1);
+    strcpy (dbo->location, location);
 
     char *errptr = NULL;
 
@@ -74,12 +76,13 @@ dbo_close (dbo_t * dbo)
 }
 
 void
-dbo_destroy(dbo_t **dbo){
-dbo_close(*dbo);
+dbo_destroy (dbo_t ** dbo)
+{
+    dbo_close (*dbo);
 
-free((*dbo)->location);
-free(*dbo);
-*dbo=NULL;
+    free ((*dbo)->location);
+    free (*dbo);
+    *dbo = NULL;
 //TODO free options etc.
 
 }

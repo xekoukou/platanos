@@ -51,9 +51,8 @@ void dbo_init (dbo_t ** dbo);
 //sleep a few seconds after
 void dbo_close (dbo_t * dbo);
 
-void dbo_open(dbo_t *dbo,char *location);
+void dbo_open (dbo_t * dbo, char *location);
 
-void
-dbo_destroy(dbo_t **dbo);
+void dbo_destroy (dbo_t ** dbo);
 
 #endif

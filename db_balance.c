@@ -32,7 +32,7 @@
 
 void
 db_balance_init (db_balance_t ** balance, dbo_t * dbo,
-              void *router_bl, void *self_bl, char *self_key)
+                 void *router_bl, void *self_bl, char *self_key)
 {
 
     *balance = malloc (sizeof (balance_t));

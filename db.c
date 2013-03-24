@@ -54,8 +54,9 @@ db_add_self (db_update_t * update, zmsg_t * msg)
 
     zmsg_destroy (&msg);
 
-    fprintf (stderr, "\ndb:%s:add_self:\nkey:%s\nn_pieces:%d\nst_piece:%lu\nlocation:%s",
-             key, key, n_pieces, st_piece,db_location);
+    fprintf (stderr,
+             "\ndb:%s:add_self:\nkey:%s\nn_pieces:%d\nst_piece:%lu\nlocation:%s",
+             key, key, n_pieces, st_piece, db_location);
 
     db_node_init (&self, key, n_pieces, st_piece, bind_point);
 
@@ -63,7 +64,7 @@ db_add_self (db_update_t * update, zmsg_t * msg)
     update->db_router->self = self;
 
 //open the database
-dbo_open(update->dbo,db_location);
+    dbo_open (update->dbo, db_location);
 
 //the rest of the router update will happen when the node goes online
 
@@ -86,23 +87,39 @@ dbo_open(update->dbo,db_location);
 }
 
 
-void db_remove_node(update_t *update,zmsg_t *msg){
+void
+db_remove_node (update_t * update, zmsg_t * msg)
+{
 
 }
 
-void db_delete_node(update_t *update,zmsg_t *msg){
+void
+db_delete_node (update_t * update, zmsg_t * msg)
+{
 
 }
-void db_add_node(update_t *update,zmsg_t *msg){
+
+void
+db_add_node (update_t * update, zmsg_t * msg)
+{
 
 }
-void db_update_st_piece(update_t *update,zmsg_t *msg){
+
+void
+db_update_st_piece (update_t * update, zmsg_t * msg)
+{
 
 }
-void db_update_n_pieces(update_t *update,zmsg_t *msg){
+
+void
+db_update_n_pieces (update_t * update, zmsg_t * msg)
+{
 
 }
-void db_go_online(db_t *db){
+
+void
+db_go_online (db_t * db)
+{
 
     char path[1000];
     char octopus[1000];
@@ -123,7 +140,8 @@ void db_go_online(db_t *db){
 
 
 
-void db_update (update_t * update, void *sub)
+void
+db_update (update_t * update, void *sub)
 {
 
 //check if it is a new update or an old one
@@ -164,47 +182,48 @@ void db_update (update_t * update, void *sub)
                     (zframe_data (frame), "remove_node",
                      zframe_size (frame)) == 0) {
                     db_remove_node (update, msg);
-                }else{
-            if (memcmp
-                (zframe_data (frame), "delete_node",
-                 zframe_size (frame)) == 0) {
-                db_delete_node (update, msg);
-            }
-
+                }
                 else {
                     if (memcmp
-                        (zframe_data (frame), "add_node",
+                        (zframe_data (frame), "delete_node",
                          zframe_size (frame)) == 0) {
-                        db_add_node (update, msg);
+                        db_delete_node (update, msg);
                     }
+
                     else {
                         if (memcmp
-                            (zframe_data (frame), "st_piece",
+                            (zframe_data (frame), "add_node",
                              zframe_size (frame)) == 0) {
-                            db_update_st_piece (update, msg);
+                            db_add_node (update, msg);
                         }
                         else {
                             if (memcmp
-                                (zframe_data (frame), "n_pieces",
+                                (zframe_data (frame), "st_piece",
                                  zframe_size (frame)) == 0) {
-                                db_update_n_pieces (update, msg);
+                                db_update_st_piece (update, msg);
                             }
                             else {
                                 if (memcmp
-                                    (zframe_data (frame), "go_online",
+                                    (zframe_data (frame), "n_pieces",
                                      zframe_size (frame)) == 0) {
-                                    db_go_online (update->db);
+                                    db_update_n_pieces (update, msg);
                                 }
+                                else {
+                                    if (memcmp
+                                        (zframe_data (frame), "go_online",
+                                         zframe_size (frame)) == 0) {
+                                        db_go_online (update->db);
+                                    }
 
 
 
 
+                                }
                             }
                         }
                     }
                 }
             }
-}
             zframe_destroy (&frame);
 
 
@@ -268,9 +287,9 @@ db_fn (void *arg)
     zmq_setsockopt (self_bl, ZMQ_IDENTITY, worker->id, strlen (worker->id));
 
 
-dbo_t *dbo;
+    dbo_t *dbo;
 
-dbo_init(&dbo);
+    dbo_init (&dbo);
 
 //router object
 //only used for balancing , not for routing msgs
@@ -289,11 +308,12 @@ dbo_init(&dbo);
 //used to update things, like the router object
     db_update_t *update;
 
-    db_update_init (&update, dealer,router_t *db_router, balance,db,in,out);
+    db_update_init (&update, dealer, router_t * db_router, balance, db, in,
+                    out);
 
 
 
-    zmq_pollitem_t pollitem[2] = { {in, 0, ZMQ_POLLIN}, {sub,0,ZMQ_POLLIN} };
+    zmq_pollitem_t pollitem[2] = { {in, 0, ZMQ_POLLIN}, {sub, 0, ZMQ_POLLIN} };
 
     fprintf (stderr, "\ndb:%s ready.", db->id);
 
@@ -305,8 +325,8 @@ dbo_init(&dbo);
             zmsg_t *msg = zmsg_recv (in);
             db_msg (msg, out);
         }
-            if (pollitem[1].revents & ZMQ_POLLIN) {
-            db_update (update,sub);
+        if (pollitem[1].revents & ZMQ_POLLIN) {
+            db_update (update, sub);
         }
 
 

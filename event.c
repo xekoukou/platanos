@@ -86,24 +86,27 @@ event_possible (event_t * event, intervals_t * intervals)
 }
 
 
-void event_clean(event_t *event, khash_t (vertices) * hash){
+void
+event_clean (event_t * event, khash_t (vertices) * hash)
+{
 
-interval_t * interval;
-interval_init(&interval,&(event->start),&(event->end));
+    interval_t *interval;
+    interval_init (&interval, &(event->start), &(event->end));
 
-khint_t hiter;
+    khint_t hiter;
 
-for (hiter = kh_begin (balance->hash); hiter != kh_end (balance->hash);
-             ++hiter) {
-            if (!kh_exist (balance->hash, hiter))
-                continue;
+    for (hiter = kh_begin (balance->hash); hiter != kh_end (balance->hash);
+         ++hiter) {
+        if (!kh_exist (balance->hash, hiter))
+            continue;
 
-            key = kh_key (balance->hash, hiter);
-            if (interval_belongs (on_give->interval, key)) {
-                
-                //delete it from the hash
-                kh_del (vertices, balance->hash, hiter);
+        key = kh_key (balance->hash, hiter);
+        if (interval_belongs (on_give->interval, key)) {
+
+            //delete it from the hash
+            kh_del (vertices, balance->hash, hiter);
 
 
-}}
+        }
+    }
 }

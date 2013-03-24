@@ -48,6 +48,7 @@ struct ozookeeper_t
     oz_updater_t updater;
     workers_t *workers;
     dbs_t *dbs;
+    zlist_t *sync_list;
 };
 
 typedef struct ozookeeper_t ozookeeper_t;

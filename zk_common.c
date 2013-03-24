@@ -62,3 +62,18 @@ part_path (char *path, int location, char **start, int *siz)
     *start = &(path[st + 1]);
     *siz = -st + end - 1;
 }
+
+//the initial struct is given
+void
+duplicate_String_vector (String_vector * duplicate, String_vector * vector)
+{
+
+    allocate_String_vector (duplicate, vector->count);
+
+    int i;
+    for (i = 0; i < vector->count; i++) {
+        duplicate->data[i] = calloc (strlen (vector->data[i]) + 1, 1);
+        memcpy (duplicate->data[i], vector->data[i],
+                strlen (vector->data[i]) + 1);
+    }
+}

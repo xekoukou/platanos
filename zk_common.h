@@ -20,8 +20,13 @@
 #ifndef OCTOPUS_ZK_COMMON_H
 #define OCTOPUS_ZK_COMMON_H
 
+#include<zookeeper/zookeeper.h>
 
 char *last_path (const char *path);
 void part_path (const char *path, int location, char **start, int *size);
+
+//the initial struct is given
+void duplicate_String_vector (String_vector * duplicate,
+                              String_vector * vector);
 
 #endif
