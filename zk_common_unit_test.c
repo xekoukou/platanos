@@ -17,35 +17,21 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OCTOPUS_DB_H_
-#define OCTOPUS_DB_H_
-
-
-#include"dbo.h"
-#include"db_update.h"
-#include"db_balance.h"
-#include"nodes.h"
-#include"zookeeper.h"
 
 
 
-struct db_t
+#include<stdio.h>
+#include"zk_common.h"
+
+
+void
+main ()
 {
-    zhandle_t *zh;
-    oconfig_t *config;
-    char *id;                   //comp_name +res_name
-    char *res_name;
-    char *comp_name;
-};
 
-typedef struct db_t db_t;
+    printf ("\nGive a path:");
 
-void db_init (db_t ** db, zhandle_t * zh, oconfig_t * config, char *comp_name,
-              char *res_name);
+    char path[1000];
+    scanf ("%s", path);
 
-
-
-//max 1000 dbs per computer
-void *db_fn (void *arg);
-
-#endif
+    printf ("\nLast node:%s", last_path (path));
+}

@@ -123,6 +123,13 @@ main ()
     if (db) {
         printf ("\n Provide the full path of the location of the database:");
         scanf ("%s", config[7]);
+
+        if (0 != zfile_mkdir (config[7])) {
+
+            printf
+                ("\n There has been an error at creating the database directory,exiting...");
+
+        }
     }
 
 
@@ -294,8 +301,30 @@ main ()
                             0, NULL, 0);
 
 
+            port = oconfig_incr_port (fconfig);
+            sprintf (bind_location, "tcp://%s:%d", config[5], port);
+            sprintf (path, "/%s/computers/%s/%s/%s/bind_point_bl", config[6],
+                     config[2], root, config[3]);
+            result =
+                zoo_create (zh, path, bind_location,
+                            strlen (bind_location) + 1, &ZOO_OPEN_ACL_UNSAFE,
+                            0, NULL, 0);
+
+
             assert (ZOK == result);
 
+
+
+            assert (ZOK == result);
+            sprintf (path, "/%s/computers/%s/%s/%s/db_location", config[6],
+                     config[2], root, config[3]);
+            result =
+                zoo_create (zh, path, config[7],
+                            strlen (config[7]) + 1,
+                            &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
+
+
+            assert (ZOK == result);
 
         }
         else {
@@ -340,24 +369,22 @@ main ()
 
             assert (ZOK == result);
 
+//this is a synchronization direcory if the node dies
 
-        }
-
-        if (db == 0) {
-
-
-
-        }
-        else {
-            assert (ZOK == result);
-            sprintf (path, "/%s/computers/%s/%s/%s/db_point", config[6],
+            sprintf (path, "/%s/computers/%s/%s/%s/sync", config[6],
                      config[2], root, config[3]);
             result =
-                zoo_create (zh, path, config[7],
-                            strlen (config[7]),
-                            &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
+                zoo_create (zh, path, NULL,
+                            -1, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
+
+
+            assert (ZOK == result);
+
+
 
         }
+
+
     }
 
 

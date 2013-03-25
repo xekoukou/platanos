@@ -156,6 +156,7 @@ oz_updater_new_computers (oz_updater_t * updater,
                 * computers.count);
 
     int **new_w_online_matrix = malloc (sizeof (int *) * computers.count);
+    int **new_w_sync_matrix = malloc (sizeof (int *) * computers.count);
 
     struct String_vector *new_db_resources =
         malloc (sizeof (struct String_vector)
@@ -172,6 +173,7 @@ oz_updater_new_computers (oz_updater_t * updater,
                     &(updater->w_resources[sort[iter]]),
                     sizeof (struct String_vector));
             new_w_online_matrix[iter] = updater->w_online[sort[iter]];
+            new_w_sync_matrix[iter] = updater->w_sync_version[sort[iter]];
 
             memcpy (&(new_db_resources[iter]),
                     &(updater->db_resources[sort[iter]]),
@@ -185,6 +187,7 @@ oz_updater_new_computers (oz_updater_t * updater,
             new_w_resources[iter].count = 0;
             new_w_resources[iter].data = 0;
             new_w_online_matrix[iter] = NULL;
+            new_w_sync_matrix[iter] = NULL;
 
             new_db_resources[iter].count = 0;
             new_db_resources[iter].data = 0;
@@ -200,6 +203,7 @@ oz_updater_new_computers (oz_updater_t * updater,
         if (array[siter] == 0) {
             deallocate_String_vector (&(updater->w_resources[siter]));
             free (updater->w_online[siter]);
+            free (updater->w_sync_version[siter]);
 
             deallocate_String_vector (&(updater->db_resources[siter]));
             free (updater->db_online[siter]);
@@ -213,6 +217,7 @@ oz_updater_new_computers (oz_updater_t * updater,
         assert (updater->db_resources != NULL);
         assert (updater->db_online != NULL);
         free (updater->w_online);
+        free (updater->w_sync_version);
 
         free (updater->db_resources);
         free (updater->db_online);
@@ -220,6 +225,7 @@ oz_updater_new_computers (oz_updater_t * updater,
     }
     updater->w_resources = new_w_resources;
     updater->w_online = new_w_online_matrix;
+    updater->w_sync_version = new_w_sync_matrix;
 
     updater->db_resources = new_db_resources;
     updater->db_online = new_db_online_matrix;
@@ -261,6 +267,7 @@ oz_updater_new_resources (oz_updater_t * updater, char *comp_name,
 
     struct String_vector *old_resources;
     int **old_online;
+    int32_t **old_sync;
 
     if (db) {
         old_resources = &(updater->db_resources[position]);
@@ -269,6 +276,7 @@ oz_updater_new_resources (oz_updater_t * updater, char *comp_name,
     else {
         old_resources = &(updater->w_resources[position]);
         old_online = updater->w_online;
+        old_sync = updater->w_sync_version;
 
     }
 
@@ -276,6 +284,9 @@ oz_updater_new_resources (oz_updater_t * updater, char *comp_name,
     int *sort = malloc (sizeof (int) * resources.count);
 //update the online vector
     int *online_vector = (int *) calloc (resources.count, sizeof (int));
+//update the sync_version vector
+    int *sync_vector = (int *) calloc (resources.count, sizeof (int32_t));
+
 
 //set watches to new resources
     zlist_autofree (db_old);
@@ -291,6 +302,9 @@ oz_updater_new_resources (oz_updater_t * updater, char *comp_name,
         if (exists) {
             sort[iter] = siter;
             online_vector[iter] = old_online[position][siter];
+            if (!db) {
+                sync_vector[iter] = old_sync[position][siter];
+            }
         }
         else {
             sort[iter] = -1;
@@ -308,6 +322,12 @@ oz_updater_new_resources (oz_updater_t * updater, char *comp_name,
         free (old_online[position]);
     }
     old_online[position] = online_vector;
+
+    if (old_sync[position] != NULL) {
+        free (old_sync[position]);
+    }
+    old_sync[position] = sync_vector;
+
 
 
     return sort;

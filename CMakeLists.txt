@@ -50,6 +50,10 @@ cmake_minimum_required (VERSION 2.8)
                 dbs.c
                 compute.c
                 db.c balance.c
+                dbo.c
+                db_update.c
+                db_balance.c
+                zk_sync.c
                 on_give.c on_receive.c update.c zookeeper.c zk_updater.c main.c)
 
     target_link_libraries (node_exec MurmurHash zookeeper_mt procps czmq leveldb

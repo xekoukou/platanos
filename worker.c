@@ -80,7 +80,7 @@ worker_new_interval (worker_t * worker, localdb_t * localdb)
         struct Stat stat;
 
         char path[1000];
-        char octopus[1000];
+        char octopus[8];
         int buffer;
         int buffer_len = sizeof (int);
 
@@ -343,6 +343,44 @@ update_st_piece (update_t * update, zmsg_t * msg)
 
 }
 
+void
+sync_remove (update_t * update, zmsg_t * msg)
+{
+    char key[100];
+
+    zframe_t *frame = zmsg_first (msg);
+
+    memcpy (key, zframe_data (frame), zframe_size (frame));
+
+    zmsg_destroy (&msg);
+
+//all previous events that are marked as dead delete them and take responsibility of the 
+//interval
+
+    event_t *event = zlist_first (update->balance->events);
+
+    while (event) {
+
+        if ((strcmp (event->key, key) == 0) && (event->dead == 1)) {
+
+            interval_t *interval;
+            interval_init (&interval, &(event->start), &(event->end));
+            //add the interval with the others
+            intervals_add (update->balance->intervals, interval);
+            intervals_print (update->balance->intervals);
+
+//TODO worker_ask_db();
+            assert (event->give == 0);
+            zlist_remove (update->balance->events, event);
+            free (event);
+
+
+        }
+        event = zlist_next (update->balance->events);
+    }
+
+
+}
 
 void
 remove_node (update_t * update, zmsg_t * msg)
@@ -360,14 +398,64 @@ remove_node (update_t * update, zmsg_t * msg)
 
     assert (node != NULL);
 
-    on_gives_remove (update->balance->on_gives, update->balance->events, node);
+//remove all on_recieves for this node, these events have already started
+//and do not require synchronization
+    on_receive_t *on_receive = zlist_first (update->balance->on_receives);
+    while (on_receive) {
+        if (strcmp (on_receive->action->key, key) == 0) {
 
-    on_receives_destroy (update->balance->on_receives, update->balance, node);
+            //add the interval with the others
+            intervals_add (update->balance->intervals, on_receive->interval);
+            intervals_print (update->balance->intervals);
 
-//remove all previous events by this node. they will never happen
-//the node is dead
+            //erase event if it exists
+            int rc;
+            rc = events_update (update->balance->events, on_receive->action);
+//since we received a remove_node event, all previous events from this node must be already here
+            assert (rc == 1);
+//TODO worker_ask_db(); 
+            free (on_receive->action);
+            zlist_remove (update->balance->on_receives, on_receive);
+            on_receive_destroy (&on_receive);
+        }
 
-    events_remove (update->balance->events, node);
+        on_receive = zlist_next (update->balance->on_receives);
+    }
+
+//remove all on_gives 
+    on_give_t *on_give = zlist_first (update->balance->on_gives);
+
+    while (on_give) {
+
+        if (strcmp (on_give->event->key, key) == 0) {
+
+            //remove the event form the event list
+            zlist_remove (update->balance->events, on_give->event);
+            zlist_remove (update->balance->on_gives, on_give);
+            event_clean (on_give->event, update->balance->hash);
+            on_give_destroy (&on_give);
+
+        }
+        on_give = zlist_next (update->balance->on_gives);
+    }
+
+
+//mark all previous events as dead so as to skip balancing
+//
+    event_t *event = zlist_first (update->balance->events);
+
+    while (event) {
+
+        if (strcmp (event->key, key) == 0) {
+
+            event->dead = 1;
+        }
+        event = zlist_next (update->balance->events);
+    }
+
+    balance_sync (update->balance, key);
+
+
 
     //  int rc;
     //  rc = zsocket_disconnect (update->compute->socket_nb, "%s",
@@ -393,7 +481,7 @@ remove_node (update_t * update, zmsg_t * msg)
 
     fprintf (stderr, "\n%s:remove_node:size of event list: %lu",
              update->router->self->key, zlist_size (events));
-    event_t *event = zlist_first (events);
+    event = zlist_first (events);
     int iter = 0;
     while (event) {
         iter++;
@@ -647,8 +735,6 @@ add_self (update_t * update, zmsg_t * msg)
     assert (rc == 0);
     rc = zsocket_bind (update->balance->self_bl, "%s", bind_point_bl);
     assert (rc != -1);
-    rc = zsocket_connect (update->balance->router_bl, "%s", bind_point_bl);
-    assert (rc == 0);
 
     fprintf (stderr, "\n%s:add_self: received its configuration",
              update->balance->self_key);
@@ -665,13 +751,11 @@ go_online (worker_t * worker)
 
     char path[1000];
     char octopus[1000];
-    char comp_name[1000];
 
     oconfig_octopus (worker->config, octopus);
-    oconfig_comp_name (worker->config, comp_name);
 
     sprintf (path, "/%s/computers/%s/worker_nodes/%s/online", octopus,
-             comp_name, worker->res_name);
+             worker->comp_name, worker->res_name);
 
     int result = zoo_create (worker->zh, path, NULL,
                              -1, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL,
@@ -684,7 +768,7 @@ go_online (worker_t * worker)
 }
 
 void
-db_add_node (update_t * update, zmsg_t * msg)
+wdb_add_node (update_t * update, zmsg_t * msg)
 {
     int start;
     node_t *node;
@@ -730,7 +814,7 @@ db_add_node (update_t * update, zmsg_t * msg)
 }
 
 void
-db_update_st_piece (update_t * update, zmsg_t * msg)
+wdb_update_st_piece (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
@@ -757,7 +841,7 @@ db_update_st_piece (update_t * update, zmsg_t * msg)
 }
 
 void
-db_update_n_pieces (update_t * update, zmsg_t * msg)
+wdb_update_n_pieces (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
@@ -784,7 +868,7 @@ db_update_n_pieces (update_t * update, zmsg_t * msg)
 
 
 void
-db_remove_node (update_t * update, zmsg_t * msg)
+wdb_remove_node (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
@@ -806,7 +890,7 @@ db_remove_node (update_t * update, zmsg_t * msg)
 
 
 void
-db_delete_node (update_t * update, zmsg_t * msg)
+wdb_delete_node (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
@@ -856,32 +940,32 @@ worker_update_db (update_t * update, zmsg_t * msg)
             if (memcmp
                 (zframe_data (frame), "delete_node",
                  zframe_size (frame)) == 0) {
-                db_delete_node (update, msg);
+                wdb_delete_node (update, msg);
             }
             else {
 
                 if (memcmp
                     (zframe_data (frame), "remove_node",
                      zframe_size (frame)) == 0) {
-                    db_remove_node (update, msg);
+                    wdb_remove_node (update, msg);
                 }
                 else {
                     if (memcmp
                         (zframe_data (frame), "add_node",
                          zframe_size (frame)) == 0) {
-                        db_add_node (update, msg);
+                        wdb_add_node (update, msg);
                     }
                     else {
                         if (memcmp
                             (zframe_data (frame), "st_piece",
                              zframe_size (frame)) == 0) {
-                            db_update_st_piece (update, msg);
+                            wdb_update_st_piece (update, msg);
                         }
                         else {
                             if (memcmp
                                 (zframe_data (frame), "n_pieces",
                                  zframe_size (frame)) == 0) {
-                                db_update_n_pieces (update, msg);
+                                wdb_update_n_pieces (update, msg);
                             }
                             else {
                                 if (memcmp
@@ -961,38 +1045,45 @@ worker_update (update_t * update, void *sub)
                 }
                 else {
                     if (memcmp
-                        (zframe_data (frame), "add_node",
+                        (zframe_data (frame), "sync_remove",
                          zframe_size (frame)) == 0) {
-                        add_node (update, msg);
+                        sync_remove (update, msg);
                     }
                     else {
+
                         if (memcmp
-                            (zframe_data (frame), "st_piece",
+                            (zframe_data (frame), "add_node",
                              zframe_size (frame)) == 0) {
-                            update_st_piece (update, msg);
+                            add_node (update, msg);
                         }
                         else {
                             if (memcmp
-                                (zframe_data (frame), "n_pieces",
+                                (zframe_data (frame), "st_piece",
                                  zframe_size (frame)) == 0) {
-                                update_n_pieces (update, msg);
+                                update_st_piece (update, msg);
                             }
                             else {
                                 if (memcmp
-                                    (zframe_data (frame), "go_online",
+                                    (zframe_data (frame), "n_pieces",
                                      zframe_size (frame)) == 0) {
-                                    go_online (update->compute->worker);
+                                    update_n_pieces (update, msg);
                                 }
+                                else {
+                                    if (memcmp
+                                        (zframe_data (frame), "go_online",
+                                         zframe_size (frame)) == 0) {
+                                        go_online (update->compute->worker);
+                                    }
 
 
 
 
+                                }
                             }
                         }
                     }
                 }
             }
-
 
             zframe_destroy (&frame);
 
@@ -1037,7 +1128,7 @@ worker_fn (void *arg)
     void *sub = zsocket_new (ctx, ZMQ_SUB);
     void *dealer = zsocket_new (ctx, ZMQ_DEALER);
 
-    char identity[17];
+    char identity[18];
     sprintf (identity, "%sw", worker->id);
     zmq_setsockopt (dealer, ZMQ_IDENTITY, identity, strlen (identity));
     zmq_setsockopt (sub, ZMQ_SUBSCRIBE, identity, strlen (identity));
@@ -1096,7 +1187,7 @@ worker_fn (void *arg)
 //balance object
     balance_t *balance;
 
-    balance_init (&balance, hash, router_bl, self_bl, worker->id);
+    balance_init (&balance, worker, hash, router_bl, self_bl, worker->id);
 
 //compute object
     compute_t *compute;
@@ -1213,7 +1304,7 @@ worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
     (*worker)->comp_name = malloc (strlen (comp_name) + 1);
     strcpy ((*worker)->comp_name, comp_name);
     (*worker)->id = malloc (strlen (comp_name) + strlen (res_name) + 1);
-    sprintf ((*worker)->id, "%s%s", comp_name, res_name);
+    sprintf ((*worker)->id, "%s/%s", comp_name, res_name);
     (*worker)->config = config;
     (*worker)->localdb = localdb;
 

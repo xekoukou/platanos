@@ -17,35 +17,35 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OCTOPUS_DB_H_
-#define OCTOPUS_DB_H_
 
 
+
+#ifndef _OCTOPUS_DB_BALANCE_H_
+#define _OCTOPUS_DB_BALANCE_H_
+
+#include"hash/khash.h"
+#include<czmq.h>
+#include"vertex.h"
+#include"intervals.h"
 #include"dbo.h"
-#include"db_update.h"
-#include"db_balance.h"
-#include"nodes.h"
-#include"zookeeper.h"
 
 
 
-struct db_t
+struct db_balance_t
 {
-    zhandle_t *zh;
-    oconfig_t *config;
-    char *id;                   //comp_name +res_name
-    char *res_name;
-    char *comp_name;
+
+    dbo_t *dbo;
+    void *router_bl;            //used to tranfer nodes to the apropriate nodes if necessary
+    void *self_bl;
+    char self_key[16];
 };
 
-typedef struct db_t db_t;
-
-void db_init (db_t ** db, zhandle_t * zh, oconfig_t * config, char *comp_name,
-              char *res_name);
+typedef struct db_balance_t db_balance_t;
 
 
 
-//max 1000 dbs per computer
-void *db_fn (void *arg);
+void db_balance_init (db_balance_t ** balance, dbo_t * dbo,
+                      void *router_bl, void *self_bl, char *key);
+
 
 #endif

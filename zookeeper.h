@@ -30,6 +30,8 @@
 #include"dbs.h"
 #include"zk_common.h"
 #include"zk_updater.h"
+#include"zk_sync.h"
+
 
 #define _LL_CAST_ (long long)
 
@@ -48,6 +50,7 @@ struct ozookeeper_t
     oz_updater_t updater;
     workers_t *workers;
     dbs_t *dbs;
+    zlist_t *sync_list;
 };
 
 typedef struct ozookeeper_t ozookeeper_t;
@@ -75,7 +78,7 @@ void ozookeeper_set_zhandle (ozookeeper_t * ozookeeper, zhandle_t * zh);
 
 void ozookeeper_zhandle (ozookeeper_t * ozookeeper, zhandle_t ** zh);
 
-void ozookeeper_destroy (ozookeeper_t * ozookeeper);
+void ozookeeper_destroy (ozookeeper_t ** ozookeeper);
 
 void global_watcher (zhandle_t * zzh, int type, int state, const char *path,
                      void *context);

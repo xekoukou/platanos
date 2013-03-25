@@ -18,20 +18,19 @@
 */
 
 
-
-
-#include<stdio.h>
-#include"common.h"
-
+#include "db_balance.h"
 
 void
-main ()
+db_balance_init (db_balance_t ** balance, dbo_t * dbo,
+                 void *router_bl, void *self_bl, char *key)
 {
 
-    printf ("\nGive a path:");
+    *balance = malloc (sizeof (db_balance_t));
+    (*balance)->dbo = dbo;
+    (*balance)->router_bl = router_bl;
+    (*balance)->self_bl = self_bl;
+    memset ((*balance)->self_key, 0, 16);
+    strcpy ((*balance)->self_key, key);
 
-    char path[1000];
-    scanf ("%s", path);
 
-    printf ("\nLast node:%s", last_path (path));
 }

@@ -17,35 +17,42 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OCTOPUS_DB_H_
-#define OCTOPUS_DB_H_
+#ifndef _OCTOPUS_ZK_SYNC_H_
+#define _OCTOPUS_ZK_SYNC_H_
+
+#include<zookeeper/zookeeper.h>
+#include"zk_common.h"
+#include"zk_updater.h"
+#include<czmq.h>
 
 
-#include"dbo.h"
-#include"db_update.h"
-#include"db_balance.h"
-#include"nodes.h"
-#include"zookeeper.h"
-
-
-
-struct db_t
+struct comp_res_t
 {
-    zhandle_t *zh;
-    oconfig_t *config;
-    char *id;                   //comp_name +res_name
-    char *res_name;
-    char *comp_name;
+    char name[8];
+    zlist_t *res_list;
 };
 
-typedef struct db_t db_t;
+typedef struct comp_res_t comp_res_t;
 
-void db_init (db_t ** db, zhandle_t * zh, oconfig_t * config, char *comp_name,
-              char *res_name);
+void comp_res_init (comp_res_t ** comp_res, char *comp_name);
+void comp_res_add (comp_res_t * comp_res, char *res_name);
+int comp_res_remove (comp_res_t * comp_res, char *res_name);
+void comp_res_destroy (comp_res_t ** comp_res);
 
 
+struct sync_t
+{
+    int old;
+    char key[16];
+    zlist_t *comp_res_list;
+};
 
-//max 1000 dbs per computer
-void *db_fn (void *arg);
+typedef struct sync_t sync_t;
+
+void sync_init (sync_t ** sync, char *key, oz_updater_t * updater, int old);
+int sync_remove_comp (sync_t * sync, char *comp_name);
+int sync_remove_res (sync_t * sync, char *comp_name, char *res_name);
+int sync_ready (sync_t * sync);
+
 
 #endif

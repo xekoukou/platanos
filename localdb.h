@@ -40,7 +40,6 @@ typedef struct
 } localdb_t;
 
 
-//id is the address/id of the thread/node
 void localdb_init (localdb_t ** localdb);
 
 //sleep a few seconds after

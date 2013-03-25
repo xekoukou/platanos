@@ -59,6 +59,9 @@ ozookeeper_init (ozookeeper_t ** ozookeeper, oconfig_t * config, zctx_t * ctx)
     (*ozookeeper)->pub = pub;
     (*ozookeeper)->router = router;
 
+
+    (*ozookeeper)->sync_list = zlist_new ();
+
     oz_updater_init (&((*ozookeeper)->updater));
 
 
@@ -132,12 +135,14 @@ ozookeeper_zhandle (ozookeeper_t * ozookeeper, zhandle_t ** zh)
 
 //TODO both is not destroyed
 void
-ozookeeper_destroy (ozookeeper_t * ozookeeper)
+ozookeeper_destroy (ozookeeper_t ** ozookeeper)
 {
-    zookeeper_close (ozookeeper->zh);
-    oconfig_destroy (ozookeeper->config);
-    oz_updater_destroy (&(ozookeeper->updater));
-    free (ozookeeper);
+    zookeeper_close ((*ozookeeper)->zh);
+    oconfig_destroy ((*ozookeeper)->config);
+    oz_updater_destroy (&((*ozookeeper)->updater));
+    zlist_destroy (&((*ozookeeper)->sync_list));
+    free (*ozookeeper);
+    *ozookeeper = NULL;
 }
 
 //TODO referencing dbs_t as workers_t
@@ -409,6 +414,17 @@ ozookeeper_update_remove_node (ozookeeper_t * ozookeeper, int db, char *key)
     ozookeeper_update (ozookeeper, &msg, db);
 }
 
+//only for workers
+void
+ozookeeper_update_sync_remove (ozookeeper_t * ozookeeper, char *key)
+{
+    zmsg_t *msg = zmsg_new ();
+    zmsg_add (msg, zframe_new ("sync_remove", strlen ("sync_remove_node") + 1));
+    zmsg_add (msg, zframe_new (key, strlen (key) + 1));
+    ozookeeper_update (ozookeeper, &msg, 0);
+}
+
+
 //this is used only by the database
 void
 ozookeeper_update_delete_node (ozookeeper_t * ozookeeper, char *key)
@@ -452,7 +468,7 @@ void
 ozookeeper_update_add_self (ozookeeper_t * ozookeeper, int db, char *key,
                             int n_pieces, unsigned long st_piece,
                             char *bind_point_nb, char *bind_point_wb,
-                            char *bind_point_bl)
+                            char *bind_point_bl, char *db_location)
 {
     zmsg_t *msg = zmsg_new ();
     zmsg_add (msg, zframe_new ("add_self", strlen ("add_self") + 1));
@@ -463,6 +479,10 @@ ozookeeper_update_add_self (ozookeeper_t * ozookeeper, int db, char *key,
     if (!db) {
         zmsg_add (msg, zframe_new (bind_point_wb, strlen (bind_point_wb) + 1));
         zmsg_add (msg, zframe_new (bind_point_bl, strlen (bind_point_bl) + 1));
+    }
+    else {
+        zmsg_add (msg, zframe_new (bind_point_bl, strlen (bind_point_bl) + 1));
+        zmsg_add (msg, zframe_new (db_location, strlen (db_location) + 1));
     }
     fprintf (stderr,
              "\nzookeeper_add_self\nkey:%s\nn_pieces:%d\nst_piece:%lu", key,
@@ -522,6 +542,10 @@ w_n_pieces (zhandle_t * zh, int type,
             int state, const char *path, void *watcherCtx);
 
 void
+w_sync (zhandle_t * zh, int type,
+        int state, const char *path, void *watcherCtx);
+
+void
 online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
         char *comp_name, char *res_name)
 {
@@ -544,6 +568,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
     char bind_point_nb[50];
     char bind_point_wb[50];
     char bind_point_bl[50];
+    char db_location[1000];
     struct Stat stat;
 
 
@@ -582,6 +607,25 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
 
             assert (result == ZOK);
 
+            buffer_len = 1000;
+            sprintf (path, "/%s/computers/%s/db_nodes/%s/bind_point_bl",
+                     octopus, comp_name, res_name);
+            result =
+                zoo_get (ozookeeper->zh, path, 0, bind_point_bl, &buffer_len,
+                         &stat);
+
+            assert (result == ZOK);
+
+
+            buffer_len = 1000;
+            sprintf (path, "/%s/computers/%s/db_nodes/%s/db_location",
+                     octopus, comp_name, res_name);
+            result =
+                zoo_get (ozookeeper->zh, path, 0, db_location, &buffer_len,
+                         &stat);
+
+            assert (result == ZOK);
+
         }
         else {
 
@@ -611,10 +655,21 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
 
             assert (result == ZOK);
 
+            buffer_len = 16000;
+            char buffer[16000];
+            sprintf (path, "/%s/computers/%s/%s/%s/sync",
+                     octopus, comp_name, type, res_name);
+            result =
+                zoo_wget (ozookeeper->zh, path, w_sync, ozookeeper,
+                          buffer, &buffer_len, &stat);
+
+            assert (ZOK == result);
+//we dont need the data, only to set the watch and get the version
+
         }
     }
 
-    sprintf (path, "%s%s", comp_name, res_name);
+    sprintf (path, "%s/%s", comp_name, res_name);
 
 
     if (self) {
@@ -623,7 +678,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
 
         ozookeeper_update_add_self (ozookeeper, db, path, n_pieces, st_piece,
                                     bind_point_nb, bind_point_wb,
-                                    bind_point_bl);
+                                    bind_point_bl, db_location);
 
 
     }
@@ -649,6 +704,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
             }
             else {
                 ozookeeper->updater.w_online[m][n] = 1;
+                ozookeeper->updater.w_sync_version[m][n] = stat.version;
             }
         }
         else {
@@ -658,11 +714,40 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
                 if (ozookeeper->updater.db_online[m][n] == 1) {
                     ozookeeper->updater.db_online[m][n] = 0;
                     ozookeeper_update_remove_node (ozookeeper, db, path);
+
                 }
             }
             else {
                 if (ozookeeper->updater.w_online[m][n] == 1) {
                     ozookeeper->updater.w_online[m][n] = 0;
+
+//check if a sync has been initialized by a sync event
+
+                    int found_one = 0;
+                    sync_t *iter = zlist_first (ozookeeper->sync_list);
+                    while (iter) {
+                        if ((strcmp (iter->key, path) == 0) && (iter->old == 0)) {
+
+                            found_one = 1;
+                            break;
+                        }
+                        iter = zlist_next (ozookeeper->sync_list);
+                    }
+
+                    if (!found_one) {
+//create a sync object for this key
+//there may exist mupltiple syncs pers node if it died multiple times
+
+                        sync_t *sync;
+                        sync_init (&sync, path, &(ozookeeper->updater), 1);
+                        zlist_append (ozookeeper->sync_list, sync);
+                    }
+//remove this node as a requirement for all previous syncs
+                    sync_t *sync = zlist_first (ozookeeper->sync_list);
+                    while (sync) {
+                        sync_remove_res (sync, comp_name, res_name);
+                        sync = zlist_next (ozookeeper->sync_list);
+                    }
                     ozookeeper_update_remove_node (ozookeeper, db, path);
                 }
 
@@ -738,6 +823,108 @@ w_online (zhandle_t * zh, int type,
         }
 
     }
+}
+
+
+
+void
+w_sync (zhandle_t * zh, int type, int state, const char *path, void *watcherCtx)
+{
+
+
+    ozookeeper_t *ozookeeper = (ozookeeper_t *) watcherCtx;
+    char octopus[8];
+    char comp_name[8];
+    char res_name[8];
+
+    oconfig_octopus (ozookeeper->config, octopus);
+    char *temp;
+    int temp_size;
+    part_path ((const char *) path, 2, &temp, &temp_size);
+    strncpy (res_name, temp, temp_size);
+    res_name[temp_size] = '\0';
+    part_path (path, 4, &temp, &temp_size);
+    strncpy (comp_name, temp, temp_size);
+    comp_name[temp_size] = '\0';
+
+
+    if (type == ZOO_SESSION_EVENT
+        && (state == ZOO_EXPIRED_SESSION_STATE
+            || state == ZOO_AUTH_FAILED_STATE)) {
+//do nothing global watcher will reinitialize things
+
+
+    }
+    else {
+
+        int m, n;
+
+        oz_updater_search ((&ozookeeper->updater), 0, comp_name, res_name, &m,
+                           &n);
+
+        assert ((m != -1) && (n != -1));
+
+
+        char tpath[1000];
+
+        sprintf (tpath, "/%s/computers/%s/worker_nodes/%s/sync", octopus,
+                 comp_name, res_name);
+        int result;
+
+        char str_array[16000] = { 0 };
+        int str_array_length = 16000;
+        struct Stat stat;
+
+        result =
+            zoo_get (ozookeeper->zh, tpath, 0, str_array,
+                     &str_array_length, &stat);
+
+        assert (result == ZOK);
+
+        int diff = stat.version - ozookeeper->updater.w_sync_version[m][n];
+        ozookeeper->updater.w_sync_version[m][n] = stat.version;
+
+
+        int i;
+        for (i = 0; i < diff; i++) {
+            char spath[16] = { 0 };
+            memcpy (spath, str_array + str_array_length - 8 * (1 + diff), 8);
+
+//search for a sync object that requires a sync by this node, else create a new sync.
+            int found_one = 0;
+            sync_t *iter = zlist_first (ozookeeper->sync_list);
+            while (iter) {
+                if (strcmp (iter->key, spath) == 0) {
+                    found_one += sync_remove_res (iter, comp_name, res_name);
+
+//TODO
+                    if (sync_ready (iter)) {
+                        ozookeeper_update_sync_remove (ozookeeper, spath);
+                    }
+
+                }
+                iter = zlist_next (ozookeeper->sync_list);
+            }
+
+            if (found_one == 0) {
+
+                sync_t *sync;
+                sync_init (&sync, spath, &(ozookeeper->updater), 0);
+                zlist_append (ozookeeper->sync_list, sync);
+
+                sync_remove_res (sync, comp_name, res_name);
+
+                if (sync_ready (iter)) {
+                    ozookeeper_update_sync_remove (ozookeeper, spath);
+                }
+
+            }
+
+        }
+
+
+    }
+
 }
 
 
@@ -834,7 +1021,7 @@ w_st_piece (zhandle_t * zh, int type,
 
                 assert (result == ZOK);
 
-                sprintf (spath, "%s%s", comp_name, res_name);
+                sprintf (spath, "%s/%s", comp_name, res_name);
                 ozookeeper_update_st_piece (ozookeeper, db, spath, st_piece);
 
 
@@ -949,7 +1136,7 @@ w_n_pieces (zhandle_t * zh, int type,
 
                 assert (result == ZOK);
 
-                sprintf (spath, "%s%s", comp_name, res_name);
+                sprintf (spath, "%s/%s", comp_name, res_name);
                 ozookeeper_update_n_pieces (ozookeeper, db, spath, n_pieces);
 
 
@@ -1086,7 +1273,7 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
             if (db) {
                 char *res = zlist_first (db_old);
                 while (res) {
-                    sprintf (spath, "%s%s", comp_name, res);
+                    sprintf (spath, "%s/%s", comp_name, res);
                     ozookeeper_update_delete_node (ozookeeper, spath);
                     res = zlist_next (db_old);
                 }

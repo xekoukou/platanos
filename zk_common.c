@@ -17,10 +17,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include<string.h>
+#include"zk_common.h"
 
 //returned pointer to the same memory
-const char *
+char *
 last_path (const char *path)
 {
 
@@ -28,7 +28,7 @@ last_path (const char *path)
     int iter;
     for (iter = size - 1; iter >= 0; iter--) {
         if (path[iter] == '/') {
-            return &(path[iter + 1]);
+            return (char *) &(path[iter + 1]);
         }
     }
     return NULL;
@@ -38,7 +38,7 @@ last_path (const char *path)
 // the result , ie start doesnt have a null at the end
 //location 1 means first from the last
 void
-part_path (char *path, int location, char **start, int *siz)
+part_path (const char *path, int location, char **start, int *siz)
 {
 
     int st = strlen (path);
@@ -61,4 +61,27 @@ part_path (char *path, int location, char **start, int *siz)
 
     *start = &(path[st + 1]);
     *siz = -st + end - 1;
+}
+
+//the initial struct is given
+void
+duplicate_String_vector (struct String_vector *duplicate,
+                         struct String_vector *vector)
+{
+
+    duplicate->count = vector->count;
+
+    if (vector->count != 0) {
+        duplicate->data = calloc (sizeof (*duplicate->data), vector->count);
+    }
+    else {
+        duplicate->data = 0;
+    }
+
+    int i;
+    for (i = 0; i < vector->count; i++) {
+        duplicate->data[i] = calloc (strlen (vector->data[i]) + 1, 1);
+        memcpy (duplicate->data[i], vector->data[i],
+                strlen (vector->data[i]) + 1);
+    }
 }

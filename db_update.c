@@ -17,35 +17,19 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OCTOPUS_DB_H_
-#define OCTOPUS_DB_H_
 
+#include "db_update.h"
 
-#include"dbo.h"
-#include"db_update.h"
-#include"db_balance.h"
-#include"nodes.h"
-#include"zookeeper.h"
-
-
-
-struct db_t
+void
+db_update_init (db_update_t ** update, void *dealer, router_t * db_router,
+                db_balance_t * balance, db_t * db, void *in, void *out)
 {
-    zhandle_t *zh;
-    oconfig_t *config;
-    char *id;                   //comp_name +res_name
-    char *res_name;
-    char *comp_name;
-};
-
-typedef struct db_t db_t;
-
-void db_init (db_t ** db, zhandle_t * zh, oconfig_t * config, char *comp_name,
-              char *res_name);
-
-
-
-//max 1000 dbs per computer
-void *db_fn (void *arg);
-
-#endif
+    *update = malloc (sizeof (update_t));
+    (*update)->id = 0;
+    (*update)->dealer = dealer;
+    (*update)->balance = balance;
+    (*update)->db = db;
+    (*update)->db_router = db_router;
+    (*update)->in = in;
+    (*update)->out = out;
+}

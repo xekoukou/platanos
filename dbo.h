@@ -17,35 +17,44 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OCTOPUS_DB_H_
-#define OCTOPUS_DB_H_
-
-
-#include"dbo.h"
-#include"db_update.h"
-#include"db_balance.h"
-#include"nodes.h"
-#include"zookeeper.h"
 
 
 
-struct db_t
+
+
+#ifndef _OCTOPUS_DBO_H_
+#define _OCTOPUS_DBO_H_
+
+
+//leveldb
+#include<leveldb/c.h>
+#include<leveldb/c.h>
+#include<string.h>
+#include<stdlib.h>
+#include<stdio.h>
+
+
+struct dbo_t
 {
-    zhandle_t *zh;
-    oconfig_t *config;
-    char *id;                   //comp_name +res_name
-    char *res_name;
-    char *comp_name;
+    leveldb_t *db;
+    leveldb_options_t *options;
+    leveldb_readoptions_t *readoptions;
+    leveldb_writeoptions_t *writeoptions;
+    char *location;
+
 };
 
-typedef struct db_t db_t;
-
-void db_init (db_t ** db, zhandle_t * zh, oconfig_t * config, char *comp_name,
-              char *res_name);
+typedef struct dbo_t dbo_t;
 
 
+//id is the address/id of the thread/node
+void dbo_init (dbo_t ** dbo);
 
-//max 1000 dbs per computer
-void *db_fn (void *arg);
+//sleep a few seconds after
+void dbo_close (dbo_t * dbo);
+
+void dbo_open (dbo_t * dbo, char *location);
+
+void dbo_destroy (dbo_t ** dbo);
 
 #endif

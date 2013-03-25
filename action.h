@@ -33,7 +33,7 @@ struct action_t
 {                               //actions are only vertices that are received
     struct _hkey_t start;
     struct _hkey_t end;
-    char key[17];
+    char key[18];
 };
 
 typedef struct action_t action_t;
