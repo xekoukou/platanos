@@ -20,10 +20,15 @@
 
 
 
-#ifndef _OCTOPUS_UPDATE_H_
-#define _OCTOPUS_UPDATE_H_
+#ifndef _OCTOPUS_DB_UPDATE_H_
+#define _OCTOPUS_DB_UPDATE_H_
 
 #include"db_balance.h"
+#include"db.h"
+#include"router.h"
+
+struct db_t;
+typedef struct db_t db_t;
 
 
 struct db_update_t
@@ -34,7 +39,7 @@ struct db_update_t
     db_t *db;
     void *in;
     void *out;
-    void *db_router;
+    router_t *db_router;
 };
 
 typedef struct db_update_t db_update_t;

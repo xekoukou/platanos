@@ -107,7 +107,7 @@ on_receives_destroy (zlist_t * on_receives, balance_t * balance, node_t * node)
 
 
             zlist_remove (balance->on_receives, iter);
-            on_receive_destroy (iter);
+            on_receive_destroy (&iter);
         }
 
         iter = zlist_next (on_receives);

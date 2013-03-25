@@ -27,8 +27,7 @@
 #include<czmq.h>
 #include"vertex.h"
 #include"intervals.h"
-#include"on_give.h"
-#include"on_receive.h"
+#include"dbo.h"
 
 
 
@@ -38,32 +37,15 @@ struct db_balance_t
     dbo_t *dbo;
     void *router_bl;            //used to tranfer nodes to the apropriate nodes if necessary
     void *self_bl;
-    intervals_t *intervals;
-    zlist_t *events;
-    zlist_t *actions;
-    zlist_t *on_gives;
-    zlist_t *on_receives;
-    //used by on_gives scheduling
-    int un_id;
-    int64_t next_time;
-    char *self_key;             //used to send the interval of the on_gives
+    char self_key[16];
 };
 
 typedef struct db_balance_t db_balance_t;
 
-struct on_give_t;
-typedef struct on_give_t on_give_t;
 
 
-void balance_init (balance_t ** balance, dbo_t * dbo,
-                   void *router_bl, void *self_bl, char *self_key);
-
-//update after an event to a specific on_give
-void balance_update_give_timer (balance_t * balance, on_give_t * on_give);
-
-void balance_new_msg (balance_t * balance, zmsg_t * msg);
-
-void balance_lazy_pirate (balance_t * balance);
+void db_balance_init (db_balance_t ** balance, dbo_t * dbo,
+                      void *router_bl, void *self_bl, char *key);
 
 
 #endif

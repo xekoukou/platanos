@@ -301,6 +301,20 @@ main ()
                             0, NULL, 0);
 
 
+            port = oconfig_incr_port (fconfig);
+            sprintf (bind_location, "tcp://%s:%d", config[5], port);
+            sprintf (path, "/%s/computers/%s/%s/%s/bind_point_bl", config[6],
+                     config[2], root, config[3]);
+            result =
+                zoo_create (zh, path, bind_location,
+                            strlen (bind_location) + 1, &ZOO_OPEN_ACL_UNSAFE,
+                            0, NULL, 0);
+
+
+            assert (ZOK == result);
+
+
+
             assert (ZOK == result);
             sprintf (path, "/%s/computers/%s/%s/%s/db_location", config[6],
                      config[2], root, config[3]);

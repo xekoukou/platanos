@@ -36,6 +36,7 @@ db_add_self (db_update_t * update, zmsg_t * msg)
     int n_pieces;
     unsigned long st_piece;
     char bind_point[50];
+    char bind_point_bl[50];
     char db_location[1000];
 
 
@@ -49,6 +50,8 @@ db_add_self (db_update_t * update, zmsg_t * msg)
     memcpy (&st_piece, zframe_data (frame), zframe_size (frame));
     frame = zmsg_next (msg);
     memcpy (bind_point, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (bind_point_bl, zframe_data (frame), zframe_size (frame));
     frame = zmsg_next (msg);
     memcpy (db_location, zframe_data (frame), zframe_size (frame));
 
@@ -64,7 +67,7 @@ db_add_self (db_update_t * update, zmsg_t * msg)
     update->db_router->self = self;
 
 //open the database
-    dbo_open (update->dbo, db_location);
+    dbo_open (update->balance->dbo, db_location);
 
 //the rest of the router update will happen when the node goes online
 
@@ -88,31 +91,31 @@ db_add_self (db_update_t * update, zmsg_t * msg)
 
 
 void
-db_remove_node (update_t * update, zmsg_t * msg)
+db_remove_node (db_update_t * update, zmsg_t * msg)
 {
 
 }
 
 void
-db_delete_node (update_t * update, zmsg_t * msg)
+db_delete_node (db_update_t * update, zmsg_t * msg)
 {
 
 }
 
 void
-db_add_node (update_t * update, zmsg_t * msg)
+db_add_node (db_update_t * update, zmsg_t * msg)
 {
 
 }
 
 void
-db_update_st_piece (update_t * update, zmsg_t * msg)
+db_update_st_piece (db_update_t * update, zmsg_t * msg)
 {
 
 }
 
 void
-db_update_n_pieces (update_t * update, zmsg_t * msg)
+db_update_n_pieces (db_update_t * update, zmsg_t * msg)
 {
 
 }
@@ -141,7 +144,7 @@ db_go_online (db_t * db)
 
 
 void
-db_update (update_t * update, void *sub)
+db_update (db_update_t * update, void *sub)
 {
 
 //check if it is a new update or an old one
@@ -235,7 +238,6 @@ db_update (update_t * update, void *sub)
         }
     }
 
-    return 0;
 }
 
 
@@ -255,7 +257,8 @@ db_fn (void *arg)
     void *sub = zsocket_new (ctx, ZMQ_SUB);
     void *dealer = zsocket_new (ctx, ZMQ_DEALER);
 
-    char identity[17];
+    char identity[17];          //14+2+1
+
     sprintf (identity, "%sdb", db->id);
     zmq_setsockopt (dealer, ZMQ_IDENTITY, identity, strlen (identity));
     zmq_setsockopt (sub, ZMQ_SUBSCRIBE, identity, strlen (identity));
@@ -274,7 +277,6 @@ db_fn (void *arg)
     void *out = zsocket_new (ctx, ZMQ_ROUTER);
     void *in = zsocket_new (ctx, ZMQ_DEALER);
 
-    char identity[17];          //14+2+1
 
     sprintf (identity, "%sdb", db->id);
     zmq_setsockopt (in, ZMQ_IDENTITY, identity, strlen (identity));
@@ -284,7 +286,7 @@ db_fn (void *arg)
 
     void *router_bl = zsocket_new (ctx, ZMQ_ROUTER);
     void *self_bl = zsocket_new (ctx, ZMQ_DEALER);
-    zmq_setsockopt (self_bl, ZMQ_IDENTITY, worker->id, strlen (worker->id));
+    zmq_setsockopt (self_bl, ZMQ_IDENTITY, db->id, strlen (db->id));
 
 
     dbo_t *dbo;
@@ -308,8 +310,7 @@ db_fn (void *arg)
 //used to update things, like the router object
     db_update_t *update;
 
-    db_update_init (&update, dealer, router_t * db_router, balance, db, in,
-                    out);
+    db_update_init (&update, dealer, db_router, balance, db, in, out);
 
 
 

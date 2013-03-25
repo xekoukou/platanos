@@ -768,7 +768,7 @@ go_online (worker_t * worker)
 }
 
 void
-db_add_node (update_t * update, zmsg_t * msg)
+wdb_add_node (update_t * update, zmsg_t * msg)
 {
     int start;
     node_t *node;
@@ -814,7 +814,7 @@ db_add_node (update_t * update, zmsg_t * msg)
 }
 
 void
-db_update_st_piece (update_t * update, zmsg_t * msg)
+wdb_update_st_piece (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
@@ -841,7 +841,7 @@ db_update_st_piece (update_t * update, zmsg_t * msg)
 }
 
 void
-db_update_n_pieces (update_t * update, zmsg_t * msg)
+wdb_update_n_pieces (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
@@ -868,7 +868,7 @@ db_update_n_pieces (update_t * update, zmsg_t * msg)
 
 
 void
-db_remove_node (update_t * update, zmsg_t * msg)
+wdb_remove_node (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
@@ -890,7 +890,7 @@ db_remove_node (update_t * update, zmsg_t * msg)
 
 
 void
-db_delete_node (update_t * update, zmsg_t * msg)
+wdb_delete_node (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
@@ -940,32 +940,32 @@ worker_update_db (update_t * update, zmsg_t * msg)
             if (memcmp
                 (zframe_data (frame), "delete_node",
                  zframe_size (frame)) == 0) {
-                db_delete_node (update, msg);
+                wdb_delete_node (update, msg);
             }
             else {
 
                 if (memcmp
                     (zframe_data (frame), "remove_node",
                      zframe_size (frame)) == 0) {
-                    db_remove_node (update, msg);
+                    wdb_remove_node (update, msg);
                 }
                 else {
                     if (memcmp
                         (zframe_data (frame), "add_node",
                          zframe_size (frame)) == 0) {
-                        db_add_node (update, msg);
+                        wdb_add_node (update, msg);
                     }
                     else {
                         if (memcmp
                             (zframe_data (frame), "st_piece",
                              zframe_size (frame)) == 0) {
-                            db_update_st_piece (update, msg);
+                            wdb_update_st_piece (update, msg);
                         }
                         else {
                             if (memcmp
                                 (zframe_data (frame), "n_pieces",
                                  zframe_size (frame)) == 0) {
-                                db_update_n_pieces (update, msg);
+                                wdb_update_n_pieces (update, msg);
                             }
                             else {
                                 if (memcmp

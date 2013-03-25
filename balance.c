@@ -49,7 +49,8 @@ balance_init (balance_t ** balance, worker_t * worker,
     (*balance)->on_receives = zlist_new ();
     (*balance)->un_id = 0;
     (*balance)->next_time = -1;
-    (*balance)->self_key = self_key;
+    memset ((*balance)->self_key, 0, 16);
+    strcpy ((*balance)->self_key, self_key);
 
 
 }
@@ -820,7 +821,7 @@ balance_sync (balance_t * balance, char *key)
         char my_res_name[8] = { 0 };
         char my_comp_name[8] = { 0 };
 
-        part_path (balance->self_key, 1, pointer, &size);
+        part_path (balance->self_key, 1, &pointer, &size);
         memcpy (my_res_name, pointer, size);
         memcpy (my_comp_name, balance->self_key,
                 strlen (balance->self_key) - size - 1);
@@ -833,23 +834,22 @@ balance_sync (balance_t * balance, char *key)
 
         char str_array[16000] = { 0 };  //maximum 1000 deaths 
         int str_array_length = 16000;
-        Stat stat;
+        struct Stat stat;
 
         result =
-            zoo_get (balance->worker->id, path, 0, str_array, &str_array_length,
+            zoo_get (balance->worker->zh, path, 0, str_array, &str_array_length,
                      &stat);
 
         assert (result == ZOK);
 
         if ((str_array_length == 16000) || (str_array_length == -1)) {
 
-            str_array = {
-            0};
-            memcpy (string_array, key, 16);
+            memset (str_array, 0, 16000);
+            memcpy (str_array, key, 16);
 
         }
         else {
-            memcpy (string_array + str_array_length, key, 16);
+            memcpy (str_array + str_array_length, key, 16);
         }
 
         result =

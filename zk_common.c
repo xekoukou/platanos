@@ -38,7 +38,7 @@ last_path (const char *path)
 // the result , ie start doesnt have a null at the end
 //location 1 means first from the last
 void
-part_path (char *path, int location, char **start, int *siz)
+part_path (const char *path, int location, char **start, int *siz)
 {
 
     int st = strlen (path);
@@ -65,10 +65,18 @@ part_path (char *path, int location, char **start, int *siz)
 
 //the initial struct is given
 void
-duplicate_String_vector (struct String_vector * duplicate, struct String_vector * vector)
+duplicate_String_vector (struct String_vector *duplicate,
+                         struct String_vector *vector)
 {
 
-    allocate_String_vector (duplicate, vector->count);
+    duplicate->count = vector->count;
+
+    if (vector->count != 0) {
+        duplicate->data = calloc (sizeof (*duplicate->data), vector->count);
+    }
+    else {
+        duplicate->data = 0;
+    }
 
     int i;
     for (i = 0; i < vector->count; i++) {

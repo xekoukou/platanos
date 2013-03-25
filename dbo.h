@@ -34,7 +34,7 @@
 #include<stdio.h>
 
 
-typedef struct
+struct dbo_t
 {
     leveldb_t *db;
     leveldb_options_t *options;
@@ -42,7 +42,9 @@ typedef struct
     leveldb_writeoptions_t *writeoptions;
     char *location;
 
-} dbo_t;
+};
+
+typedef struct dbo_t dbo_t;
 
 
 //id is the address/id of the thread/node

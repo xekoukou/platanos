@@ -58,7 +58,7 @@ dbo_open (dbo_t * dbo, char *location)
 
     char *errptr = NULL;
 
-    (*dbo)->db = leveldb_open (options, location, &errptr);
+    dbo->db = leveldb_open (dbo->options, location, &errptr);
     if (errptr) {
         printf ("\n%s", errptr);
         exit (1);

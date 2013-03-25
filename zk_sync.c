@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include"sync.h"
+#include"zk_sync.h"
 
 void
 comp_res_init (comp_res_t ** comp_res, char *comp_name)
@@ -26,9 +26,7 @@ comp_res_init (comp_res_t ** comp_res, char *comp_name)
     (*comp_res) = malloc (sizeof (comp_res));
     (*comp_res)->res_list = zlist_new ();
 
-    assert (strlen (key) < 8);
-    (*comp_res)->key = {
-    0};
+    assert (strlen (comp_name) < 8);
     strcpy ((*comp_res)->name, comp_name);
 
     zlist_autofree ((*comp_res)->res_list);
@@ -67,7 +65,7 @@ void
 comp_res_destroy (comp_res_t ** comp_res)
 {
 
-    zlist_destroy ((*comp_res)->res_list);
+    zlist_destroy (&((*comp_res)->res_list));
     free (*comp_res);
 
     *comp_res = NULL;
@@ -86,7 +84,7 @@ sync_init (sync_t ** sync, char *key, oz_updater_t * updater, int old)
     int i;
     for (i = 0; i < updater->computers.count; i++) {
         comp_res_t *comp_res;
-        comp_res_init (comp_res, updater->computers.data[i]);
+        comp_res_init (&comp_res, updater->computers.data[i]);
         zlist_append ((*sync)->comp_res_list, comp_res);
 
         int j;
@@ -113,7 +111,7 @@ sync_remove_comp (sync_t * sync, char *comp_name)
 }
 
 int
-sync_remove_res (sync_t * sync, char *comp_name, char res_name)
+sync_remove_res (sync_t * sync, char *comp_name, char *res_name)
 {
 
     int found_it = 0;

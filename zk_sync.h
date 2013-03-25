@@ -22,6 +22,7 @@
 
 #include<zookeeper/zookeeper.h>
 #include"zk_common.h"
+#include"zk_updater.h"
 #include<czmq.h>
 
 
@@ -29,26 +30,29 @@ struct comp_res_t
 {
     char name[8];
     zlist_t *res_list;
-}
+};
+
+typedef struct comp_res_t comp_res_t;
 
 void comp_res_init (comp_res_t ** comp_res, char *comp_name);
 void comp_res_add (comp_res_t * comp_res, char *res_name);
 int comp_res_remove (comp_res_t * comp_res, char *res_name);
 void comp_res_destroy (comp_res_t ** comp_res);
 
-typedef struct comp_res_t comp_res_t;
 
 struct sync_t
 {
     int old;
     char key[16];
     zlist_t *comp_res_list;
-}
+};
 
 typedef struct sync_t sync_t;
 
 void sync_init (sync_t ** sync, char *key, oz_updater_t * updater, int old);
 int sync_remove_comp (sync_t * sync, char *comp_name);
-int
-sync_remove_res (sync_t * sync, char *comp_name, char res_name)
-     int sync_ready (sync_t * sync);
+int sync_remove_res (sync_t * sync, char *comp_name, char *res_name);
+int sync_ready (sync_t * sync);
+
+
+#endif

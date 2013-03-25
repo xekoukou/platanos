@@ -21,16 +21,11 @@
 #define OCTOPUS_DB_H_
 
 
-#include"on_give.h"
-#include"on_receive.h"
-#include"update.h"
-#include"balance.h"
-#include"events.h"
+#include"dbo.h"
+#include"db_update.h"
+#include"db_balance.h"
 #include"nodes.h"
-#include"actions.h"
 #include"zookeeper.h"
-#include"sleep.h"
-#include"compute.h"
 
 
 

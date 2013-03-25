@@ -89,15 +89,14 @@ event_possible (event_t * event, intervals_t * intervals)
 void
 event_clean (event_t * event, khash_t (vertices) * hash)
 {
-uint64_t key;
+    uint64_t key;
 
     interval_t *interval;
     interval_init (&interval, &(event->start), &(event->end));
 
     khint_t hiter;
 
-    for (hiter = kh_begin (hash); hiter != kh_end (hash);
-         ++hiter) {
+    for (hiter = kh_begin (hash); hiter != kh_end (hash); ++hiter) {
         if (!kh_exist (hash, hiter))
             continue;
 
@@ -110,5 +109,5 @@ uint64_t key;
 
         }
     }
-free(interval);
+    free (interval);
 }

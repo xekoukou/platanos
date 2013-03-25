@@ -267,6 +267,7 @@ oz_updater_new_resources (oz_updater_t * updater, char *comp_name,
 
     struct String_vector *old_resources;
     int **old_online;
+    int32_t **old_sync;
 
     if (db) {
         old_resources = &(updater->db_resources[position]);

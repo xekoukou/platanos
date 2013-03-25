@@ -140,7 +140,7 @@ ozookeeper_destroy (ozookeeper_t ** ozookeeper)
     zookeeper_close ((*ozookeeper)->zh);
     oconfig_destroy ((*ozookeeper)->config);
     oz_updater_destroy (&((*ozookeeper)->updater));
-    zlist_destroy ((*ozookeeper)->sync_list);
+    zlist_destroy (&((*ozookeeper)->sync_list));
     free (*ozookeeper);
     *ozookeeper = NULL;
 }
@@ -481,6 +481,7 @@ ozookeeper_update_add_self (ozookeeper_t * ozookeeper, int db, char *key,
         zmsg_add (msg, zframe_new (bind_point_bl, strlen (bind_point_bl) + 1));
     }
     else {
+        zmsg_add (msg, zframe_new (bind_point_bl, strlen (bind_point_bl) + 1));
         zmsg_add (msg, zframe_new (db_location, strlen (db_location) + 1));
     }
     fprintf (stderr,
@@ -607,6 +608,16 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
             assert (result == ZOK);
 
             buffer_len = 1000;
+            sprintf (path, "/%s/computers/%s/db_nodes/%s/bind_point_bl",
+                     octopus, comp_name, res_name);
+            result =
+                zoo_get (ozookeeper->zh, path, 0, bind_point_bl, &buffer_len,
+                         &stat);
+
+            assert (result == ZOK);
+
+
+            buffer_len = 1000;
             sprintf (path, "/%s/computers/%s/db_nodes/%s/db_location",
                      octopus, comp_name, res_name);
             result =
@@ -650,7 +661,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
                      octopus, comp_name, type, res_name);
             result =
                 zoo_wget (ozookeeper->zh, path, w_sync, ozookeeper,
-                          bufffer, &buffer_len, &stat);
+                          buffer, &buffer_len, &stat);
 
             assert (ZOK == result);
 //we dont need the data, only to set the watch and get the version
@@ -728,11 +739,11 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
 //there may exist mupltiple syncs pers node if it died multiple times
 
                         sync_t *sync;
-                        sync_init (&sync, path, ozookeeper->updater, 1);
+                        sync_init (&sync, path, &(ozookeeper->updater), 1);
                         zlist_append (ozookeeper->sync_list, sync);
                     }
 //remove this node as a requirement for all previous syncs
-                    sync = zlist_first (ozookeeper->sync_list);
+                    sync_t *sync = zlist_first (ozookeeper->sync_list);
                     while (sync) {
                         sync_remove_res (sync, comp_name, res_name);
                         sync = zlist_next (ozookeeper->sync_list);
@@ -825,7 +836,6 @@ w_sync (zhandle_t * zh, int type, int state, const char *path, void *watcherCtx)
     char octopus[8];
     char comp_name[8];
     char res_name[8];
-    int result;
 
     oconfig_octopus (ozookeeper->config, octopus);
     char *temp;
@@ -849,7 +859,8 @@ w_sync (zhandle_t * zh, int type, int state, const char *path, void *watcherCtx)
 
         int m, n;
 
-        oz_updater_search (ozookeeper->updater, 0, comp_name, res_name, &m, &n);
+        oz_updater_search ((&ozookeeper->updater), 0, comp_name, res_name, &m,
+                           &n);
 
         assert ((m != -1) && (n != -1));
 
@@ -862,20 +873,20 @@ w_sync (zhandle_t * zh, int type, int state, const char *path, void *watcherCtx)
 
         char str_array[16000] = { 0 };
         int str_array_length = 16000;
-        Stat stat;
+        struct Stat stat;
 
         result =
-            zoo_get (balance->worker->id, tpath, 0, str_array,
+            zoo_get (ozookeeper->zh, tpath, 0, str_array,
                      &str_array_length, &stat);
 
         assert (result == ZOK);
 
-        int diff = stat.version - ozookeeper->updater.sync_version[m][n];
-        ozookeeper->updater.sync_version[m][n] = stat.version;
+        int diff = stat.version - ozookeeper->updater.w_sync_version[m][n];
+        ozookeeper->updater.w_sync_version[m][n] = stat.version;
 
 
         int i;
-        for (i = 0 i < diff; i++) {
+        for (i = 0; i < diff; i++) {
             char spath[16] = { 0 };
             memcpy (spath, str_array + str_array_length - 8 * (1 + diff), 8);
 
@@ -898,7 +909,7 @@ w_sync (zhandle_t * zh, int type, int state, const char *path, void *watcherCtx)
             if (found_one == 0) {
 
                 sync_t *sync;
-                sync_init (&sync, spath, ozookeeper->updater, 0);
+                sync_init (&sync, spath, &(ozookeeper->updater), 0);
                 zlist_append (ozookeeper->sync_list, sync);
 
                 sync_remove_res (sync, comp_name, res_name);
