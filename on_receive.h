@@ -27,6 +27,9 @@
 struct balance_t;
 typedef struct balance_t balance_t;
 
+struct node_t;
+typedef struct node_t node_t;
+
 typedef struct
 {
     action_t *action;           //this action is happening, you ll need to add it to the list when it finishes

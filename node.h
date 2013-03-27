@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include"hash/khash.h"
+#include"platanos.h"
 
 
 
@@ -38,8 +39,8 @@ struct node_t
     //to remain the same for each vertex despite the failures
     // so that the vertex can know which db to fix in case of failures
 
-    char bind_point_nb[50];     //this is used by db only
-    char bind_point_wb[50];
+    platanos_node_t *platanos_node;
+    char bind_point_db[50];
     char bind_point_bl[50];
 
 };
@@ -48,19 +49,19 @@ struct node_t
 
 typedef struct node_t node_t;
 
-KHASH_MAP_INIT_STR (nodes_t, node_t *);
-
 
 //result should be big enough
 void node_piece (char *key, unsigned long pnumber, char *result);
 
 void node_init (node_t ** node, char *key, int n_pieces,
-                unsigned long st_piece, char *bind_point_nb,
-                char *bind_point_wb, char *bind_point_bl);
+                unsigned long st_piece, char *bind_point_bl,
+                platanos_node_t * platanos_node);
 
 void
 db_node_init (node_t ** node, char *key, int n_pieces,
               unsigned long st_piece, char *bind_point_db);
+
+void node_destroy (node_t ** node);
 
 node_t *node_dup (node_t * node);
 

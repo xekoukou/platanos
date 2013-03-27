@@ -22,7 +22,8 @@
 
 void
 update_init (update_t ** update, void *dealer, router_t * router,
-             router_t * db_router, balance_t * balance, compute_t * compute)
+             router_t * db_router, balance_t * balance, platanos_t * platanos,
+             compute_t * compute)
 {
     *update = malloc (sizeof (update_t));
     (*update)->id = 0;
@@ -30,5 +31,6 @@ update_init (update_t ** update, void *dealer, router_t * router,
     (*update)->router = router;
     (*update)->db_router = db_router;
     (*update)->balance = balance;
+    (*update)->platanos = platanos;
     (*update)->compute = compute;
 }

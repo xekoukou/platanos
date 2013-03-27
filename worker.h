@@ -32,10 +32,13 @@
 #include"zookeeper.h"
 #include"sleep.h"
 #include"compute.h"
+#include"platanos.h"
 
 struct compute_t;
 typedef struct compute_t compute_t;
 
+struct platanos_t;
+typedef struct platanos_t platanos_t;
 
 
 //TODO I havent yet provided a destructor function
@@ -55,14 +58,15 @@ void worker_init (worker_t ** worker, zhandle_t * zh, oconfig_t * config,
                   char *comp_name, char *res_name, localdb_t * localdb);
 
 
-int64_t worker_timeout (balance_t * balance, sleep_t * sleep);
+int64_t worker_timeout (balance_t * balance, sleep_t * sleep,
+                        int64_t platanos_next_time);
 
 
 //returns the new interval or -1 on error
 int worker_new_interval (worker_t * worker, localdb_t * localdb);
 
 void worker_process_timer_events (worker_t * worker, balance_t * balance,
-                                  sleep_t * sleep, compute_t * compute);
+                                  sleep_t * sleep, platanos_t * platanos);
 
 //max 1000 workers per computer
 void *worker_fn (void *arg);

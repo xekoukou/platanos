@@ -24,6 +24,7 @@
 #ifndef OCTOPUS_ROUTER_H_
 #define OCTOPUS_ROUTER_H_
 
+#include "nodes.h"
 #include <stdint.h>
 #include <stddef.h>
 #include "tree/tree.h"
@@ -34,9 +35,9 @@
 #include "event.h"
 #include "hkey.h"
 #include "node.h"
-#include "nodes.h"
 
-
+struct node_t;
+typedef struct node_t node_t;
 
 
 struct hash_t

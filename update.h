@@ -26,9 +26,19 @@
 #include"balance.h"
 #include"router.h"
 #include"compute.h"
+#include"platanos.h"
 
 struct compute_t;
 typedef struct compute_t compute_t;
+
+struct router_t;
+typedef struct router_t router_t;
+
+struct platanos_t;
+typedef struct platanos_t platanos_t;
+
+struct balance_t;
+typedef struct balance_t balance_t;
 
 struct update_t
 {
@@ -37,6 +47,7 @@ struct update_t
     router_t *router;
     router_t *db_router;
     balance_t *balance;
+    platanos_t *platanos;
     compute_t *compute;
 };
 
@@ -44,7 +55,7 @@ typedef struct update_t update_t;
 
 void update_init (update_t ** update, void *dealer, router_t * router,
                   router_t * db_router, balance_t * balance,
-                  struct compute_t *compute);
+                  platanos_t * platanos, struct compute_t *compute);
 
 
 

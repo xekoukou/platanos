@@ -23,9 +23,7 @@
 void
 compute_init (compute_t ** compute, khash_t (vertices) * hash,
               router_t * router, router_t * db_router, zlist_t * events,
-              intervals_t * intervals, void *socket_nb, void *self_nb,
-              void *socket_wb, void *self_wb, localdb_t * localdb,
-              worker_t * worker)
+              intervals_t * intervals, localdb_t * localdb, worker_t * worker)
 {
 
     *compute = malloc (sizeof (compute_t));
@@ -34,10 +32,6 @@ compute_init (compute_t ** compute, khash_t (vertices) * hash,
     (*compute)->db_router = db_router;
     (*compute)->events = events;
     (*compute)->intervals = intervals;
-    (*compute)->socket_nb = socket_nb;
-    (*compute)->self_nb = self_nb;
-    (*compute)->socket_wb = socket_wb;
-    (*compute)->self_wb = self_wb;
     (*compute)->worker = worker;
     (*compute)->hash = hash;
     (*compute)->localdb = localdb;

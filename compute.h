@@ -26,6 +26,9 @@
 struct worker_t;
 typedef struct worker_t worker_t;
 
+struct router_t;
+typedef struct router_t router_t;
+
 struct compute_t
 {
     router_t *router;
@@ -33,10 +36,6 @@ struct compute_t
     zlist_t *events;
     intervals_t *intervals;
       khash_t (vertices) * hash;
-    void *socket_nb;
-    void *self_nb;
-    void *socket_wb;
-    void *self_wb;
     localdb_t *localdb;
     unsigned long counter;
     int interval;               //the interval in which the counter resides
@@ -52,9 +51,8 @@ typedef struct compute_t compute_t;
 
 void compute_init (compute_t ** compute, khash_t (vertices) * hash,
                    router_t * router, router_t * db_router, zlist_t * events,
-                   intervals_t * intervals, void *socket_nb, void *self_nb,
-                   void *socket_wb, void *self_wb, localdb_t * localdb,
-                   worker_t * worker);
+                   intervals_t * intervals,
+                   localdb_t * localdb, worker_t * worker);
 
 
 

@@ -29,45 +29,6 @@
 #define CONFIRM_CHUNK    "\004"
 #define MISSED_CHUNKES    "\005"
 
-void
-worker_send (zmsg_t * msg, unsigned short wb, compute_t * compute)
-{
-    zframe_t *frame = zmsg_first (msg);
-    frame = zmsg_next (msg);
-    uint64_t key;
-    memcpy (&key, zframe_data (frame), sizeof (uint64_t));
-    char *id;
-    id = router_route (compute->router, key);
-
-    //check that self has been initialized
-    assert (compute->router->self != NULL);
-
-    //send to self if necessary
-    if (strcmp (compute->router->self->key, id) == 0) {
-        if (wb) {
-            zmsg_send (&msg, compute->self_wb);
-        }
-        else {
-            zmsg_send (&msg, compute->self_nb);
-        }
-
-    }
-    else {
-        //write address
-        zmsg_wrap (msg, zframe_new (id, strlen (id)));
-        if (wb) {
-            zmsg_send (&msg, compute->socket_wb);
-        }
-        else {
-            zmsg_send (&msg, compute->socket_nb);
-        }
-
-    }
-
-
-
-}
-
 //returns the new interval or -1 on error
 int
 worker_new_interval (worker_t * worker, localdb_t * localdb)
@@ -539,8 +500,6 @@ add_node (update_t * update, zmsg_t * msg)
     char key[100];
     int n_pieces;
     unsigned long st_piece;
-    char bind_point_nb[50];
-    char bind_point_wb[50];
     char bind_point_bl[50];
 
     zframe_t *frame = zmsg_first (msg);
@@ -552,22 +511,15 @@ add_node (update_t * update, zmsg_t * msg)
     frame = zmsg_next (msg);
     memcpy (&st_piece, zframe_data (frame), zframe_size (frame));
     frame = zmsg_next (msg);
-    memcpy (bind_point_nb, zframe_data (frame), zframe_size (frame));
-    frame = zmsg_next (msg);
-    memcpy (bind_point_wb, zframe_data (frame), zframe_size (frame));
-    frame = zmsg_next (msg);
     memcpy (bind_point_bl, zframe_data (frame), zframe_size (frame));
 
 
-    zmsg_destroy (&msg);
 
 //connect to the node
 
+    platanos_node_t *platanos_node = platanos_connect (update->platanos, msg);
+
     int rc;
-    rc = zsocket_connect (update->compute->socket_nb, "%s", bind_point_nb);
-    assert (rc == 0);
-    rc = zsocket_connect (update->compute->socket_wb, "%s", bind_point_wb);
-    assert (rc == 0);
     rc = zsocket_connect (update->balance->router_bl, "%s", bind_point_bl);
     assert (rc == 0);
 
@@ -578,8 +530,7 @@ add_node (update_t * update, zmsg_t * msg)
              "\n%s:add_node: added node with\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
              update->balance->self_key, start, key, n_pieces, st_piece);
 
-    node_init (&node, key, n_pieces, st_piece, bind_point_nb, bind_point_wb,
-               bind_point_bl);
+    node_init (&node, key, n_pieces, st_piece, bind_point_bl, platanos_node);
 
     zlist_t *events;
     int circle;
@@ -690,8 +641,6 @@ add_self (update_t * update, zmsg_t * msg)
     char key[100];
     int n_pieces;
     unsigned long st_piece;
-    char bind_point_nb[50];
-    char bind_point_wb[50];
     char bind_point_bl[50];
 
 
@@ -704,37 +653,25 @@ add_self (update_t * update, zmsg_t * msg)
     frame = zmsg_next (msg);
     memcpy (&st_piece, zframe_data (frame), zframe_size (frame));
     frame = zmsg_next (msg);
-    memcpy (bind_point_nb, zframe_data (frame), zframe_size (frame));
-    frame = zmsg_next (msg);
-    memcpy (bind_point_wb, zframe_data (frame), zframe_size (frame));
-    frame = zmsg_next (msg);
     memcpy (bind_point_bl, zframe_data (frame), zframe_size (frame));
 
-    zmsg_destroy (&msg);
+
+    platanos_node_t *platanos_node = platanos_bind (update->platanos, msg);
+
+    int rc;
+    rc = zsocket_bind (update->balance->self_bl, "%s", bind_point_bl);
+    assert (rc != -1);
+
 
     fprintf (stderr, "\n%s:add_self:\nkey:%s\nn_pieces:%d\nst_piece:%lu",
              key, key, n_pieces, st_piece);
 
-    node_init (&self, key, n_pieces, st_piece, bind_point_nb, bind_point_wb,
-               bind_point_bl);
+    node_init (&self, key, n_pieces, st_piece, bind_point_bl, platanos_node);
 
 //update router
     update->router->self = self;
 
 //the rest of the router update will happen when the node goes online
-
-//bind sockets
-    int rc;
-    rc = zsocket_bind (update->compute->self_nb, "%s", bind_point_nb);
-    assert (rc != -1);
-    rc = zsocket_bind (update->compute->self_wb, "%s", bind_point_wb);
-    assert (rc != -1);
-    rc = zsocket_connect (update->compute->socket_nb, "%s", bind_point_nb);
-    assert (rc == 0);
-    rc = zsocket_connect (update->compute->socket_wb, "%s", bind_point_wb);
-    assert (rc == 0);
-    rc = zsocket_bind (update->balance->self_bl, "%s", bind_point_bl);
-    assert (rc != -1);
 
     fprintf (stderr, "\n%s:add_self: received its configuration",
              update->balance->self_key);
@@ -786,19 +723,14 @@ wdb_add_node (update_t * update, zmsg_t * msg)
     frame = zmsg_next (msg);
     memcpy (&st_piece, zframe_data (frame), zframe_size (frame));
     frame = zmsg_next (msg);
+//this is the balance location not needed here
+    frame = zmsg_next (msg);
     memcpy (bind_point_db, zframe_data (frame), zframe_size (frame));
 
 
     zmsg_destroy (&msg);
 
-//connect to the node
-
-    int rc;
-    rc = zsocket_connect (update->compute->socket_nb, "%s", bind_point_db);
-    assert (rc == 0);
-    rc = zsocket_connect (update->compute->socket_wb, "%s", bind_point_db);
-    assert (rc == 0);
-
+    platanos_connect_to_db (update->platanos, bind_point_db);
 
 
 
@@ -1101,13 +1033,13 @@ worker_update (update_t * update, void *sub)
 
 
 void
-worker_sleep (sleep_t * sleep, compute_t * compute)
+worker_sleep (sleep_t * sleep, platanos_t * platanos)
 {
     zmsg_t *msg;
     unsigned short wb;
 
     while ((msg = sleep_awake (sleep, &wb))) {
-        worker_send (msg, wb, compute);
+        platanos_send (platanos, msg);
 
     }
 
@@ -1142,21 +1074,6 @@ worker_fn (void *arg)
     rc = zsocket_connect (dealer, "tcp://127.0.0.1:49153");
     assert (rc == 0);
 
-
-
-
-//worker infrastruct
-
-    void *socket_wb = zsocket_new (ctx, ZMQ_ROUTER);
-    void *socket_nb = zsocket_new (ctx, ZMQ_ROUTER);
-    void *self_wb = zsocket_new (ctx, ZMQ_DEALER);
-    void *self_nb = zsocket_new (ctx, ZMQ_DEALER);
-
-
-    sprintf (identity, "%swb", worker->id);
-    zmq_setsockopt (self_wb, ZMQ_IDENTITY, identity, strlen (identity));
-    sprintf (identity, "%snb", worker->id);
-    zmq_setsockopt (self_nb, ZMQ_IDENTITY, identity, strlen (identity));
 
 //balance infrastructure
 
@@ -1193,43 +1110,55 @@ worker_fn (void *arg)
     compute_t *compute;
 
     compute_init (&compute, hash, router, db_router, balance->events,
-                  balance->intervals, socket_nb, self_nb, socket_wb, self_wb,
-                  worker->localdb, worker);
+                  balance->intervals, worker->localdb, worker);
+
+
+    platanos_poll_t *platanos_poll;
+    platanos_poll_init (&platanos_poll);
+    platanos_t *platanos;
+    platanos_init (&platanos, platanos_poll, compute, worker->id, ctx);
+
 
 //update object
 //used to update things, like the router object
     update_t *update;
 
 
-    update_init (&update, dealer, router, db_router, balance, compute);
+    update_init (&update, dealer, router, db_router, balance, platanos,
+                 compute);
 
-    zmq_pollitem_t pollitems[4] = { {sub, 0, ZMQ_POLLIN}, {self_bl, 0,
-                                                           ZMQ_POLLIN},
-    {self_wb, 0,
-     ZMQ_POLLIN},
-    {self_nb, 0, ZMQ_POLLIN}
-    };
+
+    zmq_pollitem_t *platanos_pollitems;
+    int size;
+    platanos_poll_pollitems (platanos_poll, &platanos_pollitems, &size);
+
+    zmq_pollitem_t pollitems[size + 2];
+    pollitems[0] = (zmq_pollitem_t) {
+    sub, 0, ZMQ_POLLIN};
+    pollitems[size + 1] = (zmq_pollitem_t) {
+    self_bl, 0, ZMQ_POLLIN};
+    memcpy (&(pollitems[1]), platanos_pollitems,
+            sizeof (zmq_pollitem_t) * size);
+
     fprintf (stderr, "\n%s:worker: ready.", worker->id);
 //main loop
     while (1) {
-        int64_t timeout = worker_timeout (balance, sleep);
-        rc = zmq_poll (pollitems, 4, timeout);
+        int64_t timeout = worker_timeout (balance, sleep,
+                                          platanos_poll_before_poll
+                                          (platanos_poll));
+        rc = zmq_poll (pollitems, size + 2, timeout);
         assert (rc != -1);
 
         if (timeout > 0) {
-            worker_process_timer_events (worker, balance, sleep, compute);
+            worker_process_timer_events (worker, balance, sleep, platanos);
         }
         if (pollitems[0].revents & ZMQ_POLLIN) {
             worker_update (update, sub);
         }
+        platanos_do (platanos);
+
         if (pollitems[1].revents & ZMQ_POLLIN) {
             worker_balance (balance);
-        }
-        if (pollitems[2].revents & ZMQ_POLLIN) {
-
-        }
-        if (pollitems[3].revents & ZMQ_POLLIN) {
-
         }
     }
 }
@@ -1237,36 +1166,46 @@ worker_fn (void *arg)
 
 
 int64_t
-worker_timeout (balance_t * balance, sleep_t * sleep)
+worker_timeout (balance_t * balance, sleep_t * sleep,
+                int64_t platanos_next_time)
 {
 //finding the minimum timeout
     int64_t time = zclock_time ();
-    int64_t timeout = -1;
-    if (balance->next_time < 0) {
-        if (sleep->next_time > 0) {
 
-            timeout = sleep->next_time - time;
+    int64_t last;
+    if (balance->next_time > sleep->next_time) {
+        last = sleep->next_time;
+        if (last < 0) {
+            last = balance->next_time;
         }
     }
-
-
     else {
-        if (sleep->next_time < 0) {
-            timeout = balance->next_time - time;
-        }
-        else {
 
-            if (balance->next_time > sleep->next_time) {
-                timeout = sleep->next_time - time;
-            }
-            else {
-                timeout = balance->next_time - time;
-            }
+        last = balance->next_time;
+        if (last < 0) {
+            last = sleep->next_time;
+        }
+
+    }
+
+    if (last > platanos_next_time) {
+        if (platanos_next_time > 0) {
+            last = platanos_next_time;
+        }
+    }
+    else {
+        if (last < 0) {
+            last = platanos_next_time;
         }
     }
 
-    if (timeout < 0) {
-        timeout = -1;
+    int64_t timeout = -1;
+    if (last > 0) {
+        timeout = last - time;
+        if (timeout < 0) {
+            timeout = 0;
+        }
+
     }
 
     fprintf (stderr, "\n:%s:timeout:The new timeout is: %ld.\n",
@@ -1278,7 +1217,7 @@ worker_timeout (balance_t * balance, sleep_t * sleep)
 
 void
 worker_process_timer_events (worker_t * worker, balance_t * balance,
-                             sleep_t * sleep, compute_t * compute)
+                             sleep_t * sleep, platanos_t * platanos)
 {
     int64_t time = zclock_time ();
 
@@ -1286,7 +1225,7 @@ worker_process_timer_events (worker_t * worker, balance_t * balance,
         worker_balance_lazy_pirate (balance);
     }
     if (sleep->next_time < time) {
-        worker_sleep (sleep, compute);
+        worker_sleep (sleep, platanos);
     }
 
 }

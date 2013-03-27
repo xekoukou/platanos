@@ -27,6 +27,10 @@
 #include"hash/khash.h"
 #include "balance.h"
 
+struct node_t;
+typedef struct node_t node_t;
+
+
 
 struct on_give_t
 {
