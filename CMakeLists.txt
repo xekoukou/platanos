@@ -44,7 +44,6 @@ cmake_minimum_required (VERSION 2.8)
                 nodes.c
                 router.c
                 sleep.c
-                vertex.c
                 worker.c
                 workers.c
                 dbs.c

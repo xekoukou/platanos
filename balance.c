@@ -113,16 +113,16 @@ balance_send_next_chunk (balance_t * balance, on_give_t * on_give,
             key = kh_key (balance->hash, hiter);
             if (interval_belongs (on_give->interval, key)) {
                 vertices++;
-                vertex_init (&vertex);
-                memcpy (vertex, &(kh_val (balance->hash, hiter)),
-                        sizeof (vertex_t));
+                vertex=vertex_dup( &(kh_val (balance->hash, hiter)));
+                        
                 //delete it from the hash
+                vertex_destroy(vertex);
                 kh_del (vertices, balance->hash, hiter);
 
                 //add it to the list of sent vertices
                 zlist_append (on_give->unc_vertices, vertex);
                 //add it
-                zmsg_add (responce_dup, zframe_new (vertex, sizeof (vertex_t)));
+                zmsg_add (responce_dup,vertex_serialize(vertex));
                 if (vertices == COUNTER_SIZE) {
                     zframe_t *address_dup = zframe_dup (address);
                     zmsg_wrap (responce_dup, address_dup);
@@ -288,18 +288,15 @@ balance_missed_chunkes (balance_t * balance, zmsg_t * msg, zframe_t * address)
 
 
             vertex_t *vertex;
-            vertex_init (&vertex);
-            memcpy (vertex, zlist_first (on_give->unc_vertices),
-                    sizeof (vertex_t));
-            zmsg_add (responce_dup, zframe_new (vertex, sizeof (vertex_t)));
+            vertex=zlist_first (on_give->unc_vertices);
+                    
+            zmsg_add (responce_dup, vertex_serialize(vertex));
 
             int i;
             for (i = (diff - 1) * COUNTER_SIZE; i < diff * COUNTER_SIZE; i++) {
-                vertex_init (&vertex);
-                memcpy (vertex, zlist_next (on_give->unc_vertices),
-                        sizeof (vertex_t));
+                vertex= zlist_next (on_give->unc_vertices);
 
-                zmsg_add (responce_dup, zframe_new (vertex, sizeof (vertex_t)));
+                zmsg_add (responce_dup, zframe_new (vertex_serialize(vertex)));
 
 
             }
@@ -504,7 +501,7 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
                 assert (ret != 0);
                 frame = zmsg_next (msg);
                 memcpy (&kh_value (balance->hash, k),
-                        zframe_data (frame), sizeof (vertex_t));
+                         vertex_deserialize(frame), sizeof (vertex_t));
                 frame = zmsg_next (msg);
             }
 

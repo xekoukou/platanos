@@ -26,16 +26,23 @@
 
 
 //the key of the vertex is saved by the hash 
-typedef struct
-{
 
-} vertex_t;
-
+struct vertex_t;
+typedef struct vertex_t vertex_t;
 
 
 KHASH_MAP_INIT_INT64 (vertices, vertex_t);
 
-void vertex_init (vertex_t ** vertex);
+//you dont (de/)malloc for the struct itself
+void vertex_init (vertex_t * vertex);
 
+void vertex_destroy(vertex_t *vertex);
+
+vertex_t * vertex_dup(vertex_t *vertex);
+
+//the old data should not be changed
+vertex_t * vertex_deserialize(zframe_t *frame);
+
+zframe_t * vertex_serialize(vertex_t *vertex);
 
 #endif

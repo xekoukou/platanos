@@ -20,13 +20,6 @@
 #include"db.h"
 
 
-void
-db_msg (zmsg_t * msg, void *out)
-{
-
-
-
-}
 
 void
 db_add_self (db_update_t * update, zmsg_t * msg)
@@ -49,9 +42,9 @@ db_add_self (db_update_t * update, zmsg_t * msg)
     frame = zmsg_next (msg);
     memcpy (&st_piece, zframe_data (frame), zframe_size (frame));
     frame = zmsg_next (msg);
-    memcpy (bind_point, zframe_data (frame), zframe_size (frame));
-    frame = zmsg_next (msg);
     memcpy (bind_point_bl, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (bind_point, zframe_data (frame), zframe_size (frame));
     frame = zmsg_next (msg);
     memcpy (db_location, zframe_data (frame), zframe_size (frame));
 
@@ -324,7 +317,7 @@ db_fn (void *arg)
 
         if (pollitem[0].revents & ZMQ_POLLIN) {
             zmsg_t *msg = zmsg_recv (in);
-            db_msg (msg, out);
+            platanos_db_do (msg, out);
         }
         if (pollitem[1].revents & ZMQ_POLLIN) {
             db_update (update, sub);

@@ -101,4 +101,6 @@ void platanos_node_destroy (platanos_node_t ** platanos_node);
 
 platanos_node_t *platanos_node_dup (platanos_node_t * platanos_node);
 
+
+void platanos_db_do (zmsg_t * msg, void *out);
 #endif
