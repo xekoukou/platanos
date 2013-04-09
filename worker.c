@@ -1060,7 +1060,7 @@ worker_fn (void *arg)
     void *sub = zsocket_new (ctx, ZMQ_SUB);
     void *dealer = zsocket_new (ctx, ZMQ_DEALER);
 
-    char identity[18];
+    char identity[20];
     sprintf (identity, "%sw", worker->id);
     zmq_setsockopt (dealer, ZMQ_IDENTITY, identity, strlen (identity));
     zmq_setsockopt (sub, ZMQ_SUBSCRIBE, identity, strlen (identity));

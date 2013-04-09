@@ -350,7 +350,7 @@ ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
                        zframe_new (&(ozookeeper->updater.id),
                                    sizeof (unsigned int)));
 
-            char identity[17];
+            char identity[20];
             if (db) {
                 sprintf (identity, "%sdb", ozookeeper->updater.key);
             }
@@ -638,7 +638,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
         }
         else {
 
-            platanos_bind_points (ozookeeper->zh, octopus, comp_name, res_name,
+            platanos_online_bind_points (ozookeeper->zh, octopus, comp_name, res_name,
                                   &bind_points, &size);
 
             buffer_len = 1000;

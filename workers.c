@@ -57,10 +57,10 @@ workers_init (workers_t ** workers, ozookeeper_t * ozookeeper)
             worker_t *worker;
             for (iter = 0; iter < worker_children.count; iter++) {
                 (*workers)->id[iter] =
-                    malloc (strlen (worker_children.data[iter]) + 1 +
+                    malloc (strlen (worker_children.data[iter]) + 1+1 +
                             strlen (comp_name));
 
-                sprintf ((*workers)->id[iter], "%s%s", comp_name,
+                sprintf ((*workers)->id[iter], "%s/%s", comp_name,
                          worker_children.data[iter]);
 
                 worker_init (&worker, ozookeeper->zh, ozookeeper->config,
