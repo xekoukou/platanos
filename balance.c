@@ -296,7 +296,7 @@ balance_missed_chunkes (balance_t * balance, zmsg_t * msg, zframe_t * address)
             for (i = (diff - 1) * COUNTER_SIZE; i < diff * COUNTER_SIZE; i++) {
                 vertex= zlist_next (on_give->unc_vertices);
 
-                zmsg_add (responce_dup, zframe_new (vertex_serialize(vertex)));
+                zmsg_add (responce_dup,vertex_serialize(vertex));
 
 
             }

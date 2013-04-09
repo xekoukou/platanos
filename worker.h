@@ -32,7 +32,7 @@
 #include"zookeeper.h"
 #include"sleep.h"
 #include"compute.h"
-#include"platanos.h"
+#include"api/platanos.h"
 
 struct compute_t;
 typedef struct compute_t compute_t;

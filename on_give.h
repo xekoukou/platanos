@@ -23,7 +23,7 @@
 
 #include"event.h"
 #include"node.h"
-#include"vertex.h"
+#include"api/vertex.h"
 #include"hash/khash.h"
 #include "balance.h"
 

@@ -25,7 +25,7 @@
 
 #include"hash/khash.h"
 #include<czmq.h>
-#include"vertex.h"
+#include"api/vertex.h"
 #include"intervals.h"
 #include"on_give.h"
 #include"on_receive.h"

@@ -26,7 +26,7 @@
 #include"balance.h"
 #include"router.h"
 #include"compute.h"
-#include"platanos.h"
+#include"api/platanos.h"
 
 struct compute_t;
 typedef struct compute_t compute_t;

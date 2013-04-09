@@ -17,9 +17,12 @@ cmake_minimum_required (VERSION 2.8)
 
     add_executable (zookeeper_control zookeeper_control.c)
 
-    target_link_libraries (zookeeper_control zookeeper_mt procps)
+    target_link_libraries (zookeeper_control zookeeper_mt)
 
+    add_executable (zookeeper_load_graph zookeeper_load.c)
 
+    target_link_libraries (zookeeper_load_graph zookeeper_mt)
+    
     add_subdirectory (MurmurHash)
 
 

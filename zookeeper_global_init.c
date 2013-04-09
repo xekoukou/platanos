@@ -161,6 +161,15 @@ main ()
         return 1;
     }
 
+int loa_graph=0;
+    sprintf (path, "/%s/load_graph", octopus);
+    result = zoo_create (zh, path,&load_graph , sizeof(int), &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0);
+    if (result != ZOK) {
+        printf ("\nError");
+        return 1;
+    }
+
+
     sprintf (path, "/%s/global_properties/replication", octopus);
     result =
         zoo_create (zh, path, (const char *) &replication, sizeof (int),
