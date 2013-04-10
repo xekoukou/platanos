@@ -109,5 +109,8 @@ node_t *router_fnode (struct router_t *router, char *key);
 zlist_t *router_events (router_t * router, node_t * node, int removal,
                         int *circle);
 
+//returns the intervals that this router has assigned to the node
+// it is used in the db threads.
+intervals_t *router_current_intervals (struct router_t *router, node_t * node);
 
 #endif

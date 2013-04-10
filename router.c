@@ -759,3 +759,75 @@ router_fnode (struct router_t * router, char *key)
 {
     return nodes_search (router->nodes, key);
 }
+
+
+//returns the intervals that this router has assigned to the node
+// it is used in the db threads.
+intervals_t *
+router_current_intervals (struct router_t * router, node_t * node)
+{
+
+    intervals_t *intervals;
+
+    intervals_init (&intervals);
+
+    hkey_t hkeys[node->n_pieces];
+
+    int iter = 0;
+
+    for (iter = 0; iter < node->n_pieces; iter++) {
+
+        char key[1000];
+
+        node_piece (node->key, iter + node->st_piece, key);
+        MurmurHash3_x64_128 ((void *) key, strlen (key), 0,
+                             (void *) &(hkeys[iter]));
+    }
+
+    struct hash_t hash;
+    memcpy (&(hash.hkey), &(hkeys[0]), sizeof (hkey_t));
+
+    struct hash_t *previous;
+    struct hash_t *start;
+    struct hash_t *result = RB_FIND (hash_rb_t, &(router->hash_rb), &hash);
+    assert (result != NULL);
+    previous = result;
+    start = result;
+
+    while (1) {
+
+        result = RB_NFIND (hash_rb_t, &(router->hash_rb), &hash);
+        if (result == NULL) {
+            result = RB_MIN (hash_rb_t, &(router->hash_rb));
+        }
+
+        if (memcmp (&(result->hkey), &(start->hkey), sizeof (hkey_t)) == 0) {
+            if (memcmp (&(previous->hkey), &(start->hkey), sizeof (hkey_t)) ==
+                0) {
+//complete circle
+                intervals->circle = 1;
+            }
+            else {
+                interval_t *interval;
+                interval_init (&interval, &(previous->hkey), &(result->hkey));
+                intervals_add (intervals, interval);
+            }
+            break;
+        }
+
+        for (iter = 1; iter < node->n_pieces; iter++) {
+            if (memcmp (&(result->hkey), &(hkeys[iter]), sizeof (hkey_t)) == 0) {
+                interval_t *interval;
+                interval_init (&interval, &(previous->hkey), &(result->hkey));
+                intervals_add (intervals, interval);
+
+                previous = result;
+                break;
+            }
+        }
+
+
+    }
+
+    return intervals;
+}

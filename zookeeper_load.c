@@ -120,14 +120,12 @@ main ()
     zhandle_t *zh = zookeeper_init (config[0], global_watcher, 3000, 0, 0, 0);
 
     char path[1000];
-   int result;
-   int load_graph;
+    int result;
+    int load_graph;
 
     sprintf (path, "/%s/load_graph", config[6], config[2]);
     Struct Stat stat;
-            result =
-                zoo_get (zh, path, 0, load_graph, sizeof(int),
-                         &stat);
+    result = zoo_get (zh, path, 0, load_graph, sizeof (int), &stat);
 
 
     if (result != ZOK) {
@@ -135,18 +133,18 @@ main ()
         return 0;
     }
 
-   if(load_graph ==1){
-printf("\nIt apears that the graph is already loaded");
-return 0;
-}
-load_graph=1;
-        result = zoo_set (zh, path, &load_graph,
-                          sizeof(int), stat.version);
+    if (load_graph == 1) {
+        printf ("\nIt apears that the graph is already loaded");
+        return 0;
+    }
+    load_graph = 1;
+    result = zoo_set (zh, path, &load_graph, sizeof (int), stat.version);
 
-if(result==ZOK){
-printf("\nPlatanos %s has been signaled to load the graph",config[2]);
+    if (result == ZOK) {
+        printf ("\nPlatanos %s has been signaled to load the graph", config[2]);
 
-}else{
-printf("\nCouldnt signal platanos %s",config[2]);
-}
+    }
+    else {
+        printf ("\nCouldnt signal platanos %s", config[2]);
+    }
 }

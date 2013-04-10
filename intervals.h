@@ -42,7 +42,7 @@ void intervals_init (intervals_t ** intervals);
 
 void intervals_add (intervals_t * intervals, interval_t * interval);
 
-//returns the integral if it is contained inside one integral or NULL
+//returns the interval if it is contained inside one interval or NULL
 interval_t *intervals_contained (intervals_t * intervals,
                                  interval_t * interval, int *circle);
 

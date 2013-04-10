@@ -638,8 +638,8 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
         }
         else {
 
-            platanos_online_bind_points (ozookeeper->zh, octopus, comp_name, res_name,
-                                  &bind_points, &size);
+            platanos_online_bind_points (ozookeeper->zh, octopus, comp_name,
+                                         res_name, &bind_points, &size);
 
             buffer_len = 1000;
             sprintf (path, "/%s/computers/%s/worker_nodes/%s/bind_point_bl",
@@ -1425,6 +1425,9 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
     computers (ozookeeper, 1);
 
     ozookeeper_update_go_online (ozookeeper, 1);
+
+    load_graph (ozookeeper);
+
     ozookeeper_update_go_online (ozookeeper, 0);
 
 
