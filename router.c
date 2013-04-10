@@ -796,7 +796,7 @@ router_current_intervals (struct router_t * router, node_t * node)
 
     while (1) {
 
-        result = RB_NFIND (hash_rb_t, &(router->hash_rb), &hash);
+        result = RB_NEXT (hash_rb_t, &(router->hash_rb), previous);
         if (result == NULL) {
             result = RB_MIN (hash_rb_t, &(router->hash_rb));
         }

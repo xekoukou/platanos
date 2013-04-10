@@ -60,7 +60,6 @@ int interval_belongs (interval_t * interval, uint64_t key);
 
 int cmp_interval_t (struct interval_t *first, struct interval_t *second);
 
-
-
+interval_t *interval_dup (interval_t * interval);
 
 #endif

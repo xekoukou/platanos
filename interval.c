@@ -127,3 +127,13 @@ interval_belongs (interval_t * interval, uint64_t key)
     return interval_belongs_h (interval, &hkey);
 
 }
+
+interval_t *
+interval_dup (interval_t * interval)
+{
+
+    interval_t *dinterval;
+    interval_init (&dinterval, &(interval->start), &(interval->end));
+
+    return dinterval;
+}

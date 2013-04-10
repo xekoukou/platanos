@@ -57,7 +57,10 @@ int intervals_belongs (intervals_t * intervals, uint64_t key);
 
 void intervals_print (intervals_t * intervals);
 
+intervals_t *intervals_dup (intervals_t * intervals);
 
+intervals_t *intervals_difference (intervals_t * intervals,
+                                   intervals_t * rintervals);
 
 
 #endif

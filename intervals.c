@@ -299,3 +299,38 @@ intervals_print (intervals_t * intervals)
 
     }
 }
+
+intervals_t *
+intervals_dup (intervals_t * intervals)
+{
+
+    intervals_t *dintervals;
+    intervals_init (&dintervals);
+
+    dintervals->circle = intervals->circle;
+
+    interval_t *iter;
+
+    RB_FOREACH (iter, intervals_rb_t, &(intervals->intervals_rb)) {
+
+        intervals_add (dintervals, interval_dup (iter));
+    }
+
+    return dintervals;
+
+}
+
+
+intervals_t *
+intervals_difference (intervals_t * intervals, intervals_t * rintervals)
+{
+
+    intervals_t *dintervals = intervals_dup (intervals);
+
+    interval_t *iter;
+
+    RB_FOREACH (iter, intervals_rb_t, &(rintervals->intervals_rb)) {
+
+        intervals_remove (dintervals, interval_dup (iter));
+    }
+}
