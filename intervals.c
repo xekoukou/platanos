@@ -330,7 +330,10 @@ intervals_difference (intervals_t * intervals, intervals_t * rintervals)
     interval_t *iter;
 
     RB_FOREACH (iter, intervals_rb_t, &(rintervals->intervals_rb)) {
-
-        intervals_remove (dintervals, interval_dup (iter));
+        //intervals_remove only removes intervals that are contained inside an interval 
+        interval_t *diter = interval_dup (iter);
+        intervals_add (dintervals, diter);
+        diter = interval_dup (iter);
+        intervals_remove (dintervals, diter);
     }
 }

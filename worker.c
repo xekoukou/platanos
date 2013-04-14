@@ -81,14 +81,6 @@ compute (zloop_t * loop, zmq_pollitem_t * item, void *arg)
     return 0;
 }
 
-//th structure of a msg is this
-//unique id
-//node address
-// the rest
-
-//if node adress equals yourself then it is a confirmation
-// the first 2 identify the kind of message
-
 void
 worker_balance (balance_t * balance)
 {
@@ -366,6 +358,7 @@ remove_node (update_t * update, zmsg_t * msg)
         if (strcmp (on_receive->action->key, key) == 0) {
 
             //add the interval with the others
+            //TODO some of the nodes are missing, request them from the database
             intervals_add (update->balance->intervals, on_receive->interval);
             intervals_print (update->balance->intervals);
 
@@ -738,7 +731,10 @@ wdb_add_node (update_t * update, zmsg_t * msg)
              "\n%s:db_add_node:\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
              update->balance->self_key, start, key, n_pieces, st_piece);
 
-    db_node_init (&node, key, n_pieces, st_piece, bind_point_db);
+    wdb_node_init (&node, key, n_pieces, st_piece, bind_point_db);
+
+//set the node to alive
+    node->alive = 1;
 
 //update router object
 //this should always happen after the prev step
@@ -760,8 +756,9 @@ wdb_update_st_piece (update_t * update, zmsg_t * msg)
 
     zmsg_destroy (&msg);
     node_t *prev_node;
-    node = node_dup (prev_node = nodes_search (update->db_router->nodes, key));
+    prev_node = nodes_search (update->db_router->nodes, key);
     assert (prev_node != NULL);
+    node = node_dup (prev_node);
     node->st_piece = st_piece;
 
 //update router object
@@ -787,8 +784,9 @@ wdb_update_n_pieces (update_t * update, zmsg_t * msg)
 
     zmsg_destroy (&msg);
     node_t *prev_node;
-    node = node_dup (prev_node = nodes_search (update->db_router->nodes, key));
+    prev_node = nodes_search (update->db_router->nodes, key);
     assert (prev_node != NULL);
+    node_dup (prev_node);
     node->n_pieces = n_pieces;
 
 //update router object
@@ -798,27 +796,53 @@ wdb_update_n_pieces (update_t * update, zmsg_t * msg)
     router_add (update->db_router, node);
 }
 
-
 void
-wdb_remove_node (update_t * update, zmsg_t * msg)
+wdb_add_dead_node (update_t * update, zmsg_t * msg)
 {
     node_t *node;
     char key[100];
+    int n_pieces;
+    unsigned long st_piece;
+    char bind_point_db[50];
 
     zframe_t *frame = zmsg_first (msg);
-
     memcpy (key, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (&n_pieces, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+    memcpy (&st_piece, zframe_data (frame), zframe_size (frame));
+    frame = zmsg_next (msg);
+//this is the balance location not needed here
+    frame = zmsg_next (msg);
+    memcpy (bind_point_db, zframe_data (frame), zframe_size (frame));
 
     zmsg_destroy (&msg);
 
+//TODO disconnect
+
+    fprintf (stderr,
+             "\n%s:db_add_dead_node:\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
+             update->balance->self_key, start, key, n_pieces, st_piece);
+
+
     node = nodes_search (update->db_router->nodes, key);
 
-    assert (node != NULL);
+    if (node != NULL) {
 
-    node_set_alive (node, 0);
+        node_set_alive (node, 0);
 
+    }
+    else {
+        wdb_node_init (&node, key, n_pieces, st_piece, bind_point_db);
 
+//set the node to alive
+        node->alive = 0;
+
+//update router object
+        assert (1 == router_add (update->db_router, node));
+    }
 }
+
 
 
 void
@@ -852,80 +876,65 @@ void
 worker_update_db (update_t * update, zmsg_t * msg)
 {
 
-    zframe_t *id = zmsg_pop (msg);
-    if (memcmp (zframe_data (id), &(update->id), sizeof (unsigned int)) == 0) {
-//lazy pirate reconfirm update
-        zframe_send (&id, update->dealer, 0);
-        zframe_destroy (&id);
+    zframe_t *frame = zmsg_pop (msg);
+    if (memcmp (zframe_data (frame), "add_self", zframe_size (frame)) == 0) {
         zmsg_destroy (&msg);
-        fprintf (stderr,
-                 "\n%s:update_db: It was a previous update, resending confirmation",
-                 update->balance->self_key);
-
     }
     else {
-        zframe_t *frame = zmsg_pop (msg);
-        if (memcmp (zframe_data (frame), "add_self", zframe_size (frame)) == 0) {
-            zmsg_destroy (&msg);
+        if (memcmp
+            (zframe_data (frame), "delete_node", zframe_size (frame)) == 0) {
+            wdb_delete_node (update, msg);
         }
         else {
+
             if (memcmp
-                (zframe_data (frame), "delete_node",
+                (zframe_data (frame), "add_dead_node",
                  zframe_size (frame)) == 0) {
-                wdb_delete_node (update, msg);
+                wdb_add_dead_node (update, msg);
             }
             else {
-
                 if (memcmp
-                    (zframe_data (frame), "remove_node",
+                    (zframe_data (frame), "add_node",
                      zframe_size (frame)) == 0) {
-                    wdb_remove_node (update, msg);
+                    wdb_add_node (update, msg);
                 }
                 else {
                     if (memcmp
-                        (zframe_data (frame), "add_node",
+                        (zframe_data (frame), "st_piece",
                          zframe_size (frame)) == 0) {
-                        wdb_add_node (update, msg);
+                        wdb_update_st_piece (update, msg);
                     }
                     else {
                         if (memcmp
-                            (zframe_data (frame), "st_piece",
+                            (zframe_data (frame), "n_pieces",
                              zframe_size (frame)) == 0) {
-                            wdb_update_st_piece (update, msg);
+                            wdb_update_n_pieces (update, msg);
                         }
                         else {
                             if (memcmp
-                                (zframe_data (frame), "n_pieces",
+                                (zframe_data (frame), "go_online",
                                  zframe_size (frame)) == 0) {
-                                wdb_update_n_pieces (update, msg);
-                            }
-                            else {
-                                if (memcmp
-                                    (zframe_data (frame), "go_online",
-                                     zframe_size (frame)) == 0) {
-                                    zmsg_destroy (&msg);
-
-                                }
-
-
-
+                                zmsg_destroy (&msg);
 
                             }
+
+
+
+
                         }
                     }
                 }
             }
         }
-
-
-        zframe_destroy (&frame);
-
-
-        zframe_send (&id, update->dealer, 0);
-        fprintf (stderr, "\n%s:update_db:I have sent confirmation to sub msg",
-                 update->balance->self_key);
-
     }
+
+
+    zframe_destroy (&frame);
+
+
+    zframe_send (&id, update->dealer, 0);
+    fprintf (stderr, "\n%s:update_db:I have sent confirmation to sub msg",
+             update->balance->self_key);
 
 
 
@@ -943,27 +952,32 @@ worker_update (update_t * update, void *sub)
 
     fprintf (stderr, "\n%s:update:I have received a sub msg",
              update->balance->self_key);
-    zframe_t *db = zmsg_pop (msg);
-    if (strcmp ("db", (char *) zframe_data (db)) == 0) {
-        zframe_destroy (&db);
-        worker_update_db (update, msg);
+    zframe_t *subsc = zmsg_pop (msg);
+    zframe_destroy (&subsc);
+
+    zframe_t *id = zmsg_pop (msg);
+    if (memcmp (zframe_data (id), &(update->id), sizeof (unsigned int)) == 0) {
+//lazy pirate reconfirm update
+        zframe_send (&id, update->dealer, 0);
+        zframe_destroy (&id);
+        zmsg_destroy (&msg);
+        fprintf (stderr,
+                 "\n%s:update:It was a previous update, resending confirmation",
+                 update->balance->self_key);
+
     }
     else {
-        zframe_destroy (&db);
 
-        zframe_t *id = zmsg_pop (msg);
-        if (memcmp (zframe_data (id), &(update->id), sizeof (unsigned int)) ==
-            0) {
-//lazy pirate reconfirm update
-            zframe_send (&id, update->dealer, 0);
-            zframe_destroy (&id);
-            zmsg_destroy (&msg);
-            fprintf (stderr,
-                     "\n%s:update:It was a previous update, resending confirmation",
-                     update->balance->self_key);
 
+        zframe_t *db = zmsg_pop (msg);
+        if (strcmp ("db", (char *) zframe_data (db)) == 0) {
+            zframe_destroy (&db);
+            worker_update_db (update, msg);
         }
         else {
+            zframe_destroy (&db);
+
+
             zframe_t *frame = zmsg_pop (msg);
             if (memcmp (zframe_data (frame), "add_self", zframe_size (frame)) ==
                 0) {
@@ -1026,8 +1040,8 @@ worker_update (update_t * update, void *sub)
                      update->balance->self_key);
 
         }
-    }
 
+    }
     return 0;
 }
 
@@ -1065,7 +1079,7 @@ worker_fn (void *arg)
     zmq_setsockopt (dealer, ZMQ_IDENTITY, identity, strlen (identity));
     zmq_setsockopt (sub, ZMQ_SUBSCRIBE, identity, strlen (identity));
     zmq_setsockopt (sub, ZMQ_SUBSCRIBE, "w", strlen ("w") + 1);
-    zmq_setsockopt (sub, ZMQ_SUBSCRIBE, "db", strlen ("db") + 1);
+    zmq_setsockopt (sub, ZMQ_SUBSCRIBE, "all", strlen ("all") + 1);
 
 
     rc = zsocket_connect (sub, "tcp://127.0.0.1:49152");
@@ -1146,12 +1160,13 @@ worker_fn (void *arg)
         int64_t timeout = worker_timeout (balance, sleep,
                                           platanos_poll_before_poll
                                           (platanos_poll));
+       if(timeout == 0 ){ 
+       worker_process_timer_events (worker, balance, sleep, platanos);
+     }
         rc = zmq_poll (pollitems, size + 2, timeout);
         assert (rc != -1);
 
-        if (timeout > 0) {
-            worker_process_timer_events (worker, balance, sleep, platanos);
-        }
+        
         if (pollitems[0].revents & ZMQ_POLLIN) {
             worker_update (update, sub);
         }
@@ -1170,7 +1185,6 @@ worker_timeout (balance_t * balance, sleep_t * sleep,
                 int64_t platanos_next_time)
 {
 //finding the minimum timeout
-    int64_t time = zclock_time ();
 
     int64_t last;
     if (balance->next_time > sleep->next_time) {
@@ -1198,6 +1212,8 @@ worker_timeout (balance_t * balance, sleep_t * sleep,
             last = platanos_next_time;
         }
     }
+
+    int64_t time = zclock_time ();
 
     int64_t timeout = -1;
     if (last > 0) {

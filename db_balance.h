@@ -37,7 +37,11 @@ struct db_balance_t
     dbo_t *dbo;
     void *router_bl;            //used to tranfer nodes to the apropriate nodes if necessary
     void *self_bl;
-    char self_key[16];
+    char self_key[18];
+    intervals_t *intervals;
+    intervals_t *locked_intervals;      //those can not be transfered because they are currently loaded to the workers
+    int un_id;
+    int64_t next_time;
 };
 
 typedef struct db_balance_t db_balance_t;

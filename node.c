@@ -52,8 +52,8 @@ node_destroy (node_t ** node)
 }
 
 void
-db_node_init (node_t ** node, char *key, int n_pieces,
-              unsigned long st_piece, char *bind_point_db)
+wdb_node_init (node_t ** node, char *key, int n_pieces,
+               unsigned long st_piece, char *bind_point_db)
 {
 
     *node = malloc (sizeof (node_t));
@@ -63,6 +63,20 @@ db_node_init (node_t ** node, char *key, int n_pieces,
     strcpy ((*node)->bind_point_db, bind_point_db);
 
 }
+
+void
+db_node_init (node_t ** node, char *key, int n_pieces,
+              unsigned long st_piece, char *bind_point_bl)
+{
+
+    *node = malloc (sizeof (node_t));
+    strcpy ((*node)->key, key);
+    (*node)->n_pieces = n_pieces;
+    (*node)->st_piece = st_piece;
+    strcpy ((*node)->bind_point_bl, bind_point_bl);
+
+}
+
 
 
 node_t *

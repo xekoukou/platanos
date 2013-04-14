@@ -172,11 +172,16 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
     zmsg_t *msg_to_send = zmsg_dup (*msg);
     zmsg_push (msg_to_send,
                zframe_new (&(ozookeeper->updater.id), sizeof (unsigned int)));
-    if (db) {
+    if (db == 1) {
         zmsg_push (msg_to_send, zframe_new ("db", strlen ("db") + 1));
     }
     else {
-        zmsg_push (msg_to_send, zframe_new ("w", strlen ("w") + 1));
+        if (db == 0) {
+            zmsg_push (msg_to_send, zframe_new ("w", strlen ("w") + 1));
+        }
+        else {
+            zmsg_push (msg_to_send, zframe_new ("all", strlen ("all") + 1));
+        }
     }
 
     zmsg_send (&msg_to_send, pub);
@@ -406,12 +411,13 @@ ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 
 //IMPORTANT st_piece should not be changed when a node is offline
 void
-ozookeeper_update_remove_node (ozookeeper_t * ozookeeper, int db, char *key)
+ozookeeper_update_remove_node (ozookeeper_t * ozookeeper, char *key)
 {
     zmsg_t *msg = zmsg_new ();
+    zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
     zmsg_add (msg, zframe_new ("remove_node", strlen ("remove_node") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
-    ozookeeper_update (ozookeeper, &msg, db);
+    ozookeeper_update (ozookeeper, &msg, 0);
 }
 
 //only for workers
@@ -430,6 +436,7 @@ void
 ozookeeper_update_delete_node (ozookeeper_t * ozookeeper, char *key)
 {
     zmsg_t *msg = zmsg_new ();
+    zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
     zmsg_add (msg, zframe_new ("delete_node", strlen ("delete_node") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
     ozookeeper_update (ozookeeper, &msg, 1);
@@ -445,6 +452,12 @@ ozookeeper_update_add_node (ozookeeper_t * ozookeeper, int db, int start,
                             char **bind_points, int size, char *bind_point_bl)
 {
     zmsg_t *msg = zmsg_new ();
+    if (db) {
+        zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
+    }
+    else {
+        zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
+    }
     zmsg_add (msg, zframe_new ("add_node", strlen ("add_node") + 1));
     zmsg_add (msg, zframe_new (&start, sizeof (int)));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
@@ -462,8 +475,39 @@ ozookeeper_update_add_node (ozookeeper_t * ozookeeper, int db, int start,
     fprintf (stderr,
              "\nzookeeper_add_node\nkey:%s\nn_pieces:%d\nst_piece:%lu", key,
              n_pieces, st_piece);
-    ozookeeper_update (ozookeeper, &msg, db);
+    ozookeeper_update (ozookeeper, &msg, 2);
 }
+
+//TODO check
+//this is done when a node goes online
+void
+ozookeeper_update_add_dead_node (ozookeeper_t * ozookeeper,
+                                 char *key, int n_pieces,
+                                 unsigned long st_piece, char **bind_points,
+                                 int size, char *bind_point_bl)
+{
+    zmsg_t *msg = zmsg_new ();
+    zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
+    zmsg_add (msg, zframe_new ("add_dead_node", strlen ("add_dead_node") + 1));
+    zmsg_add (msg, zframe_new (key, strlen (key) + 1));
+    zmsg_add (msg, zframe_new (&n_pieces, sizeof (int)));
+    zmsg_add (msg, zframe_new (&st_piece, sizeof (unsigned long)));
+    zmsg_add (msg, zframe_new (bind_point_bl, strlen (bind_point_bl) + 1));
+    int i;
+    for (i = 0; i < size; i++) {
+        zmsg_add (msg,
+                  zframe_new (bind_points[i], strlen (bind_points[i]) + 1));
+        free (bind_points[i]);
+    }
+    free (bind_points);
+
+    fprintf (stderr,
+             "\nzookeeper_add_dead_node\nkey:%s\nn_pieces:%d\nst_piece:%lu",
+             key, n_pieces, st_piece);
+    ozookeeper_update (ozookeeper, &msg, 2);
+}
+
+
 
 //this is done only at the start for a specific number of seconds
 void
@@ -473,6 +517,12 @@ ozookeeper_update_add_self (ozookeeper_t * ozookeeper, int db, char *key,
                             char *bind_point_bl, char *db_location)
 {
     zmsg_t *msg = zmsg_new ();
+    if (db) {
+        zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
+    }
+    else {
+        zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
+    }
     zmsg_add (msg, zframe_new ("add_self", strlen ("add_self") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
     zmsg_add (msg, zframe_new (&n_pieces, sizeof (int)));
@@ -502,10 +552,16 @@ ozookeeper_update_st_piece (ozookeeper_t * ozookeeper, int db, char *key,
                             unsigned long st_piece)
 {
     zmsg_t *msg = zmsg_new ();
+    if (db) {
+        zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
+    }
+    else {
+        zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
+    }
     zmsg_add (msg, zframe_new ("st_piece", strlen ("st_piece") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
     zmsg_add (msg, zframe_new (&st_piece, sizeof (unsigned long)));
-    ozookeeper_update (ozookeeper, &msg, db);
+    ozookeeper_update (ozookeeper, &msg, 2);
 }
 
 void
@@ -513,10 +569,16 @@ ozookeeper_update_n_pieces (ozookeeper_t * ozookeeper, int db, char *key,
                             int n_pieces)
 {
     zmsg_t *msg = zmsg_new ();
+    if (db) {
+        zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
+    }
+    else {
+        zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
+    }
     zmsg_add (msg, zframe_new ("n_pieces", strlen ("n_pieces") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
     zmsg_add (msg, zframe_new (&n_pieces, sizeof (int)));
-    ozookeeper_update (ozookeeper, &msg, db);
+    ozookeeper_update (ozookeeper, &msg, 2);
 }
 
 //this is issued to tell the workers to go online
@@ -529,6 +591,12 @@ ozookeeper_update_go_online (ozookeeper_t * ozookeeper, int db)
              db);
 
     zmsg_t *msg = zmsg_new ();
+    if (db) {
+        zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
+    }
+    else {
+        zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
+    }
     zmsg_add (msg, zframe_new ("go_online", strlen ("go_online") + 1));
     ozookeeper_update (ozookeeper, &msg, db);
 
@@ -577,7 +645,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
     struct Stat stat;
 
 
-    if (online || self) {
+    if (online || self || db) {
 //obtain the resources and send them while setting wathcers on st_piece and n_pieces
 //we dont need to check if they exist since a resource goes online only after we have registered it.
 //we have to set the resource offline before we unregister it.
@@ -708,7 +776,10 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
             if (db) {
                 if (ozookeeper->updater.db_online[m][n] == 1) {
                     ozookeeper->updater.db_online[m][n] = 0;
-                    ozookeeper_update_remove_node (ozookeeper, db, path);
+                    ozookeeper_update_add_dead_node (ozookeeper, path, n_pieces,
+                                                     st_piece, bind_points,
+                                                     size, bind_point_bl);
+
 
                 }
             }
@@ -743,7 +814,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
                         sync_remove_res (sync, comp_name, res_name);
                         sync = zlist_next (ozookeeper->sync_list);
                     }
-                    ozookeeper_update_remove_node (ozookeeper, db, path);
+                    ozookeeper_update_remove_node (ozookeeper, path);
                 }
 
             }
@@ -1412,6 +1483,12 @@ w_computers (zhandle_t * zh, int type,
 
 }
 
+void load_graph(ozookeeper_t *ozookeeper){
+
+
+}
+
+
 
 //completions
 
@@ -1424,9 +1501,9 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 
     computers (ozookeeper, 1);
 
-    ozookeeper_update_go_online (ozookeeper, 1);
-
     load_graph (ozookeeper);
+    
+    ozookeeper_update_go_online (ozookeeper, 1);
 
     ozookeeper_update_go_online (ozookeeper, 0);
 

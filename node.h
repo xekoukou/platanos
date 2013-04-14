@@ -58,8 +58,13 @@ void node_init (node_t ** node, char *key, int n_pieces,
                 platanos_node_t * platanos_node);
 
 void
+wdb_node_init (node_t ** node, char *key, int n_pieces,
+               unsigned long st_piece, char *bind_point_db);
+
+void
 db_node_init (node_t ** node, char *key, int n_pieces,
-              unsigned long st_piece, char *bind_point_db);
+              unsigned long st_piece, char *bind_point_bl);
+
 
 void node_destroy (node_t ** node);
 

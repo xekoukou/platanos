@@ -51,7 +51,7 @@ struct balance_t
     //used by on_gives scheduling
     int un_id;
     int64_t next_time;
-    char self_key[16];          //used to send the interval of the on_gives
+    char self_key[18];          //used to send the interval of the on_gives
 };
 
 typedef struct balance_t balance_t;

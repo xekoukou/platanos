@@ -31,6 +31,7 @@ db_balance_init (db_balance_t ** balance, dbo_t * dbo,
     (*balance)->self_bl = self_bl;
     memset ((*balance)->self_key, 0, 16);
     strcpy ((*balance)->self_key, key);
-
+    intervals_init (&((*balance)->intervals));
+    intervals_init (&((*balance)->locked_intervals));
 
 }
