@@ -111,19 +111,20 @@ main ()
     oconfig_t *fconfig;
     oconfig_init (&fconfig);
 
-    char config[8][1000];
+    char octopus[50];
+    char host[50];
 
-    oconfig_octopus (fconfig, config[6]);
+    oconfig_octopus (fconfig, octopus);
 
-    oconfig_host (fconfig, config[0]);
+    oconfig_host (fconfig, host);
 
-    zhandle_t *zh = zookeeper_init (config[0], global_watcher, 3000, 0, 0, 0);
+    zhandle_t *zh = zookeeper_init (host, global_watcher, 3000, 0, 0, 0);
 
     char path[1000];
     int result;
     int load_graph;
 
-    sprintf (path, "/%s/load_graph", config[6], config[2]);
+    sprintf (path, "/%s/load_graph", octopus);
     Struct Stat stat;
     result = zoo_get (zh, path, 0, load_graph, sizeof (int), &stat);
 
@@ -141,10 +142,10 @@ main ()
     result = zoo_set (zh, path, &load_graph, sizeof (int), stat.version);
 
     if (result == ZOK) {
-        printf ("\nPlatanos %s has been signaled to load the graph", config[2]);
+        printf ("\nPlatanos %s has been signaled to load the graph", octopus);
 
     }
     else {
-        printf ("\nCouldnt signal platanos %s", config[2]);
+        printf ("\nCouldnt signal platanos %s", octopus);
     }
 }

@@ -603,6 +603,29 @@ ozookeeper_update_go_online (ozookeeper_t * ozookeeper, int db)
 }
 
 
+void
+ozookeeper_update_load_graph (ozookeeper_t * ozookeeper)
+{
+    zmsg_t *msg = zmsg_new ();
+    zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
+    zmsg_add (msg, zframe_new ("load_graph", strlen ("load_graph") + 1));
+    ozookeeper_update (ozookeeper, &msg, 0);
+}
+
+void
+ozookeeper_update_start_graph_database (ozookeeper_t * ozookeeper)
+{
+    zmsg_t *msg = zmsg_new ();
+    zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));       //this is not important for db nodes
+    zmsg_add (msg,
+              zframe_new ("start_graph_database",
+                          strlen ("start_graph_database") + 1));
+    ozookeeper_update (ozookeeper, &msg, 1);
+}
+
+
+
+
 //watcher helper functions
 
 void
@@ -1483,8 +1506,124 @@ w_computers (zhandle_t * zh, int type,
 
 }
 
-void load_graph(ozookeeper_t *ozookeeper){
+int load_graph (ozookeeper_t * ozookeeper);
 
+void
+w_load_graph (zhandle_t * zh, int type,
+              int state, const char *path, void *watcherCtx)
+{
+
+    ozookeeper_t *ozookeeper = (ozookeeper_t *) watcherCtx;
+
+
+    if (type == ZOO_SESSION_EVENT
+        && (state == ZOO_EXPIRED_SESSION_STATE
+            || state == ZOO_AUTH_FAILED_STATE)) {
+//do nothing global watcher will reinitialize things
+
+
+    }
+    else {
+
+        int load_graph = load_graph (ozookeeper);
+        // TODO carefull there, someone could crash the server
+        assert (load_graph == 1);
+
+        ozookeeper_update_load_graph (ozookeeper);
+
+    }
+
+}
+
+
+int
+load_graph (ozookeeper_t * ozookeeper)
+{
+
+
+    char octopus[50];
+    char host[50];
+
+    oconfig_octopus (ozookeeper->config, octopus);
+
+    char path[1000];
+    int result;
+    int load_graph;
+
+    sprintf (path, "/%s/load_graph", octopus);
+    Struct Stat stat;
+    result =
+        zoo_wget (zh, path, w_load_graph, ozookeeper, load_graph, sizeof (int),
+                  &stat);
+
+
+    if (result != ZOK) {
+        printf ("\nThere has been an Error setting a watcher on load_graph");
+        return 0;
+    }
+
+    return load_graph;
+
+}
+
+int start_graph_database (ozookeeper_t * ozookeeper);
+
+void
+w_start_graph_databse (zhandle_t * zh, int type,
+                       int state, const char *path, void *watcherCtx)
+{
+
+    ozookeeper_t *ozookeeper = (ozookeeper_t *) watcherCtx;
+
+
+    if (type == ZOO_SESSION_EVENT
+        && (state == ZOO_EXPIRED_SESSION_STATE
+            || state == ZOO_AUTH_FAILED_STATE)) {
+//do nothing global watcher will reinitialize things
+
+
+    }
+    else {
+
+        int start_graph_database = start_graph_database (ozookeeper);
+        // TODO carefull there, someone could crash the server
+        assert (start_graph_database == 1);
+
+        ozookeeper_update_start_graph_database (ozookeeper);
+
+    }
+
+}
+
+
+int
+start_graph_database (ozookeeper_t * ozookeeper)
+{
+
+
+    char octopus[50];
+    char host[50];
+
+    oconfig_octopus (ozookeeper->config, octopus);
+
+    char path[1000];
+    int result;
+    int start_graph_database;
+
+    sprintf (path, "/%s/start_graph_database", octopus);
+    Struct Stat stat;
+    result =
+        zoo_wget (zh, path, w_start_graph_database, ozookeeper,
+                  start_graph_database, sizeof (int), &stat);
+
+
+    if (result != ZOK) {
+        printf
+            ("\nThere has been an Error setting a watcher on start_graph_database");
+        return 0;
+    }
+
+    return start_graph_database;
 
 }
 
@@ -1502,7 +1641,8 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
     computers (ozookeeper, 1);
 
     load_graph (ozookeeper);
-    
+    start_graph_database (ozookeeper);
+
     ozookeeper_update_go_online (ozookeeper, 1);
 
     ozookeeper_update_go_online (ozookeeper, 0);

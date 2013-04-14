@@ -304,6 +304,14 @@ db_go_online (db_t * db)
 }
 
 
+void
+db_start_graph_database (db_update_t * update, zmsg_t * msg)
+{
+    zmsg_destroy (&msg);
+
+//TODO init database
+
+}
 
 void
 db_update (db_update_t * update, void *sub)
@@ -374,10 +382,18 @@ db_update (db_update_t * update, void *sub)
                                     (zframe_data (frame), "go_online",
                                      zframe_size (frame)) == 0) {
                                     db_go_online (update->db);
+                                    zmsg_destroy (&msg);
                                 }
+                                else {
+                                    if (memcmp
+                                        (zframe_data (frame),
+                                         "start_graph_database",
+                                         zframe_size (frame)) == 0) {
+                                        db_start_graph_database (update);
+                                    }
 
 
-
+                                }
 
                             }
                         }
@@ -480,12 +496,12 @@ db_fn (void *arg)
     while (1) {
         int64_t timeout = db_timeout (balance);
 
-        if(timeout == 0){
-    db_process_timer_events (db, balance);
-}
+        if (timeout == 0) {
+            db_process_timer_events (db, balance);
+        }
         rc = zmq_poll (pollitem, 1, db_timeout (balance));
         assert (rc != -1);
-    
+
         if (pollitem[0].revents & ZMQ_POLLIN) {
             zmsg_t *msg = zmsg_recv (in);
             platanos_db_do (msg, out);

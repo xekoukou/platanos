@@ -23,6 +23,10 @@ cmake_minimum_required (VERSION 2.8)
 
     target_link_libraries (zookeeper_load_graph zookeeper_mt)
     
+    add_executable (zookeeper_start_graph_database zookeeper_start_graph_database.c)
+
+    target_link_libraries (zookeeper_start_graph_database zookeeper_mt)
+    
     add_subdirectory (MurmurHash)
 
 

@@ -698,6 +698,20 @@ go_online (worker_t * worker)
 }
 
 void
+wload_graph (update_t * update, zmsg_t * msg)
+{
+    zmsg_destroy (&msg);
+
+
+//TODO LOAD THE GRAPH
+
+}
+
+
+
+
+
+void
 wdb_add_node (update_t * update, zmsg_t * msg)
 {
     int start;
@@ -1020,10 +1034,18 @@ worker_update (update_t * update, void *sub)
                                          zframe_size (frame)) == 0) {
                                         go_online (update->compute->worker);
                                     }
+                                    else {
+                                        if (memcmp
+                                            (zframe_data (frame), "load_graph",
+                                             zframe_size (frame)) == 0) {
+                                            update_load_graph (update, msg);
+                                        }
 
 
 
 
+
+                                    }
                                 }
                             }
                         }
@@ -1160,13 +1182,13 @@ worker_fn (void *arg)
         int64_t timeout = worker_timeout (balance, sleep,
                                           platanos_poll_before_poll
                                           (platanos_poll));
-       if(timeout == 0 ){ 
-       worker_process_timer_events (worker, balance, sleep, platanos);
-     }
+        if (timeout == 0) {
+            worker_process_timer_events (worker, balance, sleep, platanos);
+        }
         rc = zmq_poll (pollitems, size + 2, timeout);
         assert (rc != -1);
 
-        
+
         if (pollitems[0].revents & ZMQ_POLLIN) {
             worker_update (update, sub);
         }
