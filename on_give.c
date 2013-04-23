@@ -62,31 +62,30 @@ on_give_destroy (on_give_t ** on_give)
     free ((*on_give)->event);
     assert ((*on_give)->unc_vertices != NULL);
     zlist_destroy (&((*on_give)->unc_vertices));
+    free ((*on_give)->interval);
+    zmsg_destroy (&((*on_give)->responce));
     free (*on_give);
     on_give = NULL;
 }
 
 
-//we assume that all vertices of this transaction have
-//been put in the unc_vertices list
 void
-on_gives_remove (zlist_t * on_gives, zlist_t * events, node_t * node)
+on_gives_remove (balance_t * balance, node_t * node)
 {
 
-    on_give_t *iter = zlist_first (on_gives);
+    on_give_t *iter = zlist_first (balance->on_gives);
 
     while (iter) {
         if (strcmp (node->key, iter->event->key) == 0) {
-            zlist_remove (on_gives, iter);
-            zlist_remove (events, iter->event);
-            free (iter->event);
+            zlist_remove (balance->on_gives, iter);
+            zlist_remove (balance->events, iter->event);
+            event_clean (iter->event, balance->hash);
             vertex_t *vertex = zlist_pop (iter->unc_vertices);
             while (vertex) {
                 free (vertex);
                 vertex = zlist_pop (iter->unc_vertices);
             }
-            zlist_destroy (&(iter->unc_vertices));
-            free (iter);
+            on_give_destroy (&iter);
         }
         iter = zlist_next (on_gives);
     }

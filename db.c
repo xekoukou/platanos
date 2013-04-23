@@ -143,7 +143,7 @@ db_add_dead_node (update_t * update, zmsg_t * msg)
     else {
         db_node_init (&node, key, n_pieces, st_piece, bind_point_bl);
 
-//set the node to alive
+//set the node to dead
         node_set_alive (node, 0);
 
 //update router object
@@ -168,6 +168,16 @@ db_delete_node (db_update_t * update, zmsg_t * msg)
     assert (node != NULL);
 
 //TODO on_give, on_receive?
+
+
+//update router object
+    assert (1 == router_delete (update->router, node));
+
+
+    intervals_t *cintervals = router_current_intervals (update->router, node);
+
+    db_balance_init_gives (update->balance,cintervals);
+
 
 }
 
@@ -210,7 +220,6 @@ db_add_node (db_update_t * update, zmsg_t * msg)
     node_set_alive (node, 1);
 
 //update router object
-//this should always happen after the prev step
     assert (1 == router_add (update->router, node));
 
 
@@ -247,6 +256,7 @@ db_update_st_piece (db_update_t * update, zmsg_t * msg)
     router_delete (update->db_router, prev_node);
     router_add (update->db_router, node);
 
+    intervals_t *cintervals = router_current_intervals (update->router, node);
     db_balance_init_gives (cintervals);
 
 }
@@ -278,6 +288,7 @@ db_update_n_pieces (db_update_t * update, zmsg_t * msg)
     router_add (update->db_router, node);
 
 
+    intervals_t *cintervals = router_current_intervals (update->router, node);
     db_balance_init_gives (cintervals);
 
 }

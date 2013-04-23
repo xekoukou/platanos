@@ -30,7 +30,7 @@
 
 //the key is the key of the node that will take part in the event /action
 //there is only the exception for the first node that will go online
-//its first event will have NULL as key
+//its first event will have NULL as key  ??this is deprecated TODO
 
 struct event_t
 {

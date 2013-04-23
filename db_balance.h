@@ -38,6 +38,10 @@ struct db_balance_t
     void *router_bl;            //used to tranfer nodes to the apropriate nodes if necessary
     void *self_bl;
     char self_key[18];
+    zlist_t *on_gives;          //db version
+    zlist_t *don_gives;         //db version
+    zlist_t *on_receives;
+    zlist_t *don_receives;      //when the node goes up again, resume the transfer
     intervals_t *intervals;
     intervals_t *locked_intervals;      //those can not be transfered because they are currently loaded to the workers
     int un_id;
