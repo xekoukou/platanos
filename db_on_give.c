@@ -25,7 +25,7 @@
 
 void
 db_on_give_init (db_on_give_t ** on_give, db_balance_t * balance, char *key,
-                 int un_id, interval_t * interval)
+                 interval_t * interval, int un_id)
 {
     *on_give = malloc (sizeof (on_give_t));
     memcpy ((*on_give)->key, key, strlen (key) + 1);
@@ -37,7 +37,7 @@ db_on_give_init (db_on_give_t ** on_give, db_balance_t * balance, char *key,
     (*on_give)->last_time = zclock_time ();
     (*on_give)->interval = interval;
 
-    (*on_give)->unc_iter = NULL;     //NULL represents no unc chunkes
+    (*on_give)->unc_iter = NULL;        //NULL represents no unc chunkes
 
     (*on_give)->responce = zmsg_new ();
     zframe_t *frame =
@@ -49,64 +49,52 @@ db_on_give_init (db_on_give_t ** on_give, db_balance_t * balance, char *key,
               zframe_new (&((*on_give)->un_id), sizeof (int)));
 
 //make on_give durable
-leveldb_writeoptions_t* writeoptions = leveldb_writeoptions_create();
-leveldb_writeoptions_set_sync(writeoptions, 1);
-unsigned char key[10];
-key[0]=1;
-key[1]=0;
-memcpy(key+2,(*on_give)->un_id,sizeof(int));
-key[6]=0;
+    leveldb_writeoptions_t *writeoptions = leveldb_writeoptions_create ();
+    leveldb_writeoptions_set_sync (writeoptions, 1);
+    unsigned char key[10];
+    key[0] = 1;
+    key[1] = 0;
+    memcpy (key + 2, (*on_give)->un_id, sizeof (int));
+    key[6] = 0;
 
-leveldb_writebatch_t* writebatch = leveldb_writebatch_create();
+    leveldb_writebatch_t *writebatch = leveldb_writebatch_create ();
 
-char **errptr =NULL;
+    char **errptr = NULL;
 
-key[7]=1; //the key
+    key[7] = 1;                 //the key
 
-leveldb_writebatch_put(
-    writebatch,
-    key, 8,
-    (*on_give)->key, strlen((*on_give)->key)+1
-    );
+    leveldb_writebatch_put (writebatch,
+                            key, 8,
+                            (*on_give)->key, strlen ((*on_give)->key) + 1);
 
-key[7]=2; //the start of the interval
+    key[7] = 2;                 //the start of the interval
 
-leveldb_writebatch_put(
-    writebatch,
-    key, 8,
-    (*on_give)->interval->start, 16
-    );
+    leveldb_writebatch_put (writebatch,
+                            key, 8, (*on_give)->interval->start, 16);
 
 
-key[7]=3; //the end of the interval
+    key[7] = 3;                 //the end of the interval
 
-leveldb_writebatch_put(
-    writebatch,
-    key, 8,
-    (*on_give)->interval->end, 16
-    );
+    leveldb_writebatch_put (writebatch, key, 8, (*on_give)->interval->end, 16);
 
-leveldb_write(
-    balance->dbo->db,
-    writeoptions,
-    writebatch,
-    errptr);
+    leveldb_write (balance->dbo->db, writeoptions, writebatch, errptr);
 
 
-assert(errptr == NULL);
+    assert (errptr == NULL);
 
-leveldb_writebatch_destroy(writebatch);
+    leveldb_writebatch_destroy (writebatch);
 
-leveldb_writeoptions_destroy(writeoptions);
+    leveldb_writeoptions_destroy (writeoptions);
 
 //create iterator
-leveldb_readoptions_t* readoptions = leveldb_readoptions_create();
-leveldb_readoptions_set_fill_cache(read_options,0);
-levelb_iterator_t * iter=leveldb_crate_iterator(balance->dbo->db,read_options);
-leveldb_iter_seek_to_first(iter);
+    leveldb_readoptions_t *readoptions = leveldb_readoptions_create ();
+    leveldb_readoptions_set_fill_cache (read_options, 0);
+    levelb_iterator_t *iter =
+        leveldb_crate_iterator (balance->dbo->db, read_options);
+    leveldb_iter_seek_to_first (iter);
 
-(*on_give)->iter = iter;
-(*on_give)->readoptions = readoptions;
+    (*on_give)->iter = iter;
+    (*on_give)->readoptions = readoptions;
 }
 
 
@@ -120,56 +108,43 @@ db_on_give_destroy (db_on_give_t ** on_give)
     zmsg_destroy (&(*on_give)->responce);
 
 //destroy durable on_give 
-leveldb_writeoptions_t* writeoptions = leveldb_writeoptions_create();
-leveldb_writeoptions_set_sync(writeoptions, 1);
-unsigned char key[10];
-key[0]=1;
-key[1]=0;
-memcpy(key+2,(*on_give)->un_id,sizeof(int));
-key[6]=0;
+    leveldb_writeoptions_t *writeoptions = leveldb_writeoptions_create ();
+    leveldb_writeoptions_set_sync (writeoptions, 1);
+    unsigned char key[10];
+    key[0] = 1;
+    key[1] = 0;
+    memcpy (key + 2, (*on_give)->un_id, sizeof (int));
+    key[6] = 0;
 
-leveldb_writebatch_t* writebatch = leveldb_writebatch_create();
+    leveldb_writebatch_t *writebatch = leveldb_writebatch_create ();
 
-char **errptr =NULL;
+    char **errptr = NULL;
 
-key[7]=1; //the key
+    key[7] = 1;                 //the key
 
-leveldb_writebatch_delete(
-    writebatch,
-    key, 8
-    );
+    leveldb_writebatch_delete (writebatch, key, 8);
 
-key[7]=2; //the start of the interval
+    key[7] = 2;                 //the start of the interval
 
-leveldb_writebatch_delete(
-    writebatch,
-    key, 8
-    );
+    leveldb_writebatch_delete (writebatch, key, 8);
 
 
-key[7]=3; //the end of the interval
+    key[7] = 3;                 //the end of the interval
 
-leveldb_writebatch_delete(
-    writebatch,
-    key, 8
-    );
+    leveldb_writebatch_delete (writebatch, key, 8);
 
-leveldb_write(
-    balance->dbo->db,
-    writeoptions,
-    writebatch,
-    errptr);
+    leveldb_write (balance->dbo->db, writeoptions, writebatch, errptr);
 
 
-assert(errptr == NULL);
+    assert (errptr == NULL);
 
-leveldb_writebatch_destroy(writebatch);
-leveldb_writeoptions_destroy(writeoptions);
+    leveldb_writebatch_destroy (writebatch);
+    leveldb_writeoptions_destroy (writeoptions);
 
 
 
-leveldb_readoptions_destroy((*on_give)->readoptions);
-leveldb_iter_destroy((*on_give)->iter);
+    leveldb_readoptions_destroy ((*on_give)->readoptions);
+    leveldb_iter_destroy ((*on_give)->iter);
     free (*on_give);
     on_give = NULL;
 
@@ -185,7 +160,7 @@ db_on_gives_dead (db_balance_t * balance, node_t * node)
     while (iter) {
         if (strcmp (node->key, iter->key) == 0) {
             zlist_remove (balance->on_gives, iter);
-            zlist_append(balance->don_gives, iter);
+            zlist_append (balance->don_gives, iter);
         }
         iter = zlist_next (on_gives);
     }

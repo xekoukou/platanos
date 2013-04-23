@@ -33,7 +33,7 @@ typedef struct node_t node_t;
 struct db_on_give_t
 {
     char key[18];               //the key of the node we send to
-    char unc_iter[50];       //the first key of of the iterator that points to unconfirmed keys
+    char unc_iter[50];          //the first key of of the iterator that points to unconfirmed keys
 
     uint64_t rec_counter;       //the counter of the last confirmation
     int un_id;
@@ -52,8 +52,8 @@ struct db_on_give_t
     uint64_t last_counter;
 
 //iterator
-   leveldb_iterator_t *iter;
-   leveldb_readoptions_t *readoptions;
+    leveldb_iterator_t *iter;
+    leveldb_readoptions_t *readoptions;
 
 };                              //ongoing event
 
@@ -63,7 +63,7 @@ struct db_balance_t;
 typedef struct db_balance_t db_balance_t;
 
 void db_on_give_init (db_on_give_t ** on_give, db_balance_t * balance,
-                      event_t * event, int un_id);
+                      interval_t * interval, int un_id);
 
 //destroy this after you have removed the event from the events list
 //this will free the event
@@ -72,8 +72,7 @@ void db_on_give_init (db_on_give_t ** on_give, db_balance_t * balance,
 
 void db_on_give_destroy (on_give_t ** on_give);
 
-void
-db_on_gives_dead (db_balance_t * balance, node_t * node);
+void db_on_gives_dead (db_balance_t * balance, node_t * node);
 //linear search
 db_on_give_t *db_on_gives_search_id (zlist_t * on_gives, int id);
 

@@ -57,7 +57,7 @@ struct router_t
 {
     int type;                   //1 is db 0 is worker
     struct hash_rb_t hash_rb;
-    int repl;                   //replication, used only be the db_routing
+    int repl;                   //replication, used only by the db_routing
     node_t *self;
 
       khash_t (nodes_t) * nodes;

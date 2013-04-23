@@ -38,15 +38,14 @@ typedef struct
     uint64_t counter;           //counter of the last received data
     uint64_t last_time;         //used to indicate the last time it requested for the missed chunkes 
     interval_t *interval;       //at the end of the receive it is added to the rest of the intervals
-} db_on_receive_t;                 //ongoing event
+} db_on_receive_t;              //ongoing event
 
 void db_on_receive_init (db_on_receive_t ** on_receive, int id, char *key,
-                      zmsg_t * msg);
+                         zmsg_t * msg);
 
-void
-db_on_receives_destroy (db_balance_t * balance, node_t * node);
+void db_on_receives_destroy (db_balance_t * balance, node_t * node);
 
-
+//doesnt not destroy the interval
 void db_on_receive_destroy (db_on_receive_t ** on_receive);
 
 //on_receive events are not unique per id

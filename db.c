@@ -20,6 +20,38 @@
 #include"db.h"
 
 
+//returns the replication factor of the database to be used with the db_router
+int
+db_db_replication (db_t * db)
+{
+
+
+    int result;
+    struct Stat stat;
+
+    char path[1000];
+    char octopus[8];
+    int buffer;
+    int buffer_len = sizeof (int);
+
+    oconfig_octopus (worker->config, octopus);
+
+    sprintf (path, "/%s/global_properties/replication", octopus);
+    result =
+        zoo_get (worker->zh, path, 0, (char *) &buffer, &buffer_len, &stat);
+    assert (result == ZOK);
+
+    assert (buffer_len == sizeof (int));
+
+
+    assert (result == ZOK);
+
+    return buffer;
+
+}
+
+
+
 void
 db__balance (db_balance_t * balance)
 {
@@ -147,13 +179,18 @@ db_add_dead_node (update_t * update, zmsg_t * msg)
         node_set_alive (node, 0);
 
 //update router object
-        assert (1 == router_add (update->db_router, node));
-    }
+        router_add (update->db_router, node);
 
-//TODO on_give on_receive?
+    }
+//the intervals of the on_gives will be missing till the dead node goes up
+    db_balance_dead_node (db_balance_t * balance, node_t * node);
 }
 
+//IMPORTANT
 
+//deleted nodes should contain no data at the time of their removal
+//the deleted node needs to "prinf" that it doesnt have any data so that the administrator issues the delete command
+//here we assume that this is the case, ie that there are no pending on_gives or on_receives
 
 void
 db_delete_node (db_update_t * update, zmsg_t * msg)
@@ -167,17 +204,13 @@ db_delete_node (db_update_t * update, zmsg_t * msg)
     node_t *node = nodes_search (update->router->nodes, key);
     assert (node != NULL);
 
-//TODO on_give, on_receive?
-
 
 //update router object
-    assert (1 == router_delete (update->router, node));
+    router_delete (update->router, node);
 
-
-    intervals_t *cintervals = router_current_intervals (update->router, node);
-
-    db_balance_init_gives (update->balance,cintervals);
-
+//this should never have any effect
+//or else we lost data
+    db_balance_delete_node (db_balance_t * balance, node_t * node);
 
 }
 
@@ -216,16 +249,28 @@ db_add_node (db_update_t * update, zmsg_t * msg)
              "\n%s:add_node: added node with\nstart:%d\nkey:%s\nn_pieces:%d\nst_piece:%lu",
              update->balance->self_key, start, key, n_pieces, st_piece);
 
-    db_node_init (&node, key, n_pieces, st_piece, bind_point_bl);
-    node_set_alive (node, 1);
+    node = nodes_search (update->db_router->nodes, key);
+
+    if (node != NULL) {
+
+        node_set_alive (node, 1);
+
+        db_balance_alive_node (db_balance_t * balance, node_t * node);
+
+    }
+    else {
+
+        db_node_init (&node, key, n_pieces, st_piece, bind_point_bl);
+        node_set_alive (node, 1);
 
 //update router object
-    assert (1 == router_add (update->router, node));
+        router_add (update->router, node);
 
+        intervals_t *cintervals =
+            router_current_intervals (update->router, node);
+        db_balance_init_gives (cintervals);
+    }
 
-    intervals_t *cintervals = router_current_intervals (update->router, node);
-
-    db_balance_init_gives (cintervals);
 
 }
 
@@ -483,6 +528,7 @@ db_fn (void *arg)
     router_t *db_router;
 
     router_init (&db_router, 1);
+    db_router->repl = db_db_replication (db);
 
 
 //balance object

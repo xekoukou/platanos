@@ -320,6 +320,25 @@ intervals_dup (intervals_t * intervals)
 
 }
 
+void
+intervals_destroy (intervals_t ** intervals)
+{
+
+    if ((*intervals)->circle == 0) {
+
+        interval_t *iter;
+
+        RB_FOREACH (iter, intervals_rb_t, &((*intervals)->intervals_rb)) {
+
+            intervals_remove (intervals, iter);
+        }
+    }
+    free (*intervals);
+    *intervals = NULL;
+
+}
+
+
 
 intervals_t *
 intervals_difference (intervals_t * intervals, intervals_t * rintervals)

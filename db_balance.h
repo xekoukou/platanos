@@ -55,5 +55,46 @@ typedef struct db_balance_t db_balance_t;
 void db_balance_init (db_balance_t ** balance, dbo_t * dbo,
                       void *router_bl, void *self_bl, char *key);
 
+void db_balance_clear_timer (db_balance_t * balance);
+
+//update after an event to a specific on_give
+void
+db_balance_update_give_timer (db_balance_t * balance, db_on_give_t * on_give);
+
+//update after an event to a specific on_receive
+void
+db_balance_update_receive_timer (balance_t * balance,
+                                 db_on_receive_t * on_receive);
+
+//position the iterator to the correct position first
+void
+db_balance_send_next_chunk (db_balance_t * balance, db_on_give_t * on_give,
+                            zframe_t * address);
+
+void
+db_balance_interval_received (db_balance_t * balance, zmsg_t * msg,
+                              zframe_t * address);
+
+void
+db_balance_confirm_chunk (db_balance_t * balance, zmsg_t * msg,
+                          zframe_t * address);
+
+void
+db_balance_missed_chunkes (db_balance_t * balance, zmsg_t * msg,
+                           zframe_t * address);
+
+void balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address);
+
+void db_balance_new_interval
+    (db_balance_t * balance, zmsg_t * msg, zframe_t * address);
+
+void db_balance_new_msg (db_balance_t * balance, zmsg_t * msg);
+
+void db_balance_lazy_pirate (db_balance_t * balance);
+
+void db_balance_init_gives (db_balance_t * balance, intervals_t * cintervals);
+
+
+
 
 #endif

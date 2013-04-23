@@ -230,7 +230,6 @@ router_dbroute (struct router_t *router, uint64_t key, char **rkey,
     }
 
     if (result == NULL) {
-        *rkey = NULL;
         return;
     }
 
@@ -764,28 +763,23 @@ router_fnode (struct router_t * router, char *key)
 //returns the intervals that this router has assigned to the node
 // it is used in the db threads.
 intervals_t *
-router_current_intervals (struct router_t * router, node_t * node)
+router_db_current_intervals (struct router_t * router, node_t * node)
 {
 
     intervals_t *intervals;
 
     intervals_init (&intervals);
 
-    hkey_t hkeys[node->n_pieces];
 
-    int iter = 0;
-
-    for (iter = 0; iter < node->n_pieces; iter++) {
-
-        char key[1000];
-
-        node_piece (node->key, iter + node->st_piece, key);
-        MurmurHash3_x64_128 ((void *) key, strlen (key), 0,
-                             (void *) &(hkeys[iter]));
-    }
+    char temp[1000];
+    node_piece (node->key, iter + node->st_piece, temp);
 
     struct hash_t hash;
-    memcpy (&(hash.hkey), &(hkeys[0]), sizeof (hkey_t));
+
+    MurmurHash3_x64_128 ((void *) temp, strlen (temp), 0,
+                         (void *) &(hash.hkey));
+
+
 
     struct hash_t *previous;
     struct hash_t *start;
@@ -801,33 +795,72 @@ router_current_intervals (struct router_t * router, node_t * node)
             result = RB_MIN (hash_rb_t, &(router->hash_rb));
         }
 
-        if (memcmp (&(result->hkey), &(start->hkey), sizeof (hkey_t)) == 0) {
-            if (memcmp (&(previous->hkey), &(start->hkey), sizeof (hkey_t)) ==
-                0) {
-//complete circle
-                intervals->circle = 1;
-            }
-            else {
-                interval_t *interval;
-                interval_init (&interval, &(previous->hkey), &(result->hkey));
-                intervals_add (intervals, interval);
-            }
-            break;
-        }
+        char rkeys[router->repl][18];
+        int nreturned;
 
-        for (iter = 1; iter < node->n_pieces; iter++) {
-            if (memcmp (&(result->hkey), &(hkeys[iter]), sizeof (hkey_t)) == 0) {
+        router_dbroute (router, result->node->key, rkeys, &nreturned);
+
+        for (iter = 1; iter < nreturned; iter++) {
+            if (strcmp (rkeys[iter], node->key) == 0) {
                 interval_t *interval;
                 interval_init (&interval, &(previous->hkey), &(result->hkey));
                 intervals_add (intervals, interval);
 
-                previous = result;
                 break;
             }
         }
 
+        if (memcmp (&(result->hkey), &(start->hkey), sizeof (hkey_t)) == 0) {
+            break;
+        }
+        previous = result;
 
     }
-
     return intervals;
+}
+
+//returns the list of on_gives that needs to be executed
+void
+router_db_on_gives (router_t * router, intervals_t * intervals,
+                    db_balance_t * balance)
+{
+
+    interval_t *iter;
+
+    RB_FOREACH (iter, intervals_rb_t, &(intervals->intervals_rb)) {
+
+        struct hash_t hash;
+        memcpy (&(hash.hkey), &(iter->end), sizeof (struct _hkey_t));
+
+        struct hash_t *result = RB_FIND (hash_rb_t, &(router->hash_rb), &hash);
+        result = RB_NEXT (hash_rb_t, &(router->hash_rb), result);
+
+        if ((strcmp (result->node->key, router->self->key) != 0)
+            && (result->node->alive)) {
+            //update the intervals
+            interval_t *interval = interval_dup (iter);
+            intervals_remove (balance->intervals, interval);
+
+            //update un_id;
+            if (balance->un_id > 1000000000) {
+                balance->un_id = 1;
+            }
+            else {
+                balance->un_id++;
+            }
+
+
+            interval = interval_dup (iter);
+            //create on_give object
+            on_give_t *on_give;
+            on_give_init (&on_give, balance, interval, balance->un_id);
+
+//update balance object
+            balance_update_give_timer (balance, on_give);
+//put on_give event into the list
+            zlist_append (balance->on_gives, on_give);
+
+        }
+    }
+    intervals_destroy (intervals);
 }

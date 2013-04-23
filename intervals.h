@@ -40,6 +40,8 @@ typedef struct intervals_rb_t intervals_rb_t;
 
 void intervals_init (intervals_t ** intervals);
 
+void intervals_destroy (intervals_t ** intervals);
+
 void intervals_add (intervals_t * intervals, interval_t * interval);
 
 //returns the interval if it is contained inside one interval or NULL

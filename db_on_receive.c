@@ -22,7 +22,8 @@
 
 
 void
-db_on_receive_init (db_on_receive_t ** on_receive, int id, char *key, zmsg_t * msg)
+db_on_receive_init (db_on_receive_t ** on_receive, int id, char *key,
+                    zmsg_t * msg)
 {
     *on_receive = malloc (sizeof (on_receive_t));
 

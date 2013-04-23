@@ -99,68 +99,68 @@ balance_send_next_chunk (balance_t * balance, on_give_t * on_give,
     uint64_t vertices = 0;
 
 
-        zmsg_t *responce_dup = zmsg_dup (on_give->responce);
-        zframe_t *frame = zframe_new (&counter, sizeof (uint64_t));
-        zmsg_add (responce_dup, frame);
+    zmsg_t *responce_dup = zmsg_dup (on_give->responce);
+    zframe_t *frame = zframe_new (&counter, sizeof (uint64_t));
+    zmsg_add (responce_dup, frame);
 
-        for (hiter = on_give->hiter + 1; hiter != kh_end (balance->hash);
-             ++hiter) {
-            if (!kh_exist (balance->hash, hiter))
-                continue;
+    for (hiter = on_give->hiter + 1; hiter != kh_end (balance->hash); ++hiter) {
+        if (!kh_exist (balance->hash, hiter))
+            continue;
 
-            key = kh_key (balance->hash, hiter);
-            if (interval_belongs (on_give->interval, key)) {
-                vertices++;
-                vertex = vertex_dup (&(kh_val (balance->hash, hiter)));
+        key = kh_key (balance->hash, hiter);
+        if (interval_belongs (on_give->interval, key)) {
+            vertices++;
+            vertex = vertex_dup (&(kh_val (balance->hash, hiter)));
 
-                //delete it from the hash
-                vertex_destroy (vertex);
-                kh_del (vertices, balance->hash, hiter);
+            //delete it from the hash
+            vertex_destroy (vertex);
+            kh_del (vertices, balance->hash, hiter);
 
-                //add it to the list of sent vertices
-                zmsg_t *msg;
-                zlist_append (on_give->unc_vertices, vertex_serialize (msg,vertex));
-                //add it
-		responce_dup= vertex_serialize (responce_dup,vertex);
-                if (vertices == COUNTER_SIZE) {
-                    zframe_t *address_dup = zframe_dup (address);
-                    zmsg_wrap (responce_dup, address_dup);
-                    zmsg_send (&responce_dup, balance->router_bl);
-                    on_give->last_counter++;
-                    on_give->hiter = hiter;
-                    break;
-                }
+            //add it to the list of sent vertices
+            zmsg_t *msg;
+            zlist_append (on_give->unc_vertices,
+                          vertex_serialize (msg, vertex));
+            //add it
+            responce_dup = vertex_serialize (responce_dup, vertex);
+            if (vertices == COUNTER_SIZE) {
+                zframe_t *address_dup = zframe_dup (address);
+                zmsg_wrap (responce_dup, address_dup);
+                zmsg_send (&responce_dup, balance->router_bl);
+                on_give->last_counter++;
+                on_give->hiter = hiter;
+                break;
             }
         }
-        if (vertices < COUNTER_SIZE) {
-            //this is the last address frame
-            zframe_t *address_dup = zframe_dup (address);
-            zmsg_wrap (responce_dup, address_dup);
+    }
+    if (vertices < COUNTER_SIZE) {
+        //this is the last address frame
+        zframe_t *address_dup = zframe_dup (address);
+        zmsg_wrap (responce_dup, address_dup);
 
-            zmsg_send (&responce_dup, balance->router_bl);
+        zmsg_send (&responce_dup, balance->router_bl);
 
 //zero counter /last msgs also gives the total/last counter 
-            counter = 0;
-            frame = zframe_new (&counter, sizeof (uint64_t));
-            zmsg_add (on_give->responce, frame);
-            frame = zframe_new (&(on_give->last_counter), sizeof (uint64_t));
-            zmsg_add (on_give->responce, frame);
+        counter = 0;
+        frame = zframe_new (&counter, sizeof (uint64_t));
+        zmsg_add (on_give->responce, frame);
+        frame = zframe_new (&(on_give->last_counter), sizeof (uint64_t));
+        zmsg_add (on_give->responce, frame);
 
 
-            zmsg_wrap (on_give->responce, address);
-            zmsg_send (&(on_give->responce), balance->router_bl);
+        zmsg_wrap (on_give->responce, address);
+        zmsg_send (&(on_give->responce), balance->router_bl);
 
 //state set to 1
 //and update clock
-            on_give->state = 1;
+        on_give->state = 1;
 
-        }
-        else {
-            zframe_destroy (&address);
+    }
+    else {
+        zframe_destroy (&address);
 
-        }
-        on_give->last_time = zclock_time ();
-        balance_update_give_timer (balance, on_give);
+    }
+    on_give->last_time = zclock_time ();
+    balance_update_give_timer (balance, on_give);
 
 }
 
@@ -188,7 +188,7 @@ balance_interval_received (balance_t * balance, zmsg_t * msg,
     }
 
     on_give->state = 2;
-    while(on_give->pending_confirmations < MAX_PENDING_CONFIRMATIONS) {
+    while (on_give->pending_confirmations < MAX_PENDING_CONFIRMATIONS) {
         balance_send_next_chunk (balance, on_give, address);
     }
 
@@ -302,7 +302,7 @@ balance_missed_chunkes (balance_t * balance, zmsg_t * msg, zframe_t * address)
                 zmsg_t *vert_msg = zlist_first (on_give->unc_vertices);
                 zlist_remove (on_give->unc_vertices, vert_msg);
                 zmsg_destroy (&vert_frame);
-                for (i = 1; i < (diff-1) * COUNTER_SIZE; i++) {
+                for (i = 1; i < (diff - 1) * COUNTER_SIZE; i++) {
 
                     vert_msg = zlist_next (on_give->unc_vertices);
                     zlist_remove (on_give->unc_vertices, vert_msg);
@@ -311,22 +311,21 @@ balance_missed_chunkes (balance_t * balance, zmsg_t * msg, zframe_t * address)
 
             }
 //resend the lost chunk
-                zmsg_t *vert_msg = zlist_first (on_give->unc_vertices);
-            frame=zmsg_first(vert_msg);
-            while(frame){
-            zmsg_add (responce_dup, zframe_dup (frame));
-            frame=zmsg_next(vert_msg);
+            zmsg_t *vert_msg = zlist_first (on_give->unc_vertices);
+            frame = zmsg_first (vert_msg);
+            while (frame) {
+                zmsg_add (responce_dup, zframe_dup (frame));
+                frame = zmsg_next (vert_msg);
             }
 
-            for (i =1; i < COUNTER_SIZE;
-                 i++) {
+            for (i = 1; i < COUNTER_SIZE; i++) {
                 vert_msg = zlist_next (on_give->unc_vertices);
 
-         frame=zmsg_first(vert_msg);
-            while(frame){
-            zmsg_add (responce_dup, zframe_dup (frame));
-            frame=zmsg_next(vert_msg);
-            }
+                frame = zmsg_first (vert_msg);
+                while (frame) {
+                    zmsg_add (responce_dup, zframe_dup (frame));
+                    frame = zmsg_next (vert_msg);
+                }
 
 
             }
@@ -378,7 +377,7 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
 
     uint64_t counter;
     memcpy (&counter, zframe_data (frame), sizeof (uint64_t));
-    zframe_destroy(&frame);
+    zframe_destroy (&frame);
 
 //update missed_chunkes
 
@@ -389,7 +388,7 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
         uint64_t total_counter;
         frame = zmsg_pop (msg);
         memcpy (&total_counter, zframe_data (frame), sizeof (uint64_t));
-        zframe_destroy(&frame);
+        zframe_destroy (&frame);
 
 //check if there where more chunks than the ones received           
 //add them with the rest missing if necessary
@@ -508,27 +507,27 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
 //check whether it is one of the missed chunkes
 
             uint64_t *c = zlist_first (on_receive->m_counters);
-                if (*c == counter) {
+            if (*c == counter) {
+
+                frame = zmsg_first (msg);
+                while (frame) {
+                    vertex_deserialize (balance->hash, msg);
 
                     frame = zmsg_first (msg);
-                    while (frame) {
-                        vertex_deserialize(balance->hash,msg);
-
-                        frame = zmsg_first (msg);
-                    }
-
-                    zlist_remove (on_receive->m_counters, c);
                 }
+
+                zlist_remove (on_receive->m_counters, c);
+            }
 
         }
         else {
 //get the data
-                    frame = zmsg_first (msg);
-                    while (frame) {
-                        vertex_deserialize(balance->hash,msg);
+            frame = zmsg_first (msg);
+            while (frame) {
+                vertex_deserialize (balance->hash, msg);
 
-                        frame = zmsg_first (msg);
-                    }
+                frame = zmsg_first (msg);
+            }
 
 
             //update last counter

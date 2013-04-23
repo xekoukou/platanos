@@ -65,7 +65,8 @@ db_balance_update_give_timer (db_balance_t * balance, db_on_give_t * on_give)
 
 //update after an event to a specific on_receive
 void
-db_balance_update_receive_timer (balance_t * balance, db_on_receive_t * on_receive)
+db_balance_update_receive_timer (balance_t * balance,
+                                 db_on_receive_t * on_receive)
 {
 
     if ((on_receive->last_time + ON_TIMEOUT < balance->next_time)
@@ -77,7 +78,7 @@ db_balance_update_receive_timer (balance_t * balance, db_on_receive_t * on_recei
 //position the iterator to the correct position first
 void
 db_balance_send_next_chunk (db_balance_t * balance, db_on_give_t * on_give,
-                         zframe_t * address)
+                            zframe_t * address)
 {
 
 
@@ -90,64 +91,64 @@ db_balance_send_next_chunk (db_balance_t * balance, db_on_give_t * on_give,
     uint64_t vertices = 0;
 
 
-        zmsg_t *responce_dup = zmsg_dup (on_give->responce);
-        zframe_t *frame = zframe_new (&counter, sizeof (uint64_t));
-        zmsg_add (responce_dup, frame);
+    zmsg_t *responce_dup = zmsg_dup (on_give->responce);
+    zframe_t *frame = zframe_new (&counter, sizeof (uint64_t));
+    zmsg_add (responce_dup, frame);
 
-        while(leveldb_iter_valid(on_give->iter)){
-size_t klen;
-char *iter_key=leveldb_iter_key(on_give->iter,&klen);
-memcpy(&key,iter_key,strlen(iter_key));
+    while (leveldb_iter_valid (on_give->iter)) {
+        size_t klen;
+        char *iter_key = leveldb_iter_key (on_give->iter, &klen);
+        memcpy (&key, iter_key, strlen (iter_key));
 
-            if (interval_belongs (on_give->interval, key)) {
-                vertices++;
-               
-                //add it
-vertex_db_to_msg(responce_dup,iter);
-                if (vertices == COUNTER_SIZE) {
-                    zframe_t *address_dup = zframe_dup (address);
-                    zmsg_wrap (responce_dup, address_dup);
-                    zmsg_send (&responce_dup, balance->router_bl);
-                    on_give->last_counter++;
-                    break;
-                }
+        if (interval_belongs (on_give->interval, key)) {
+            vertices++;
+
+            //add it
+            vertex_db_to_msg (responce_dup, iter);
+            if (vertices == COUNTER_SIZE) {
+                zframe_t *address_dup = zframe_dup (address);
+                zmsg_wrap (responce_dup, address_dup);
+                zmsg_send (&responce_dup, balance->router_bl);
+                on_give->last_counter++;
+                break;
             }
         }
-        if (vertices < COUNTER_SIZE) {
-            //this is the last address frame
-            zframe_t *address_dup = zframe_dup (address);
-            zmsg_wrap (responce_dup, address_dup);
+    }
+    if (vertices < COUNTER_SIZE) {
+        //this is the last address frame
+        zframe_t *address_dup = zframe_dup (address);
+        zmsg_wrap (responce_dup, address_dup);
 
-            zmsg_send (&responce_dup, balance->router_bl);
+        zmsg_send (&responce_dup, balance->router_bl);
 
 //zero counter /last msgs also gives the total/last counter 
-            counter = 0;
-            frame = zframe_new (&counter, sizeof (uint64_t));
-            zmsg_add (on_give->responce, frame);
-            frame = zframe_new (&(on_give->last_counter), sizeof (uint64_t));
-            zmsg_add (on_give->responce, frame);
+        counter = 0;
+        frame = zframe_new (&counter, sizeof (uint64_t));
+        zmsg_add (on_give->responce, frame);
+        frame = zframe_new (&(on_give->last_counter), sizeof (uint64_t));
+        zmsg_add (on_give->responce, frame);
 
 
-            zmsg_wrap (on_give->responce, address);
-            zmsg_send (&(on_give->responce), balance->router_bl);
+        zmsg_wrap (on_give->responce, address);
+        zmsg_send (&(on_give->responce), balance->router_bl);
 
 //state set to 1
 //and update clock
-            on_give->state = 1;
+        on_give->state = 1;
 
-        }
-        else {
-            zframe_destroy (&address);
+    }
+    else {
+        zframe_destroy (&address);
 
-        }
-        on_give->last_time = zclock_time ();
-        balance_update_give_timer (balance, on_give);
+    }
+    on_give->last_time = zclock_time ();
+    balance_update_give_timer (balance, on_give);
 
 }
 
 void
 db_balance_interval_received (db_balance_t * balance, zmsg_t * msg,
-                           zframe_t * address)
+                              zframe_t * address)
 {
 
     zframe_t *id_frame = zmsg_pop (msg);
@@ -169,15 +170,16 @@ db_balance_interval_received (db_balance_t * balance, zmsg_t * msg,
     }
 
     on_give->state = 2;
-    
-    while(on_give->pening_confirmations < MAX_PENDING_CONFIRMATIONS) {
+
+    while (on_give->pening_confirmations < MAX_PENDING_CONFIRMATIONS) {
         balance_send_next_chunk (balance, on_give, address);
     }
 
 }
 
 void
-db_balance_confirm_chunk (db_balance_t * balance, zmsg_t * msg, zframe_t * address)
+db_balance_confirm_chunk (db_balance_t * balance, zmsg_t * msg,
+                          zframe_t * address)
 {
 
     zframe_t *id_frame = zmsg_pop (msg);
@@ -195,12 +197,13 @@ db_balance_confirm_chunk (db_balance_t * balance, zmsg_t * msg, zframe_t * addre
     memcpy (&counter, zframe_data (frame), sizeof (uint64_t));
 
 //save the position of the iterator
-size_t saved_klen;
-char saved_key[50];
-char *temp=leveldb_iter_key(iter,&saved_klen);
-assert(saved_klen<=50);
-memcpy(saved_key,temp,saved_klen);
-leveldb_iter_seek(on_give->iter,on_give->unc_iter,strlen(on_give->unc_iter)+1);
+    size_t saved_klen;
+    char saved_key[50];
+    char *temp = leveldb_iter_key (iter, &saved_klen);
+    assert (saved_klen <= 50);
+    memcpy (saved_key, temp, saved_klen);
+    leveldb_iter_seek (on_give->iter, on_give->unc_iter,
+                       strlen (on_give->unc_iter) + 1);
 
 
 //a counter zero represents the end of the transfer
@@ -211,18 +214,20 @@ leveldb_iter_seek(on_give->iter,on_give->unc_iter,strlen(on_give->unc_iter)+1);
         if (diff > 0) {
             int i;
             for (i = 0; i < diff * COUNTER_SIZE; i++) {
-            size_t klen;
-            char key[50];
-temp=leveldb_iter_key(iter,&klen);
-assert(klen<=50);
-memcpy(key,temp,strlen(temp));
-while(1){
-            if (interval_belongs (on_give->interval, key)) {
-vertex_db_destroy(balance->dbo,on_give->iter);
-break;
-}else{
-vertex_iter_next(on_give->iter);
-}}
+                while (leveldb_iter_valid (on_give->iter)) {
+                    size_t klen;
+                    char key[50];
+                    temp = leveldb_iter_key (iter, &klen);
+                    assert (klen <= 50);
+                    memcpy (key, temp, strlen (temp));
+                    if (interval_belongs (on_give->interval, key)) {
+                        vertex_db_destroy (balance->dbo, on_give->iter);
+                        break;
+                    }
+                    else {
+                        vertex_iter_next (on_give->iter);
+                    }
+                }
             }
         }
         for (i = 0; i < diff; i++) {
@@ -233,22 +238,24 @@ vertex_iter_next(on_give->iter);
             }
         }
 //return the iterator to its previous position
-leveldb_iter_seek(on_give->iter,saved_key,strlen(saved_key)+1);
+        leveldb_iter_seek (on_give->iter, saved_key, strlen (saved_key) + 1);
 
     }
     else {
 
-while(leveldb_iter_valid(on_give->iter)){
+        while (leveldb_iter_valid (on_give->iter)) {
             size_t klen;
             char key[50];
-temp=leveldb_iter_key(iter,&klen);
-assert(klen<=50);
-memcpy(key,temp,strlen(temp));
+            temp = leveldb_iter_key (iter, &klen);
+            assert (klen <= 50);
+            memcpy (key, temp, strlen (temp));
             if (interval_belongs (on_give->interval, key)) {
-vertex_db_destroy(balance->dbo,on_give->iter);
-}else{
-vertex_iter_next(on_give->iter);
-}}
+                vertex_db_destroy (balance->dbo, on_give->iter);
+            }
+            else {
+                vertex_iter_next (on_give->iter);
+            }
+        }
 
 
         //remove the event form the event list
@@ -262,7 +269,8 @@ vertex_iter_next(on_give->iter);
 
 
 void
-db_balance_missed_chunkes (db_balance_t * balance, zmsg_t * msg, zframe_t * address)
+db_balance_missed_chunkes (db_balance_t * balance, zmsg_t * msg,
+                           zframe_t * address)
 {
 
     zframe_t *id_frame = zmsg_pop (msg);
@@ -302,38 +310,42 @@ db_balance_missed_chunkes (db_balance_t * balance, zmsg_t * msg, zframe_t * addr
                 on_give->rec_counter = counter - 1;
 
 //save the position of the iterator
-size_t saved_klen;
-char saved_key[50];
-char *temp=leveldb_iter_key(iter,&saved_klen);
-assert(saved_klen<=50);
-memcpy(saved_key,temp,saved_klen);
-leveldb_iter_seek(on_give->iter,on_give->unc_iter,strlen(on_give->unc_iter)+1);
+                size_t saved_klen;
+                char saved_key[50];
+                char *temp = leveldb_iter_key (iter, &saved_klen);
+                assert (saved_klen <= 50);
+                memcpy (saved_key, temp, saved_klen);
+                leveldb_iter_seek (on_give->iter, on_give->unc_iter,
+                                   strlen (on_give->unc_iter) + 1);
 
-            int i;
-            for (i = 1; i < diff-1 * COUNTER_SIZE; i++) {
-            size_t klen;
-            char key[50];
-temp=leveldb_iter_key(iter,&klen);
-assert(klen<=50);
-memcpy(key,temp,strlen(temp));
-while(1){
-            if (interval_belongs (on_give->interval, key)) {
-vertex_db_destroy(balance->dbo,on_give->iter);
-break;
-}else{
-vertex_iter_next(on_give->iter);
-}}
+                int i;
+                for (i = 1; i < diff - 1 * COUNTER_SIZE; i++) {
+                    size_t klen;
+                    char key[50];
+                    temp = leveldb_iter_key (iter, &klen);
+                    assert (klen <= 50);
+                    memcpy (key, temp, strlen (temp));
+                    while (1) {
+                        if (interval_belongs (on_give->interval, key)) {
+                            vertex_db_destroy (balance->dbo, on_give->iter);
+                            break;
+                        }
+                        else {
+                            vertex_iter_next (on_give->iter);
+                        }
+                    }
+                }
+
+
             }
 
-
-}
-
 //send the missing chunk
-balance_send_next_chunk (balance, on_give, address);
+            balance_send_next_chunk (balance, on_give, address);
 
 
 //return the iterator to its previous position
-leveldb_iter_seek(on_give->iter,saved_key,strlen(saved_key)+1);
+            leveldb_iter_seek (on_give->iter, saved_key,
+                               strlen (saved_key) + 1);
 
         }
     }
@@ -375,7 +387,7 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
 
     uint64_t counter;
     memcpy (&counter, zframe_data (frame), sizeof (uint64_t));
-    zframe_destroy(&frame);
+    zframe_destroy (&frame);
 
 //update missed_chunkes
 
@@ -386,7 +398,7 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
         uint64_t total_counter;
         frame = zmsg_pop (msg);
         memcpy (&total_counter, zframe_data (frame), sizeof (uint64_t));
-        zframe_destroy(&frame);
+        zframe_destroy (&frame);
 
 //check if there where more chunks than the ones received           
 //add them with the rest missing if necessary
@@ -445,9 +457,11 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
         zlist_remove (balance->on_receives, on_receive);
         on_receive_destroy (&on_receive);
 
-        intervals_t *cintervals = router_current_intervals (update->router, node);
+        intervals_t *cintervals = router_db_current_intervals (balance->router,
+                                                               balance->router->
+                                                               self);
 
-    db_balance_init_gives (balance,cintervals);
+        db_balance_init_gives (balance, cintervals);
 
 
         zmsg_destroy (&msg);
@@ -459,30 +473,30 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
 //check whether it is one of the missed chunkes
 
             uint64_t *c = zlist_first (on_receive->m_counters);
-                if (*c == counter) {
+            if (*c == counter) {
+
+                frame = zmsg_first (msg);
+                while (frame) {
+                    vertex_db_msg_to_db (balance->dbo, msg);
 
                     frame = zmsg_first (msg);
-                    while (frame) {
-vertex_db_msg_to_db(balance->dbo,msg);
-
-                        frame = zmsg_first (msg);
-                    }
-
-                    zlist_remove (on_receive->m_counters, c);
                 }
+
+                zlist_remove (on_receive->m_counters, c);
+            }
 
         }
         else {
 //get the data
-                    frame = zmsg_first (msg);
-                    while (frame) {
-vertex_db_msg_to_db(balance->dbo,msg);
+            frame = zmsg_first (msg);
+            while (frame) {
+                vertex_db_msg_to_db (balance->dbo, msg);
 
-                        frame = zmsg_first (msg);
-                    }
+                frame = zmsg_first (msg);
+            }
 
 
-           //update last counter
+            //update last counter
             on_receive->counter = counter;
         }
 
@@ -629,7 +643,8 @@ db_balance_lazy_pirate (db_balance_t * balance)
                          iter->key,
                          iter->interval->start.prefix,
                          iter->interval->start.suffix,
-                         iter->interval->end.prefix, iter->interval->end.suffix);
+                         iter->interval->end.prefix,
+                         iter->interval->end.suffix);
                 zmsg_t *responce = zmsg_new ();
                 zframe_t *frame = zframe_new (balance->self_key,
                                               strlen (balance->self_key));
@@ -645,8 +660,7 @@ db_balance_lazy_pirate (db_balance_t * balance)
                     counter = zlist_next (iter->m_counters);
                 }
 
-                frame =
-                    zframe_new (iter->key, strlen (iter->key));
+                frame = zframe_new (iter->key, strlen (iter->key));
                 zmsg_wrap (responce, frame);
                 zmsg_send (&responce, balance->router_bl);
                 iter->last_time = time;
@@ -683,7 +697,8 @@ db_balance_lazy_pirate (db_balance_t * balance)
             frame =
                 zframe_new (&(siter->interval->start), sizeof (struct _hkey_t));
             zmsg_add (msg, frame);
-            frame = zframe_new (&(siter->interval->end), sizeof (struct _hkey_t));
+            frame =
+                zframe_new (&(siter->interval->end), sizeof (struct _hkey_t));
             zmsg_add (msg, frame);
             frame = zframe_new (siter->key, strlen (siter->event->key));
             zmsg_wrap (msg, frame);
@@ -692,13 +707,14 @@ db_balance_lazy_pirate (db_balance_t * balance)
         else {
             if (siter->state == 1) {
 
-               fprintf (stderr,
+                fprintf (stderr,
                          "\ndb:%s:balance:Sending EOT msg to worker %s\n for event with\nstart: %lu %lu \n end: %lu %lu",
                          balance->self_key,
                          siter->key,
                          siter->interval->start.prefix,
                          siter->interval->start.suffix,
-                         siter->interval->end.prefix, siter->interval->end.suffix);
+                         siter->interval->end.prefix,
+                         siter->interval->end.suffix);
                 zmsg_t *msg = zmsg_new ();
                 zframe_t *frame = zframe_new (balance->self_key,
                                               strlen (balance->self_key));
@@ -710,10 +726,7 @@ db_balance_lazy_pirate (db_balance_t * balance)
                 uint64_t counter = 0;
                 frame = zframe_new (&counter, sizeof (uint64_t));
                 zmsg_add (msg, frame);
-                frame =
-                    zframe_new (&
-                                (siter->key),
-                                strlen (siter->key));
+                frame = zframe_new (&(siter->key), strlen (siter->key));
                 zmsg_wrap (msg, frame);
                 zmsg_send (&msg, balance->router_bl);
             }
@@ -725,7 +738,8 @@ db_balance_lazy_pirate (db_balance_t * balance)
                          siter->key,
                          siter->interval->start.prefix,
                          siter->interval->start.suffix,
-                         siter->interval->end.prefix, siter->interval->end.suffix);
+                         siter->interval->end.prefix,
+                         siter->interval->end.suffix);
                 zframe_t *address = zframe_new (&(siter->key),
                                                 strlen (siter->key));
                 balance_send_next_chunk (balance, siter, address);
@@ -742,7 +756,118 @@ db_balance_lazy_pirate (db_balance_t * balance)
 
 
 
-void  db_balance_init_gives (db_balance_t *balance, intervals_t *cintervals){
+void
+db_balance_init_gives (db_balance_t * balance, intervals_t * cintervals)
+{
 
+
+    intervals_t *diff2 = intervals_difference (balance->intervals, cintervals);
+    intervals_t *diff = intervals_difference (diff2, balance->locked_intervals);
+    intervals_destroy (diff2);
+
+    router_db_on_gives (balance->router, diff2, balance);
+}
+
+void
+db_balance_dead_node (db_balance_t * balance, node_t * node)
+{
+//we dont update the timer, no need
+    db_on_give_t *on_give = zlist_first (balance->on_gives);
+    while (on_give) {
+
+        if (strcmp (on_give->key, node->key) == 0) {
+            zlist_remove (balance->on_gives, on_give);
+            zlist_append (balance->don_gives, on_give);
+        }
+        on_give = zlist_next (balance->on_gives);
+    }
+
+    db_on_receive_t *on_receive = zlist_first (balance->on_receives);
+    while (on_receive) {
+
+        if (strcmp (on_receive->key, node->key) == 0) {
+            zlist_remove (balance->on_receives, on_receive);
+            zlist_append (balance->don_receives, on_receive);
+        }
+        on_give = zlist_next (balance->on_receives);
+    }
+
+}
+
+void
+db_balance_alive_node (db_balance_t * balance, node_t * node)
+{
+//we dont update the timer, no need
+    db_on_give_t *on_give = zlist_first (balance->don_gives);
+    while (on_give) {
+
+        if (strcmp (on_give->key, node->key) == 0) {
+            zlist_remove (balance->don_gives, on_give);
+            zlist_append (balance->on_gives, on_give);
+
+            db_balance_update_give_timer (balance, on_give);
+        }
+        on_give = zlist_next (balance->on_gives);
+    }
+
+    db_on_receive_t *on_receive = zlist_first (balance->don_receives);
+    while (on_receive) {
+
+        if (strcmp (on_receive->key, node->key) == 0) {
+            zlist_remove (balance->don_receives, on_receive);
+            zlist_append (balance->on_receives, on_receive);
+
+            db_balance_update_receive_timer (balance, on_receive);
+        }
+        on_give = zlist_next (balance->on_receives);
+    }
+
+}
+
+
+
+//this should never have any effect
+//if it has, it means that we lost data
+void
+db_balance_delete_node (db_balance_t * balance, node_t * node)
+{
+//we dont update the timer, no need
+    db_on_give_t *on_give = zlist_first (balance->on_gives);
+    while (on_give) {
+
+        if (strcmp (on_give->key, node->key) == 0) {
+            zlist_remove (balance->on_gives, on_give);
+
+//cleaning remaining data
+            while (leveldb_iter_valid (on_give->iter)) {
+                size_t klen;
+                char key[50];
+                temp = leveldb_iter_key (on_give->iter, &klen);
+                assert (klen <= 50);
+                memcpy (key, temp, strlen (temp));
+                if (interval_belongs (on_give->interval, key)) {
+                    vertex_db_destroy (balance->dbo, on_give->iter);
+                }
+                else {
+                    vertex_iter_next (on_give->iter);
+                }
+            }
+
+            db_on_give_destroy (on_give);
+
+        }
+        on_give = zlist_next (balance->on_gives);
+    }
+
+    db_on_receive_t *on_receive = zlist_first (balance->on_receives);
+    while (on_receive) {
+
+        if (strcmp (on_receive->key, node->key) == 0) {
+            intervals_add (balance->intervals, on_receive->interval);
+            zlist_remove (balance->on_receives, on_receive);
+            db_on_receive_destroy (on_receive);
+        }
+        on_give = zlist_next (balance->on_receives);
+    }
 
 }

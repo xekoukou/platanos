@@ -73,6 +73,37 @@ worker_new_interval (worker_t * worker, localdb_t * localdb)
 
 }
 
+//returns the replication factor of the database to be used with the db_router
+int
+worker_db_replication (worker_t * worker)
+{
+
+
+    int result;
+    struct Stat stat;
+
+    char path[1000];
+    char octopus[8];
+    int buffer;
+    int buffer_len = sizeof (int);
+
+    oconfig_octopus (worker->config, octopus);
+
+    sprintf (path, "/%s/global_properties/replication", octopus);
+    result =
+        zoo_get (worker->zh, path, 0, (char *) &buffer, &buffer_len, &stat);
+    assert (result == ZOK);
+
+    assert (buffer_len == sizeof (int));
+
+
+    assert (result == ZOK);
+
+    return buffer;
+
+}
+
+
 int
 compute (zloop_t * loop, zmq_pollitem_t * item, void *arg)
 {
@@ -353,7 +384,7 @@ remove_node (update_t * update, zmsg_t * msg)
 
 //remove all on_recieves for this node, these events have already started
 //and do not require synchronization
-on_receives_destroy (update->balance,node);
+    on_receives_destroy (update->balance, node);
 
 
 //remove all on_gives 
@@ -505,7 +536,7 @@ add_node (update_t * update, zmsg_t * msg)
 
 //update router object
 //this should always happen after the prev step
-    assert (1 == router_add (update->router, node));
+    router_add (update->router, node);
 
     if (!start) {
         fprintf (stderr, "\n%s:add_node:size of event list: %lu",
@@ -717,7 +748,7 @@ wdb_add_node (update_t * update, zmsg_t * msg)
 
 //update router object
 //this should always happen after the prev step
-    assert (1 == router_add (update->db_router, node));
+    router_add (update->db_router, node);
 }
 
 void
@@ -818,7 +849,7 @@ wdb_add_dead_node (update_t * update, zmsg_t * msg)
         node->alive = 0;
 
 //update router object
-        assert (1 == router_add (update->db_router, node));
+        router_add (update->db_router, node);
     }
 }
 
@@ -1100,6 +1131,7 @@ worker_fn (void *arg)
     router_t *db_router;
 
     router_init (&db_router, 1);
+    db_router->repl = worker_db_replication (worker);
 
 
 //balance object
