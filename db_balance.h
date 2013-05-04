@@ -30,7 +30,6 @@
 #include"dbo.h"
 
 
-
 struct db_balance_t
 {
 
@@ -38,14 +37,17 @@ struct db_balance_t
     void *router_bl;            //used to tranfer nodes to the apropriate nodes if necessary
     void *self_bl;
     char self_key[18];
+    zlist_t *events;   //ordered in time inserted FIFO
     zlist_t *on_gives;          //db version
     zlist_t *don_gives;         //db version
     zlist_t *on_receives;
-    zlist_t *don_receives;      //when the node goes up again, resume the transfer
+    zlist_t *don_receives;     
+    //when the node goes up again, resume the transfer
     intervals_t *intervals;
     intervals_t *locked_intervals;      //those can not be transfered because they are currently loaded to the workers
     int un_id;
     int64_t next_time;
+    int started;
 };
 
 typedef struct db_balance_t db_balance_t;

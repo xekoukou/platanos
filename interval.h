@@ -57,7 +57,9 @@ int interval_belongs_h (interval_t * interval, struct _hkey_t *hkey);
 
 int interval_belongs (interval_t * interval, uint64_t key);
 
+int interval_identical(interval_t *first, interval_t *second);
 
+//this is used for the red-black tree
 int cmp_interval_t (struct interval_t *first, struct interval_t *second);
 
 interval_t *interval_dup (interval_t * interval);

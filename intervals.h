@@ -50,6 +50,8 @@ interval_t *intervals_contained (intervals_t * intervals,
 
 //removes and free interval
 //returns true if there was a change
+//can only remove an interval if all of it is contained in an interval of intervals
+//you ll need to add the interval before deleting it to emulate a different behaviour
 int intervals_remove (intervals_t * intervals, interval_t * interval);
 
 int intervals_belongs_h (intervals_t * intervals, struct _hkey_t *hkey);

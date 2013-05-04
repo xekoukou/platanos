@@ -137,3 +137,13 @@ interval_dup (interval_t * interval)
 
     return dinterval;
 }
+
+
+int interval_identical(interval_t *first, interval_t *second){
+
+if(memcmp(&(first->start),&(second->start), sizeof (struct _hkey_t))==0){
+if(memcmp(&(first->end),&(second->end), sizeof (struct _hkey_t))==0){
+return 1;
+}}
+return 0;
+}

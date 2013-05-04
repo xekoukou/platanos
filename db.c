@@ -266,9 +266,11 @@ db_add_node (db_update_t * update, zmsg_t * msg)
 //update router object
         router_add (update->router, node);
 
+if(update->balance->started){
         intervals_t *cintervals =
             router_current_intervals (update->router, node);
         db_balance_init_gives (cintervals);
+}
     }
 
 
@@ -301,9 +303,10 @@ db_update_st_piece (db_update_t * update, zmsg_t * msg)
     router_delete (update->db_router, prev_node);
     router_add (update->db_router, node);
 
+if(update->balance->started){
     intervals_t *cintervals = router_current_intervals (update->router, node);
     db_balance_init_gives (cintervals);
-
+}
 }
 
 void
@@ -333,14 +336,19 @@ db_update_n_pieces (db_update_t * update, zmsg_t * msg)
     router_add (update->db_router, node);
 
 
+if(update->balance->started){
     intervals_t *cintervals = router_current_intervals (update->router, node);
     db_balance_init_gives (cintervals);
-
+}
 }
 
 void
 db_go_online (db_t * db)
 {
+//load balancing events that were interrupted
+    db_on_gives_load (balance);
+    db_on_receives_load (balance);
+
 
     char path[1000];
     char octopus[1000];
@@ -365,8 +373,12 @@ db_start_graph_database (db_update_t * update, zmsg_t * msg)
 {
     zmsg_destroy (&msg);
 
-//TODO init database
+update->balance->start=1;
 
+//load the on_receives and on_gives
+
+//TODO check the on_receives and on_gives that one has loaded from the database
+//if they match with the current status
 }
 
 void
@@ -535,6 +547,9 @@ db_fn (void *arg)
     db_balance_t *balance;
 
     db_balance_init (&balance, dbo, router_bl, self_bl, db->id);
+
+    db_on_gives_load (balance);
+    db_on_receives_load (balance);
 
 //update object
 //used to update things, like the router object

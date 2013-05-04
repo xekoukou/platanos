@@ -62,15 +62,12 @@ typedef struct db_on_give_t db_on_give_t;
 struct db_balance_t;
 typedef struct db_balance_t db_balance_t;
 
-void db_on_give_init (db_on_give_t ** on_give, db_balance_t * balance,
-                      interval_t * interval, int un_id);
+void db_on_give_init (db_on_give_t ** on_give, db_balance_t * balance,char *key,interval_t * interval, int un_id);
 
-//destroy this after you have removed the event from the events list
-//this will free the event
-//also remove it from the on_gives list
-//also all the vertices need to be freed before destroying this
+void
+db_on_give_reset (db_on_give_t * on_give);
 
-void db_on_give_destroy (on_give_t ** on_give);
+void db_on_give_destroy (on_give_t ** on_give,db_balance_t *balance);
 
 void db_on_gives_dead (db_balance_t * balance, node_t * node);
 //linear search

@@ -37,7 +37,7 @@ db_on_give_init (db_on_give_t ** on_give, db_balance_t * balance, char *key,
     (*on_give)->last_time = zclock_time ();
     (*on_give)->interval = interval;
 
-    (*on_give)->unc_iter = NULL;        //NULL represents no unc chunkes
+    memset((*on_give)->unc_iter,0,50);        //NULL represents no unc chunkes
 
     (*on_give)->responce = zmsg_new ();
     zframe_t *frame =
@@ -98,11 +98,24 @@ db_on_give_init (db_on_give_t ** on_give, db_balance_t * balance, char *key,
 }
 
 
-//destroy this after you have removed the event from the events list
-//this will free the event
-//also all the vertices need to be freed before destroying this
 void
-db_on_give_destroy (db_on_give_t ** on_give)
+db_on_give_reset (db_on_give_t * on_give)
+{
+    on_give->rec_counter = 0;
+    on_give->last_counter = 0;
+    on_give->state = 0;
+    on_give->pending_confirmations = 0;
+    on_give->last_time = zclock_time ();
+
+    on_give->unc_iter = NULL;        //NULL represents no unc chunkes
+leveldb_iter_seek(on_give->iter, on_give->unc_iter, strlen(on_give->unc_iter));
+
+}
+
+
+
+void
+db_on_give_destroy (db_on_give_t ** on_give,db_balance_t *balance)
 {
     free ((*on_give)->interval);
     zmsg_destroy (&(*on_give)->responce);
@@ -154,12 +167,13 @@ db_on_give_destroy (db_on_give_t ** on_give)
 void
 db_on_gives_dead (db_balance_t * balance, node_t * node)
 {
-
+//we dont update the timer, no need
     on_give_t *iter = zlist_first (balance->on_gives);
 
     while (iter) {
         if (strcmp (node->key, iter->key) == 0) {
             zlist_remove (balance->on_gives, iter);
+            db_on_gives_reset(iter);
             zlist_append (balance->don_gives, iter);
         }
         iter = zlist_next (on_gives);
@@ -182,4 +196,95 @@ db_on_gives_search_id (zlist_t * db_on_gives, int id)
     }
 
     return NULL;
+}
+
+//we use this fuction when we add ourselves
+//we check if a node has been deleted and destroy the on_give/on_receive if necessary
+
+void db_on_gives_load(db_balance_t *balance){
+
+unsigned char key[10];
+    key[0] = 1;
+    key[1] = 0;
+
+
+//create iterator
+    leveldb_readoptions_t *readoptions = leveldb_readoptions_create ();
+    leveldb_readoptions_set_fill_cache (read_options, 0);
+    levelb_iterator_t *iter =
+        leveldb_create_iterator (balance->dbo->db, read_options);
+    leveldb_iter_seek (iter,key,2);
+
+    while(1){
+size_t klen;
+char *temp = leveldb_iter_key(iter,&klen);
+if(temp[0]!=1){
+break;
+}
+int un_id;
+char key[18];
+struct _hkey_t start;
+struct _hkey_t stop;
+
+memcpy(&un_id,temp+2,sizeof(int));
+temp= leveldb_iter_value(iter, klen);
+memcpy(key,temp,klen);
+leveldb_iter_next(iter);
+temp= leveldb_iter_value(iter, klen);
+memcpy(&start,temp,klen);
+
+leveldb_iter_next(iter);
+temp= leveldb_iter_value(iter, klen);
+memcpy(&start,temp,klen);
+
+temp = leveldb_iter_key(iter,&klen);
+assert(temp[0]==1);
+
+interval_t *interval;
+interval_init(&interval, &start, &stop);
+
+db_on_give_t *on_give;
+db_on_give_init (&on_give,balance,key,
+                      interval,un_id);
+
+//check the existance of the node
+node_t *node=nodes_search(balance->router->nodes,key);
+if(node){
+
+//check if dead
+if(node->alive){
+zlist_add(balance->on_gives,on_give);
+db_balance_update_give_timer (balance, on_give);
+}else{
+zlist_add(balance->don_gives,on_give);
+}
+}else{
+//clean data
+//TODO WRITEBATCH
+            while (leveldb_iter_valid (on_give->iter)) {
+                size_t kklen;
+                char kkey[50];
+                temp = leveldb_iter_key (on_give->iter, &kklen);
+                assert (kklen <= 50);
+                memcpy (kkey, temp, strlen (temp));
+                if (interval_belongs (on_give->interval, kkey)) {
+                    vertex_db_destroy (balance->dbo, on_give->iter);
+                }
+                else {
+                    vertex_iter_next (on_give->iter);
+                }
+            }
+
+
+db_on_give_destroy (on_give,balance);
+}
+
+leveldb_iter_next(iter);
+}
+
+
+
+//TODO destroy iterator
+
+
 }

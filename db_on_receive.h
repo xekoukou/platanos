@@ -43,6 +43,9 @@ typedef struct
 void db_on_receive_init (db_on_receive_t ** on_receive, int id, char *key,
                          zmsg_t * msg);
 
+void
+db_on_receive_reset (db_on_receive_t * on_receive,int id);
+
 void db_on_receives_destroy (db_balance_t * balance, node_t * node);
 
 //doesnt not destroy the interval
@@ -51,5 +54,6 @@ void db_on_receive_destroy (db_on_receive_t ** on_receive);
 //on_receive events are not unique per id
 db_on_receive_t *on_receives_search (zlist_t * on_receives, int id, char *key);
 
+void db_on_receives_dead(db_balance_t *balance, node_t *node);
 
 #endif

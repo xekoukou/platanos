@@ -43,6 +43,8 @@ db_balance_init (db_balance_t ** balance, dbo_t * dbo,
     strcpy ((*balance)->self_key, key);
     intervals_init (&((*balance)->intervals));
     intervals_init (&((*balance)->locked_intervals));
+    (*balance)->started = 0;
+    RB_INIT (&((*balance)->interv_pos_rb));
 
 }
 
@@ -212,6 +214,8 @@ db_balance_confirm_chunk (db_balance_t * balance, zmsg_t * msg,
         diff = counter - on_give->rec_counter;
         on_give->rec_counter = counter;
         if (diff > 0) {
+//TODO this should be done in a signle writebatch,to avoid corruption
+//in case the server crushes
             int i;
             for (i = 0; i < diff * COUNTER_SIZE; i++) {
                 while (leveldb_iter_valid (on_give->iter)) {
@@ -242,6 +246,9 @@ db_balance_confirm_chunk (db_balance_t * balance, zmsg_t * msg,
 
     }
     else {
+
+//TODO this should be done in a signle writebatch,to avoid corruption
+//in case the server crushes
 
         while (leveldb_iter_valid (on_give->iter)) {
             size_t klen;
@@ -449,6 +456,12 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
         zmsg_add (responce, frame);
         zmsg_wrap (responce, address);
         zmsg_send (&responce, balance->router_bl);
+
+int pos=router_db_interv_pos(balance->router,on_receive->interval);
+interv_pos_t *interv_pos;
+interv_pos_init(&interv_pos,on_receive->interval,pos);
+interv_pos_add(balance,interv_pos);
+
 //add the interval with the others
         intervals_add (balance->intervals, on_receive->interval);
         intervals_print (balance->intervals);
@@ -460,6 +473,7 @@ balance_new_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
         intervals_t *cintervals = router_db_current_intervals (balance->router,
                                                                balance->router->
                                                                self);
+
 
         db_balance_init_gives (balance, cintervals);
 
@@ -753,6 +767,14 @@ db_balance_lazy_pirate (db_balance_t * balance)
         siter = zlist_next (balance->on_gives);
     }
 }
+void
+db_balance_events(db_balance_t *balance, router_t *old_router, router_t *new_router){
+zlist_t *old_intervals;
+zlist_t *old_locations;
+
+
+
+}
 
 
 
@@ -768,36 +790,18 @@ db_balance_init_gives (db_balance_t * balance, intervals_t * cintervals)
     router_db_on_gives (balance->router, diff2, balance);
 }
 
+//TODO all these need to change
+
 void
 db_balance_dead_node (db_balance_t * balance, node_t * node)
 {
-//we dont update the timer, no need
-    db_on_give_t *on_give = zlist_first (balance->on_gives);
-    while (on_give) {
-
-        if (strcmp (on_give->key, node->key) == 0) {
-            zlist_remove (balance->on_gives, on_give);
-            zlist_append (balance->don_gives, on_give);
-        }
-        on_give = zlist_next (balance->on_gives);
-    }
-
-    db_on_receive_t *on_receive = zlist_first (balance->on_receives);
-    while (on_receive) {
-
-        if (strcmp (on_receive->key, node->key) == 0) {
-            zlist_remove (balance->on_receives, on_receive);
-            zlist_append (balance->don_receives, on_receive);
-        }
-        on_give = zlist_next (balance->on_receives);
-    }
-
+db_on_gives_dead (balance,node);
+db_on_receives_dead(balance,node);
 }
 
 void
 db_balance_alive_node (db_balance_t * balance, node_t * node)
 {
-//we dont update the timer, no need
     db_on_give_t *on_give = zlist_first (balance->don_gives);
     while (on_give) {
 
@@ -808,18 +812,6 @@ db_balance_alive_node (db_balance_t * balance, node_t * node)
             db_balance_update_give_timer (balance, on_give);
         }
         on_give = zlist_next (balance->on_gives);
-    }
-
-    db_on_receive_t *on_receive = zlist_first (balance->don_receives);
-    while (on_receive) {
-
-        if (strcmp (on_receive->key, node->key) == 0) {
-            zlist_remove (balance->don_receives, on_receive);
-            zlist_append (balance->on_receives, on_receive);
-
-            db_balance_update_receive_timer (balance, on_receive);
-        }
-        on_give = zlist_next (balance->on_receives);
     }
 
 }
@@ -839,6 +831,7 @@ db_balance_delete_node (db_balance_t * balance, node_t * node)
             zlist_remove (balance->on_gives, on_give);
 
 //cleaning remaining data
+//TODO WRITEBATCH
             while (leveldb_iter_valid (on_give->iter)) {
                 size_t klen;
                 char key[50];

@@ -116,7 +116,7 @@ int main() {
 #include <string.h>
 #include <limits.h>
 
-/* compipler specific configuration */
+/* compiler specific configuration */
 
 #if UINT_MAX == 0xffffffffu
 typedef unsigned int khint32_t;
@@ -225,7 +225,7 @@ static const double __ac_HASH_UPPER = 0.77;
 		} else return 0;												\
 	}																	\
 	SCOPE int kh_resize_##name(kh_##name##_t *h, khint_t new_n_buckets) \
-	{ /* This function uses 0.25*n_bucktes bytes of working space instead of [sizeof(key_t+val_t)+.25]*n_buckets. */ \
+	{ /* This function uses 0.25*n_buckets bytes of working space instead of [sizeof(key_t+val_t)+.25]*n_buckets. */ \
 		khint32_t *new_flags = 0;										\
 		khint_t j = 1;													\
 		{																\
@@ -461,7 +461,7 @@ static kh_inline khint_t __ac_Wang_hash(khint_t key)
   @param  name  Name of the hash table [symbol]
   @param  h     Pointer to the hash table [khash_t(name)*]
   @param  k     Key [type of keys]
-  @return       Iterator to the found element, or kh_end(h) is the element is absent [khint_t]
+  @return       Iterator to the found element, or kh_end(h) if the element is absent [khint_t]
  */
 #define kh_get(name, h, k) kh_get_##name(h, k)
 

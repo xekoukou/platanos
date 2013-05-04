@@ -211,7 +211,7 @@ node_set_alive (node_t * node, int alive)
 
 //we grab the first repl number of nodes and return only the alive ones
 void
-router_dbroute (struct router_t *router, uint64_t key, char **rkey,
+router_dbroute (struct router_t *router, uint64_t key, char *rkey[][18],
                 int *nreturned)
 {
 
@@ -237,7 +237,7 @@ router_dbroute (struct router_t *router, uint64_t key, char **rkey,
     first_result = result;
 //printf("\ndbroute debug key: %s",result->key);
     if (result->node->alive) {
-        strcpy (rkey[0], result->node->key);
+        strcpy ((*rkey)[0], result->node->key);
         (*nreturned)++;
     }
     while (1) {
@@ -258,7 +258,7 @@ router_dbroute (struct router_t *router, uint64_t key, char **rkey,
         int iter;
         int neww = 1;
         for (iter = 0; iter < *nreturned; iter++) {
-            if (0 == strcmp (rkey[iter], result->node->key)) {
+            if (0 == strcmp ((*rkey)[iter], result->node->key)) {
                 neww = 0;
                 break;
             }
@@ -269,7 +269,7 @@ router_dbroute (struct router_t *router, uint64_t key, char **rkey,
             all++;              //all unique dead or alive
             if (result->node->alive) {
 
-                strcpy (rkey[*nreturned], result->node->key);
+                strcpy ((*rkey)[*nreturned], result->node->key);
                 (*nreturned)++;
             }
         }
@@ -277,6 +277,76 @@ router_dbroute (struct router_t *router, uint64_t key, char **rkey,
 
 
 }
+
+//rkey the key of the node that is responsible for the key
+//rkey should be big enough and should check repl before
+//this will only return alive nodes
+
+//we grab the first repl number of nodes and return all of them
+void
+router_dbroute_all (struct router_t *router, uint64_t key, char *rkey[][18])
+
+{
+
+    struct hash_t hash;
+    struct hash_t *result;
+    struct hash_t *first_result;        //used to identify a full circle
+    *nreturned = 0;
+
+    MurmurHash3_x64_128 ((void *) &key, sizeof (uint64_t), 0,
+                         (void *) &(hash.hkey));
+
+    result = RB_NFIND (hash_rb_t, &(router->hash_rb), &hash);
+
+    if (result == NULL) {
+        result = RB_MIN (hash_rb_t, &(router->hash_rb));
+    }
+
+    if (result == NULL) {
+        return;
+    }
+
+    int all = 0;
+    first_result = result;
+        strcpy ((*rkey)[0], result->node->key);
+     all++;
+    while (1) {
+        struct hash_t *prev_result = result;
+        result = RB_NEXT (hash_rb_t, &(router->hash_rb), prev_result);
+
+//go back to the beggining
+        if (result == NULL) {
+            result = RB_MIN (hash_rb_t, &(router->hash_rb));
+        }
+//stop at a full circle or we found a repl number of nodes dead or alive
+        if ((strcmp (result->node->key, first_result->node->key) == 0)
+            || (all == router->repl)) {
+            break;
+        }
+
+//chech whether we already picked this node
+        int iter;
+        int neww = 1;
+        for (iter = 0; iter < *nreturned; iter++) {
+            if (0 == strcmp ((*rkey)[iter], result->node->key)) {
+                neww = 0;
+                break;
+            }
+        }
+
+        if (neww) {
+
+                strcpy ((*rkey)[all], result->node->key);
+            all++;              //all unique dead or alive
+            }
+        }
+    }
+
+
+}
+
+
+
 
 //returns an array of events of a specific size
 //if this node already exist it creates events from the difference of their settings
@@ -760,15 +830,36 @@ router_fnode (struct router_t * router, char *key)
 }
 
 
+router_t * router_dup(router_t *router){
+
+router_t *dup;
+router_init(&dup,router->type);
+
+router_set_repl(dup,router->repl);
+
+//dub->self
+khiter k= 0;
+while(k!= kh_end(router->nodes)){
+
+node_t *node=node_dup(kh_value (router->nodes, k));
+router_add(dup,node);
+k++;
+}
+
+node_t *self=nodes_search(dup->nodes,router->self->key);
+dup->self=self;
+
+}
+
+
 //returns the intervals that this router has assigned to the node
 // it is used in the db threads.
-intervals_t *
-router_db_current_intervals (struct router_t * router, node_t * node)
+void
+router_db_current_intervals (struct router_t * router, node_t * node, zlist_t **intervals, zlist_t **locations)
 {
 
-    intervals_t *intervals;
-
-    intervals_init (&intervals);
+    *intervals=zlist_new();
+    *locations=zlist_new();
 
 
     char temp[1000];
@@ -795,17 +886,16 @@ router_db_current_intervals (struct router_t * router, node_t * node)
             result = RB_MIN (hash_rb_t, &(router->hash_rb));
         }
 
-        char rkeys[router->repl][18];
-        int nreturned;
+        char *rkeys[router->repl][18]=malloc(18*router->repl);
 
-        router_dbroute (router, result->node->key, rkeys, &nreturned);
+        router_dbroute_all (router, result->node->key, rkeys);
 
-        for (iter = 1; iter < nreturned; iter++) {
-            if (strcmp (rkeys[iter], node->key) == 0) {
+        for (iter = 0; iter < router->repl; iter++) {
+            if (strcmp ((*rkeys)[iter], node->key) == 0) {
                 interval_t *interval;
                 interval_init (&interval, &(previous->hkey), &(result->hkey));
-                intervals_add (intervals, interval);
-
+                zlist_append(*intervals,interval);
+                zlist_append(*locations,rkeys);
                 break;
             }
         }
@@ -816,7 +906,6 @@ router_db_current_intervals (struct router_t * router, node_t * node)
         previous = result;
 
     }
-    return intervals;
 }
 
 //returns the list of on_gives that needs to be executed
@@ -839,7 +928,9 @@ router_db_on_gives (router_t * router, intervals_t * intervals,
             && (result->node->alive)) {
             //update the intervals
             interval_t *interval = interval_dup (iter);
+interv_pos_remove(balance,interval->end);
             intervals_remove (balance->intervals, interval);
+            
 
             //update un_id;
             if (balance->un_id > 1000000000) {
@@ -863,4 +954,27 @@ router_db_on_gives (router_t * router, intervals_t * intervals,
         }
     }
     intervals_destroy (intervals);
+}
+
+
+int router_db_interv_pos(router_t *router,interval_t *interval){
+
+  struct hash_t hash;
+  memcpy(&(hash.hkey),&(interval->end),sizeof(struct _hkey_t));
+
+        struct hash_t *result = RB_FIND (hash_rb_t, &(router->hash_rb), &hash);
+
+        char rkeys[router->repl][18];
+        int nreturned;
+
+        router_dbroute (router, result->node->key, rkeys, &nreturned);
+
+        for (iter = 0; iter < nreturned; iter++) {
+            if (strcmp (rkeys[iter], router->self->key) == 0) {
+               return iter;
+            }
+        }
+
+return -1;
+
 }

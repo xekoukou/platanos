@@ -46,16 +46,25 @@ intervals_add (intervals_t * intervals, interval_t * interval)
     memcpy (&(interval->end), &(interval->start), sizeof (struct _hkey_t));
 
     interval_above =
-        RB_FIND (intervals_rb_t, &(intervals->intervals_rb), interval);
+        RB_NFIND (intervals_rb_t, &(intervals->intervals_rb), interval);
+
+//in case the end of the interval is in the other side of the circle
+    if (interval_below == NULL) {
+
+        interval_below = RB_MIN (intervals_rb_t, &(intervals->intervals_rb));
+    }
+
 
     memcpy (&(interval->end), &temp, sizeof (struct _hkey_t));
 
     if (interval_above) {
 
+if(interval_belongs_h (interval_above,&(interval->start))==1){
+
+
         memcpy (&(interval->start), &(interval_above->start),
                 sizeof (struct _hkey_t));
-        RB_REMOVE (intervals_rb_t, &(intervals->intervals_rb), interval_above);
-        free (interval_above);
+}
     }
 
     interval_below =
@@ -68,20 +77,23 @@ intervals_add (intervals_t * intervals, interval_t * interval)
     }
 
     if (interval_below) {
-        if (memcmp (&(interval_below->start), &(interval->end),
-                    sizeof (struct _hkey_t)) == 0) {
+if(interval_belongs_h (interval_below,&(interval->end))==1){
+
             memcpy (&(interval->end), &(interval_below->end),
                     sizeof (struct _hkey_t));
+        }
+    }
+if(interval_above){
+        RB_REMOVE (intervals_rb_t, &(intervals->intervals_rb), interval_above);
+        free (interval_above);
+}
+if((interval_below) && (interval_below != interval_above)){ 
             RB_REMOVE (intervals_rb_t, &(intervals->intervals_rb),
                        interval_below);
             free (interval_below);
-        }
-        else {
-            assert (interval_belongs_h (interval, &(interval_below->start)) ==
-                    0);
+}
 
-        }
-    }
+
     if (memcmp (&(interval->start), &(interval->end),
                 sizeof (struct _hkey_t)) == 0) {
         intervals->circle = 1;

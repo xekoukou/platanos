@@ -92,8 +92,16 @@ void router_get_repl (struct router_t *router, int *repl);
 //this will only return alive nodes
 
 //we grab the first repl number of nodes and return only the alive ones
-void router_dbroute (struct router_t *router, uint64_t key, char **rkey,
+void router_dbroute (struct router_t *router, uint64_t key, char *rkey[][18],
                      int *nreturned);
+
+//rkey contains the addresses of the nodes
+//rkey should be big enough and should check repl before
+//this will only return alive nodes
+
+//we grab the first repl number of nodes and return all of them
+void router_dbroute_all (struct router_t *router, uint64_t key, char *rkey[][18]);
+
 
 //finds a node with its  key
 //returns null if not found
@@ -109,8 +117,20 @@ node_t *router_fnode (struct router_t *router, char *key);
 zlist_t *router_events (router_t * router, node_t * node, int removal,
                         int *circle);
 
+//duplicates a node
+//used in db.c
+router_t * router_dup(router_t *router);
+
+
 //returns the intervals that this router has assigned to the node
 // it is used in the db threads.
-intervals_t *router_current_intervals (struct router_t *router, node_t * node);
+void
+router_db_current_intervals (struct router_t * router, node_t * node, zlist_t **intervals, zlist_t **locations)
+
+
+//returns the position that this db has in the replicas
+//or -1
+//to be used to map balancing responsibility
+int router_db_interv_pos(router_t *router,interval_t *interval);
 
 #endif
