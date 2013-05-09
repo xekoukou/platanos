@@ -39,8 +39,6 @@ struct oz_updater_t
     int **w_online;             //this is used tocheck whether a previous watch event has set a resource
 //offline (used by w_st_piece ,w_n_pieces)
 
-    struct String_vector *db_resources;
-    int **db_online;
 
 };
 
@@ -58,7 +56,7 @@ void oz_updater_free_key (oz_updater_t * updater);
 //returns the location where the resource is ex.(5, 17)
 //if it doesnt exist you get (-1,something) or (something,-1)
 void
-oz_updater_search (oz_updater_t * updater, int db, char *comp_name,
+oz_updater_search (oz_updater_t * updater, char *comp_name,
                    char *res_name, int *m, int *n);
 
 
@@ -72,7 +70,7 @@ int *oz_updater_new_computers (oz_updater_t * updater,
 //sort must be deallocated
 
 int *oz_updater_new_resources (oz_updater_t * updater, char *comp_name,
-                               struct String_vector resources, int db,
-                               zlist_t * db_old);
+                               struct String_vector resources
+                               );
 
 #endif

@@ -30,8 +30,6 @@ oz_updater_init (oz_updater_t * updater)
     updater->computers.data = 0;
     updater->w_resources = NULL;
     updater->w_online = NULL;
-    updater->db_resources = NULL;
-    updater->db_online = NULL;
     updater->key = NULL;
 }
 
@@ -60,13 +58,9 @@ oz_updater_destroy (oz_updater_t * updater)
 
     for (iter = 0; iter < updater->computers.count; iter++) {
         deallocate_String_vector (&(updater->w_resources[iter]));
-        deallocate_String_vector (&(updater->db_resources[iter]));
         free (updater->w_online[iter]);
-        free (updater->db_online[iter]);
     }
     free (updater->w_resources);
-    free (updater->db_resources);
-    free (updater->db_online);
     free (updater->w_online);
 }
 
@@ -74,7 +68,7 @@ oz_updater_destroy (oz_updater_t * updater)
 //returns the location where the resource is ex.(5, 17)
 //if it doesnt exist you get (-1,something) or (something,-1)
 void
-oz_updater_search (oz_updater_t * updater, int db, char *comp_name,
+oz_updater_search (oz_updater_t * updater, char *comp_name,
                    char *res_name, int *m, int *n)
 {
     *m = -1;
@@ -87,21 +81,11 @@ oz_updater_search (oz_updater_t * updater, int db, char *comp_name,
             break;
         }
     }
-    if (db) {
-        for (iter = 0; iter < updater->db_resources[*m].count; iter++) {
-            if (strcmp (updater->db_resources[*m].data[iter], res_name) == 0) {
-                *n = iter;
-                break;
-            }
-        }
-    }
-    else {
         for (iter = 0; iter < updater->w_resources[*m].count; iter++) {
             if (strcmp (updater->w_resources[*m].data[iter], res_name) == 0) {
                 *n = iter;
                 break;
             }
-        }
     }
 
 }
@@ -158,11 +142,7 @@ oz_updater_new_computers (oz_updater_t * updater,
     int **new_w_online_matrix = malloc (sizeof (int *) * computers.count);
     int **new_w_sync_matrix = malloc (sizeof (int *) * computers.count);
 
-    struct String_vector *new_db_resources =
-        malloc (sizeof (struct String_vector)
-                * computers.count);
 
-    int **new_db_online_matrix = malloc (sizeof (int *) * computers.count);
 
 
 //obtain the previous data
@@ -175,10 +155,6 @@ oz_updater_new_computers (oz_updater_t * updater,
             new_w_online_matrix[iter] = updater->w_online[sort[iter]];
             new_w_sync_matrix[iter] = updater->w_sync_version[sort[iter]];
 
-            memcpy (&(new_db_resources[iter]),
-                    &(updater->db_resources[sort[iter]]),
-                    sizeof (struct String_vector));
-            new_db_online_matrix[iter] = updater->db_online[sort[iter]];
 
 
         }
@@ -189,9 +165,6 @@ oz_updater_new_computers (oz_updater_t * updater,
             new_w_online_matrix[iter] = NULL;
             new_w_sync_matrix[iter] = NULL;
 
-            new_db_resources[iter].count = 0;
-            new_db_resources[iter].data = 0;
-            new_db_online_matrix[iter] = NULL;
 
 
         }
@@ -205,8 +178,6 @@ oz_updater_new_computers (oz_updater_t * updater,
             free (updater->w_online[siter]);
             free (updater->w_sync_version[siter]);
 
-            deallocate_String_vector (&(updater->db_resources[siter]));
-            free (updater->db_online[siter]);
 
         }
 
@@ -214,21 +185,15 @@ oz_updater_new_computers (oz_updater_t * updater,
     if (updater->w_resources != NULL) {
         free (updater->w_resources);
         assert (updater->w_online != NULL);
-        assert (updater->db_resources != NULL);
-        assert (updater->db_online != NULL);
         free (updater->w_online);
         free (updater->w_sync_version);
 
-        free (updater->db_resources);
-        free (updater->db_online);
 
     }
     updater->w_resources = new_w_resources;
     updater->w_online = new_w_online_matrix;
     updater->w_sync_version = new_w_sync_matrix;
 
-    updater->db_resources = new_db_resources;
-    updater->db_online = new_db_online_matrix;
 
 
     free (array);
@@ -244,8 +209,8 @@ oz_updater_new_computers (oz_updater_t * updater,
 
 int *
 oz_updater_new_resources (oz_updater_t * updater, char *comp_name,
-                          struct String_vector resources, int db,
-                          zlist_t * db_old)
+                          struct String_vector resources
+                          )
 {
 
     int iter;
@@ -269,16 +234,10 @@ oz_updater_new_resources (oz_updater_t * updater, char *comp_name,
     int **old_online;
     int32_t **old_sync;
 
-    if (db) {
-        old_resources = &(updater->db_resources[position]);
-        old_online = updater->db_online;
-    }
-    else {
         old_resources = &(updater->w_resources[position]);
         old_online = updater->w_online;
         old_sync = updater->w_sync_version;
 
-    }
 
 //i use this in case there is a reordering of the existing children
     int *sort = malloc (sizeof (int) * resources.count);
@@ -289,7 +248,6 @@ oz_updater_new_resources (oz_updater_t * updater, char *comp_name,
 
 
 //set watches to new resources
-    zlist_autofree (db_old);
 
 
     for (iter = 0; iter < resources.count; iter++) {
@@ -302,15 +260,10 @@ oz_updater_new_resources (oz_updater_t * updater, char *comp_name,
         if (exists) {
             sort[iter] = siter;
             online_vector[iter] = old_online[position][siter];
-            if (!db) {
                 sync_vector[iter] = old_sync[position][siter];
-            }
         }
         else {
             sort[iter] = -1;
-            if (db) {
-                zlist_append (db_old, old_resources->data[siter]);
-            }
         }
     }
 

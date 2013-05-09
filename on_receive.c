@@ -72,7 +72,7 @@ on_receives_destroy (balance_t * balance, node_t * node)
 
             //erase event if it exists
             int rc;
-            rc = events_update (update->balance->events, on_receive->action);
+            rc = events_update (balance->events, on_receive->action);
 //since we received a remove_node event, all previous events from this node must be already here
             assert (rc == 1);
             free (on_receive->action);

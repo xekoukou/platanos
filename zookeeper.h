@@ -27,7 +27,6 @@
 #include"config.h"
 #include"worker.h"
 #include"workers.h"
-#include"dbs.h"
 #include"zk_common.h"
 #include"zk_updater.h"
 #include"zk_sync.h"
@@ -37,8 +36,6 @@
 
 struct workers_t;
 typedef struct workers_t workers_t;
-struct dbs_t;
-typedef struct dbs_t dbs_t;
 
 
 struct ozookeeper_t
@@ -49,7 +46,6 @@ struct ozookeeper_t
     void *router;
     oz_updater_t updater;
     workers_t *workers;
-    dbs_t *dbs;
     zlist_t *sync_list;
 };
 
@@ -66,11 +62,6 @@ int ozookeeper_not_corrupt (ozookeeper_t ** ozookeep);
 
 void ozookeeper_init_workers (ozookeeper_t * ozookeeper,
                               struct workers_t *workers);
-
-void ozookeeper_init_dbs (ozookeeper_t * ozookeeper, dbs_t * dbs);
-
-void ozookeeper_init_both (ozookeeper_t * ozookeeper, workers_t * workers,
-                           dbs_t * dbs);
 
 void ozookeeper_getconfig (ozookeeper_t * ozookeeper);
 

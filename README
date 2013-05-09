@@ -1,6 +1,8 @@
 
+Platanos
+==
 
-This a graph processing system that will eventually also be a database so as to store the vertex state.
+This a graph processing system. 
 
 Work in progress.
 
@@ -14,3 +16,6 @@ In order to compile it:
 
 
 Testing it requires a zookeeper-server to connect to.
+
+
+

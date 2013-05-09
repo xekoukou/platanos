@@ -87,7 +87,7 @@ on_gives_remove (balance_t * balance, node_t * node)
             }
             on_give_destroy (&iter);
         }
-        iter = zlist_next (on_gives);
+        iter = zlist_next (balance->on_gives);
     }
 
 }

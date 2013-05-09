@@ -32,7 +32,6 @@ typedef struct router_t router_t;
 struct compute_t
 {
     router_t *router;
-    router_t *db_router;
     zlist_t *events;
     intervals_t *intervals;
       khash_t (vertices) * hash;
@@ -50,7 +49,7 @@ typedef struct compute_t compute_t;
 
 
 void compute_init (compute_t ** compute, khash_t (vertices) * hash,
-                   router_t * router, router_t * db_router, zlist_t * events,
+                   router_t * router, zlist_t * events,
                    intervals_t * intervals,
                    localdb_t * localdb, worker_t * worker);
 

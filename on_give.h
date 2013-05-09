@@ -73,7 +73,7 @@ void on_give_init (on_give_t ** on_give, balance_t * balance, event_t * event,
 void on_give_destroy (on_give_t ** on_give);
 
 //used when we receive a remove_node event
-void on_gives_remove (zlist_t * on_gives, zlist_t * events, node_t * node);
+void on_gives_remove (balance_t *balance, node_t * node);
 
 //linear search
 on_give_t *on_gives_search_id (zlist_t * on_gives, int id);

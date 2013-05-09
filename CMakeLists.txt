@@ -19,14 +19,6 @@ cmake_minimum_required (VERSION 2.8)
 
     target_link_libraries (zookeeper_control zookeeper_mt)
 
-    add_executable (zookeeper_load_graph zookeeper_load.c)
-
-    target_link_libraries (zookeeper_load_graph zookeeper_mt)
-    
-    add_executable (zookeeper_start_graph_database zookeeper_start_graph_database.c)
-
-    target_link_libraries (zookeeper_start_graph_database zookeeper_mt)
-    
     add_subdirectory (MurmurHash)
 
 
@@ -53,12 +45,8 @@ cmake_minimum_required (VERSION 2.8)
                 sleep.c
                 worker.c
                 workers.c
-                dbs.c
                 compute.c
-                db.c balance.c
-                dbo.c
-                db_update.c
-                db_balance.c
+                balance.c
                 zk_sync.c
                 on_give.c on_receive.c update.c zookeeper.c zk_updater.c main.c)
 

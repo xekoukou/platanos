@@ -22,14 +22,13 @@
 
 void
 compute_init (compute_t ** compute, khash_t (vertices) * hash,
-              router_t * router, router_t * db_router, zlist_t * events,
+              router_t * router, zlist_t * events,
               intervals_t * intervals, localdb_t * localdb, worker_t * worker)
 {
 
     *compute = malloc (sizeof (compute_t));
 
     (*compute)->router = router;
-    (*compute)->db_router = db_router;
     (*compute)->events = events;
     (*compute)->intervals = intervals;
     (*compute)->worker = worker;

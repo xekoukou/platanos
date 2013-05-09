@@ -117,11 +117,10 @@ balance_send_next_chunk (balance_t * balance, on_give_t * on_give,
             kh_del (vertices, balance->hash, hiter);
 
             //add it to the list of sent vertices
-            zmsg_t *msg;
             zlist_append (on_give->unc_vertices,
-                          vertex_serialize (msg, vertex));
+                          vertex_serialize (vertex));
             //add it
-            responce_dup = vertex_serialize (responce_dup, vertex);
+            responce_dup = vertex_serialize (vertex);
             if (vertices == COUNTER_SIZE) {
                 zframe_t *address_dup = zframe_dup (address);
                 zmsg_wrap (responce_dup, address_dup);
@@ -222,14 +221,15 @@ balance_confirm_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
             int i;
             zmsg_t *vert_msg = zlist_first (on_give->unc_vertices);
             zlist_remove (on_give->unc_vertices, vert_msg);
-            zframe_destroy (&vert_frame);
+            zmsg_destroy (&vert_msg);
             for (i = 1; i < diff * COUNTER_SIZE; i++) {
 
                 vert_msg = zlist_next (on_give->unc_vertices);
                 zlist_remove (on_give->unc_vertices, vert_msg);
-                zframe_destroy (&vert_msg);
+                zmsg_destroy (&vert_msg);
             }
         }
+        int i;
         for (i = 0; i < diff; i++) {
             on_give->pending_confirmations--;
 //send_next_chunk
@@ -242,7 +242,8 @@ balance_confirm_chunk (balance_t * balance, zmsg_t * msg, zframe_t * address)
 
 
         while (zlist_size (on_give->unc_vertices)) {
-            zmsg_destroy (&(zlist_pop (on_give->unc_vertices)));
+            zmsg_t *tmp=zlist_pop (on_give->unc_vertices);
+            zmsg_destroy (&tmp);
         }
         //remove the event form the event list
         zlist_remove (balance->events, on_give->event);
@@ -274,7 +275,7 @@ balance_missed_chunkes (balance_t * balance, zmsg_t * msg, zframe_t * address)
     uint64_t diff = 0;
     while (zmsg_size (msg)) {
         uint64_t counter;
-        frame = zmsg_pop (msg);
+        zframe_t *frame = zmsg_pop (msg);
         memcpy (&counter, zframe_data (frame), sizeof (uint64_t));
 
         diff = counter - on_give->rec_counter;
@@ -301,7 +302,7 @@ balance_missed_chunkes (balance_t * balance, zmsg_t * msg, zframe_t * address)
 //remove the corresponding confirmed chunks for the unc_vertices
                 zmsg_t *vert_msg = zlist_first (on_give->unc_vertices);
                 zlist_remove (on_give->unc_vertices, vert_msg);
-                zmsg_destroy (&vert_frame);
+                zmsg_destroy (&vert_msg);
                 for (i = 1; i < (diff - 1) * COUNTER_SIZE; i++) {
 
                     vert_msg = zlist_next (on_give->unc_vertices);

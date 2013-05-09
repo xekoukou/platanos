@@ -25,7 +25,6 @@
 #include<string.h>
 #include<czmq.h>
 #include"worker.h"
-#include"db.h"
 #include<stdlib.h>
 
 #define RESEND_INTERVAL 1000
@@ -145,12 +144,11 @@ ozookeeper_destroy (ozookeeper_t ** ozookeeper)
     *ozookeeper = NULL;
 }
 
-//TODO referencing dbs_t as workers_t
 void
-ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
+ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg)
 {
 
-    int size = ozookeeper->workers->size + ozookeeper->dbs->size;
+    int size = ozookeeper->workers->size;
 
     void *pub = ozookeeper->pub;
     void *router = ozookeeper->router;
@@ -172,17 +170,7 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
     zmsg_t *msg_to_send = zmsg_dup (*msg);
     zmsg_push (msg_to_send,
                zframe_new (&(ozookeeper->updater.id), sizeof (unsigned int)));
-    if (db == 1) {
-        zmsg_push (msg_to_send, zframe_new ("db", strlen ("db") + 1));
-    }
-    else {
-        if (db == 0) {
             zmsg_push (msg_to_send, zframe_new ("w", strlen ("w") + 1));
-        }
-        else {
-            zmsg_push (msg_to_send, zframe_new ("all", strlen ("all") + 1));
-        }
-    }
 
     zmsg_send (&msg_to_send, pub);
 
@@ -265,13 +253,7 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 
             int it;
             for (it = 0; it < size; it++) {
-                if (it < ozookeeper->workers->size) {
                     sprintf (identity, "%sw", ozookeeper->workers->id[it]);
-                }
-                else {
-                    sprintf (identity, "%sdb",
-                             ozookeeper->dbs->id[size - it - 1]);
-                }
                 int exists = 0;
                 iter = zlist_first (ok_list);
                 while (iter) {
@@ -289,14 +271,8 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
                                zframe_new (&(ozookeeper->updater.id),
                                            sizeof (unsigned int)));
 
-                    if (db) {
-                        zmsg_push (msg_to_send,
-                                   zframe_new ("db", strlen ("db") + 1));
-                    }
-                    else {
                         zmsg_push (msg_to_send,
                                    zframe_new ("w", strlen ("w") + 1));
-                    }
 
                     zmsg_push (msg_to_send,
                                zframe_new (identity, strlen (identity)));
@@ -313,17 +289,16 @@ ozookeeper_update (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
 
 //init ozookeeper with the workers
 void
-ozookeeper_init_both (ozookeeper_t * ozookeeper, workers_t * workers,
-                      dbs_t * dbs)
+ozookeeper_init_workers (ozookeeper_t * ozookeeper, workers_t * workers
+                      )
 {
     ozookeeper->workers = workers;
-    ozookeeper->dbs = dbs;
 
 }
 
 //one node update
 void
-ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
+ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg)
 {
     void *pub;
     void *router;
@@ -356,12 +331,7 @@ ozookeeper_update_one (ozookeeper_t * ozookeeper, zmsg_t ** msg, int db)
                                    sizeof (unsigned int)));
 
             char identity[20];
-            if (db) {
-                sprintf (identity, "%sdb", ozookeeper->updater.key);
-            }
-            else {
                 sprintf (identity, "%sw", ozookeeper->updater.key);
-            }
 
             zmsg_push (msg_to_send, zframe_new (identity, strlen (identity)));
             zmsg_send (&msg_to_send, pub);
@@ -417,7 +387,7 @@ ozookeeper_update_remove_node (ozookeeper_t * ozookeeper, char *key)
     zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
     zmsg_add (msg, zframe_new ("remove_node", strlen ("remove_node") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
-    ozookeeper_update (ozookeeper, &msg, 0);
+    ozookeeper_update (ozookeeper, &msg);
 }
 
 //only for workers
@@ -427,37 +397,21 @@ ozookeeper_update_sync_remove (ozookeeper_t * ozookeeper, char *key)
     zmsg_t *msg = zmsg_new ();
     zmsg_add (msg, zframe_new ("sync_remove", strlen ("sync_remove_node") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
-    ozookeeper_update (ozookeeper, &msg, 0);
+    ozookeeper_update (ozookeeper, &msg);
 }
 
-
-//this is used only by the database
-void
-ozookeeper_update_delete_node (ozookeeper_t * ozookeeper, char *key)
-{
-    zmsg_t *msg = zmsg_new ();
-    zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
-    zmsg_add (msg, zframe_new ("delete_node", strlen ("delete_node") + 1));
-    zmsg_add (msg, zframe_new (key, strlen (key) + 1));
-    ozookeeper_update (ozookeeper, &msg, 1);
-}
 
 
 
 //TODO check
 //this is done when a node goes online
 void
-ozookeeper_update_add_node (ozookeeper_t * ozookeeper, int db, int start,
+ozookeeper_update_add_node (ozookeeper_t * ozookeeper, int start,
                             char *key, int n_pieces, unsigned long st_piece,
                             char **bind_points, int size, char *bind_point_bl)
 {
     zmsg_t *msg = zmsg_new ();
-    if (db) {
-        zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
-    }
-    else {
         zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
-    }
     zmsg_add (msg, zframe_new ("add_node", strlen ("add_node") + 1));
     zmsg_add (msg, zframe_new (&start, sizeof (int)));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
@@ -475,54 +429,20 @@ ozookeeper_update_add_node (ozookeeper_t * ozookeeper, int db, int start,
     fprintf (stderr,
              "\nzookeeper_add_node\nkey:%s\nn_pieces:%d\nst_piece:%lu", key,
              n_pieces, st_piece);
-    ozookeeper_update (ozookeeper, &msg, 2);
-}
-
-//TODO check
-//this is done when a node goes online
-void
-ozookeeper_update_add_dead_node (ozookeeper_t * ozookeeper,
-                                 char *key, int n_pieces,
-                                 unsigned long st_piece, char **bind_points,
-                                 int size, char *bind_point_bl)
-{
-    zmsg_t *msg = zmsg_new ();
-    zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
-    zmsg_add (msg, zframe_new ("add_dead_node", strlen ("add_dead_node") + 1));
-    zmsg_add (msg, zframe_new (key, strlen (key) + 1));
-    zmsg_add (msg, zframe_new (&n_pieces, sizeof (int)));
-    zmsg_add (msg, zframe_new (&st_piece, sizeof (unsigned long)));
-    zmsg_add (msg, zframe_new (bind_point_bl, strlen (bind_point_bl) + 1));
-    int i;
-    for (i = 0; i < size; i++) {
-        zmsg_add (msg,
-                  zframe_new (bind_points[i], strlen (bind_points[i]) + 1));
-        free (bind_points[i]);
-    }
-    free (bind_points);
-
-    fprintf (stderr,
-             "\nzookeeper_add_dead_node\nkey:%s\nn_pieces:%d\nst_piece:%lu",
-             key, n_pieces, st_piece);
-    ozookeeper_update (ozookeeper, &msg, 2);
+    ozookeeper_update (ozookeeper, &msg);
 }
 
 
 
 //this is done only at the start for a specific number of seconds
 void
-ozookeeper_update_add_self (ozookeeper_t * ozookeeper, int db, char *key,
+ozookeeper_update_add_self (ozookeeper_t * ozookeeper, char *key,
                             int n_pieces, unsigned long st_piece,
                             char **bind_points, int size,
-                            char *bind_point_bl, char *db_location)
+                            char *bind_point_bl)
 {
     zmsg_t *msg = zmsg_new ();
-    if (db) {
-        zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
-    }
-    else {
         zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
-    }
     zmsg_add (msg, zframe_new ("add_self", strlen ("add_self") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
     zmsg_add (msg, zframe_new (&n_pieces, sizeof (int)));
@@ -536,93 +456,53 @@ ozookeeper_update_add_self (ozookeeper_t * ozookeeper, int db, char *key,
     }
     free (bind_points);
 
-    if (db) {
-        zmsg_add (msg, zframe_new (db_location, strlen (db_location) + 1));
-    }
     fprintf (stderr,
              "\nzookeeper_add_self\nkey:%s\nn_pieces:%d\nst_piece:%lu", key,
              n_pieces, st_piece);
-    ozookeeper_update_one (ozookeeper, &msg, db);
+    ozookeeper_update_one (ozookeeper, &msg);
 }
 
 
 
 void
-ozookeeper_update_st_piece (ozookeeper_t * ozookeeper, int db, char *key,
+ozookeeper_update_st_piece (ozookeeper_t * ozookeeper, char *key,
                             unsigned long st_piece)
 {
     zmsg_t *msg = zmsg_new ();
-    if (db) {
-        zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
-    }
-    else {
         zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
-    }
     zmsg_add (msg, zframe_new ("st_piece", strlen ("st_piece") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
     zmsg_add (msg, zframe_new (&st_piece, sizeof (unsigned long)));
-    ozookeeper_update (ozookeeper, &msg, 2);
+    ozookeeper_update (ozookeeper, &msg);
 }
 
 void
-ozookeeper_update_n_pieces (ozookeeper_t * ozookeeper, int db, char *key,
+ozookeeper_update_n_pieces (ozookeeper_t * ozookeeper, char *key,
                             int n_pieces)
 {
     zmsg_t *msg = zmsg_new ();
-    if (db) {
-        zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
-    }
-    else {
         zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
-    }
     zmsg_add (msg, zframe_new ("n_pieces", strlen ("n_pieces") + 1));
     zmsg_add (msg, zframe_new (key, strlen (key) + 1));
     zmsg_add (msg, zframe_new (&n_pieces, sizeof (int)));
-    ozookeeper_update (ozookeeper, &msg, 2);
+    ozookeeper_update (ozookeeper, &msg);
 }
 
 //this is issued to tell the workers to go online
 void
-ozookeeper_update_go_online (ozookeeper_t * ozookeeper, int db)
+ozookeeper_update_go_online (ozookeeper_t * ozookeeper)
 {
 
     fprintf (stderr,
-             "\ndb:%d zookeeper_go_online: I am asking the threads to go online",
-             db);
+             "\nzookeeper_go_online: I am asking the threads to go online"
+             );
 
     zmsg_t *msg = zmsg_new ();
-    if (db) {
-        zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));
-    }
-    else {
         zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
-    }
     zmsg_add (msg, zframe_new ("go_online", strlen ("go_online") + 1));
-    ozookeeper_update (ozookeeper, &msg, db);
+    ozookeeper_update (ozookeeper, &msg );
 
 }
-
-
-void
-ozookeeper_update_load_graph (ozookeeper_t * ozookeeper)
-{
-    zmsg_t *msg = zmsg_new ();
-    zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
-    zmsg_add (msg, zframe_new ("load_graph", strlen ("load_graph") + 1));
-    ozookeeper_update (ozookeeper, &msg, 0);
-}
-
-void
-ozookeeper_update_start_graph_database (ozookeeper_t * ozookeeper)
-{
-    zmsg_t *msg = zmsg_new ();
-    zmsg_add (msg, zframe_new ("db", strlen ("db") + 1));       //this is not important for db nodes
-    zmsg_add (msg,
-              zframe_new ("start_graph_database",
-                          strlen ("start_graph_database") + 1));
-    ozookeeper_update (ozookeeper, &msg, 1);
-}
-
 
 
 
@@ -642,19 +522,14 @@ w_sync (zhandle_t * zh, int type,
         int state, const char *path, void *watcherCtx);
 
 void
-online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
+online (ozookeeper_t * ozookeeper, int online, int start, int self,
         char *comp_name, char *res_name)
 {
     char octopus[1000];
     char path[1000];
     char type[15];
     int result;
-    if (db) {
-        strcpy (type, "db_nodes");
-    }
-    else {
         strcpy (type, "worker_nodes");
-    }
 
     oconfig_octopus (ozookeeper->config, octopus);
 
@@ -664,11 +539,10 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
     char **bind_points;
     int size;
     char bind_point_bl[50];
-    char db_location[1000];
     struct Stat stat;
 
 
-    if (online || self || db) {
+    if (online || self ) {
 //obtain the resources and send them while setting wathcers on st_piece and n_pieces
 //we dont need to check if they exist since a resource goes online only after we have registered it.
 //we have to set the resource offline before we unregister it.
@@ -692,42 +566,6 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
 
         assert (result == ZOK);
 
-        if (db) {
-
-            bind_points = malloc (sizeof (char *));
-            bind_points[0] = malloc (50);
-            size = 1;
-
-            buffer_len = 1000;
-            sprintf (path, "/%s/computers/%s/db_nodes/%s/bind_point",
-                     octopus, comp_name, res_name);
-            result =
-                zoo_get (ozookeeper->zh, path, 0, bind_points[0], &buffer_len,
-                         &stat);
-
-            assert (result == ZOK);
-
-            buffer_len = 1000;
-            sprintf (path, "/%s/computers/%s/db_nodes/%s/bind_point_bl",
-                     octopus, comp_name, res_name);
-            result =
-                zoo_get (ozookeeper->zh, path, 0, bind_point_bl, &buffer_len,
-                         &stat);
-
-            assert (result == ZOK);
-
-
-            buffer_len = 1000;
-            sprintf (path, "/%s/computers/%s/db_nodes/%s/db_location",
-                     octopus, comp_name, res_name);
-            result =
-                zoo_get (ozookeeper->zh, path, 0, db_location, &buffer_len,
-                         &stat);
-
-            assert (result == ZOK);
-
-        }
-        else {
 
             platanos_online_bind_points (ozookeeper->zh, octopus, comp_name,
                                          res_name, &bind_points, &size);
@@ -752,7 +590,6 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
             assert (ZOK == result);
 //we dont need the data, only to set the watch and get the version
 
-        }
     }
 
     sprintf (path, "%s/%s", comp_name, res_name);
@@ -762,9 +599,9 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
         oz_updater_free_key (&(ozookeeper->updater));
         oz_updater_key (&(ozookeeper->updater), path);
 
-        ozookeeper_update_add_self (ozookeeper, db, path, n_pieces, st_piece,
+        ozookeeper_update_add_self (ozookeeper, path, n_pieces, st_piece,
                                     bind_points, size,
-                                    bind_point_bl, db_location);
+                                    bind_point_bl);
 
 
     }
@@ -773,7 +610,7 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
 //update its status on the updater object
         int m;
         int n;
-        oz_updater_search (&(ozookeeper->updater), db, comp_name, res_name,
+        oz_updater_search (&(ozookeeper->updater), comp_name, res_name,
                            &m, &n);
         assert (m != -1);
         assert (n != -1);
@@ -781,32 +618,16 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
 
         if (online) {
 
-            ozookeeper_update_add_node (ozookeeper, db, start, path, n_pieces,
+            ozookeeper_update_add_node (ozookeeper, start, path, n_pieces,
                                         st_piece, bind_points, size,
                                         bind_point_bl);
 
-            if (db) {
-                ozookeeper->updater.db_online[m][n] = 1;
-            }
-            else {
                 ozookeeper->updater.w_online[m][n] = 1;
                 ozookeeper->updater.w_sync_version[m][n] = stat.version;
-            }
         }
         else {
 //this is the case where it was previously online but now it is offline
 //TODO Is this because there is a change we get a watch where the value remains the same?
-            if (db) {
-                if (ozookeeper->updater.db_online[m][n] == 1) {
-                    ozookeeper->updater.db_online[m][n] = 0;
-                    ozookeeper_update_add_dead_node (ozookeeper, path, n_pieces,
-                                                     st_piece, bind_points,
-                                                     size, bind_point_bl);
-
-
-                }
-            }
-            else {
                 if (ozookeeper->updater.w_online[m][n] == 1) {
                     ozookeeper->updater.w_online[m][n] = 0;
 
@@ -840,7 +661,6 @@ online (ozookeeper_t * ozookeeper, int db, int online, int start, int self,
                     ozookeeper_update_remove_node (ozookeeper, path);
                 }
 
-            }
         }
     }
 
@@ -859,7 +679,6 @@ w_online (zhandle_t * zh, int type,
     char comp_name[1000];
     char res_name[1000];
     char kind[1000];
-    int db;
     int result;
 
     // get the options
@@ -876,14 +695,6 @@ w_online (zhandle_t * zh, int type,
     strncpy (comp_name, temp, temp_size);
     comp_name[temp_size] = '\0';
 
-    if (strcmp (kind, "worker_nodes") == 0) {
-        db = 0;
-
-    }
-    else {
-
-        db = 1;
-    }
 
     if (type == ZOO_SESSION_EVENT
         && (state == ZOO_EXPIRED_SESSION_STATE
@@ -904,11 +715,11 @@ w_online (zhandle_t * zh, int type,
             (result =
              zoo_wexists (ozookeeper->zh, spath, w_online, ozookeeper,
                           &stat))) {
-            online (ozookeeper, db, 1, 0, 0, comp_name, res_name);
+            online (ozookeeper, 1, 0, 0, comp_name, res_name);
         }
         else {
             assert (result == ZNONODE);
-            online (ozookeeper, db, 0, 0, 0, comp_name, res_name);
+            online (ozookeeper, 0, 0, 0, comp_name, res_name);
         }
 
     }
@@ -948,7 +759,7 @@ w_sync (zhandle_t * zh, int type, int state, const char *path, void *watcherCtx)
 
         int m, n;
 
-        oz_updater_search ((&ozookeeper->updater), 0, comp_name, res_name, &m,
+        oz_updater_search ((&ozookeeper->updater), comp_name, res_name, &m,
                            &n);
 
         assert ((m != -1) && (n != -1));
@@ -1038,7 +849,6 @@ w_st_piece (zhandle_t * zh, int type,
     char kind[1000];
     int result;
     int online = 0;
-    int db;
 
     oconfig_octopus (ozookeeper->config, octopus);
     char *temp;
@@ -1054,15 +864,6 @@ w_st_piece (zhandle_t * zh, int type,
     comp_name[temp_size] = '\0';
 
 
-    if (strcmp (kind, "worker_nodes") == 0) {
-        db = 0;
-
-    }
-    else {
-
-        db = 1;
-    }
-
 
 
     if (type == ZOO_SESSION_EVENT
@@ -1077,16 +878,11 @@ w_st_piece (zhandle_t * zh, int type,
 //check if the node is online
         int m;
         int n;
-        oz_updater_search (&(ozookeeper->updater), db, comp_name, res_name,
+        oz_updater_search (&(ozookeeper->updater), comp_name, res_name,
                            &m, &n);
         assert (m != -1);
         assert (n != -1);
-        if (db) {
-            online = ozookeeper->updater.db_online[m][n];
-        }
-        else {
             online = ozookeeper->updater.w_online[m][n];
-        }
 
         if (online) {
 
@@ -1111,7 +907,7 @@ w_st_piece (zhandle_t * zh, int type,
                 assert (result == ZOK);
 
                 sprintf (spath, "%s/%s", comp_name, res_name);
-                ozookeeper_update_st_piece (ozookeeper, db, spath, st_piece);
+                ozookeeper_update_st_piece (ozookeeper, spath, st_piece);
 
 
 
@@ -1151,7 +947,6 @@ w_n_pieces (zhandle_t * zh, int type,
     char kind[1000];
     int result;
     int online = 0;
-    int db;
 
     oconfig_octopus (ozookeeper->config, octopus);
     char *temp;
@@ -1167,15 +962,6 @@ w_n_pieces (zhandle_t * zh, int type,
     comp_name[temp_size] = '\0';
 
 
-    if (strcmp (kind, "worker_nodes") == 0) {
-        db = 0;
-
-    }
-    else {
-
-        db = 1;
-    }
-
 
 
     if (type == ZOO_SESSION_EVENT
@@ -1190,18 +976,13 @@ w_n_pieces (zhandle_t * zh, int type,
 //check if the node is online
         int m;
         int n;
-        oz_updater_search (&(ozookeeper->updater), db, comp_name, res_name,
+        oz_updater_search (&(ozookeeper->updater), comp_name, res_name,
                            &m, &n);
         assert (m != -1);
         assert (n != -1);
 
-        if (db) {
-            online = ozookeeper->updater.db_online[m][n];
-        }
-        else {
             online = ozookeeper->updater.w_online[m][n];
 
-        }
 
         if (online) {
 
@@ -1226,7 +1007,7 @@ w_n_pieces (zhandle_t * zh, int type,
                 assert (result == ZOK);
 
                 sprintf (spath, "%s/%s", comp_name, res_name);
-                ozookeeper_update_n_pieces (ozookeeper, db, spath, n_pieces);
+                ozookeeper_update_n_pieces (ozookeeper, spath, n_pieces);
 
 
 
@@ -1275,7 +1056,6 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
     int result;
     int onlin = 0;
     int self = 0;
-    int db;
 
 
     char kind[1000];
@@ -1288,15 +1068,6 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
     part_path (path, 1, &temp, &temp_size);
     strncpy (kind, temp, temp_size);
     kind[temp_size] = '\0';
-
-    if (strcmp (kind, "worker_nodes") == 0) {
-        db = 0;
-
-    }
-    else {
-
-        db = 1;
-    }
 
 
 
@@ -1336,20 +1107,19 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
 
             assert (result == ZOK);
 
-            fprintf (stderr, "\ndb:%d registered resources for computer %s",
-                     db, comp_name);
+            fprintf (stderr, "\nregistered resources for computer %s",
+                     comp_name);
             for (iter = 0; iter < resources.count; iter++) {
                 fprintf (stderr, "\n%s", resources.data[iter]);
             }
 
-            zlist_t *db_old = zlist_new ();
 
             int *sort =
                 oz_updater_new_resources (&(ozookeeper->updater), comp_name,
-                                          resources, db, db_old);
+                                          resources);
 
 
-            fprintf (stderr, "\ndb:%d new resources for computer %s", db,
+            fprintf (stderr, "\nnew resources for computer %s",
                      comp_name);
             for (iter = 0; iter < resources.count; iter++) {
                 if (sort[iter] == -1) {
@@ -1357,18 +1127,7 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
                 }
             }
 
-            //inform for unregistered dbs
-            //databases need to know whether a node has unregistered
-            if (db) {
-                char *res = zlist_first (db_old);
-                while (res) {
-                    sprintf (spath, "%s/%s", comp_name, res);
-                    ozookeeper_update_delete_node (ozookeeper, spath);
-                    res = zlist_next (db_old);
-                }
-            }
 
-            zlist_destroy (&db_old);
 
 
             //check the new resources
@@ -1389,7 +1148,7 @@ resources (ozookeeper_t * ozookeeper, char *path, int start)
                         assert (result == ZNONODE);
                         onlin = 0;
                     }
-                    online (ozookeeper, db, onlin, start, self, comp_name,
+                    online (ozookeeper, onlin, start, self, comp_name,
                             resources.data[iter]);
 
                 }
@@ -1470,10 +1229,6 @@ computers (ozookeeper_t * ozookeeper, int start)
                      computers.data[iter]);
             resources (ozookeeper, spath, start);
 
-            sprintf (spath, "/%s/computers/%s/db_nodes", octopus,
-                     computers.data[iter]);
-            resources (ozookeeper, spath, start);
-
         }
     }
     free (sort);
@@ -1506,129 +1261,6 @@ w_computers (zhandle_t * zh, int type,
 
 }
 
-int load_graph (ozookeeper_t * ozookeeper);
-
-void
-w_load_graph (zhandle_t * zh, int type,
-              int state, const char *path, void *watcherCtx)
-{
-
-    ozookeeper_t *ozookeeper = (ozookeeper_t *) watcherCtx;
-
-
-    if (type == ZOO_SESSION_EVENT
-        && (state == ZOO_EXPIRED_SESSION_STATE
-            || state == ZOO_AUTH_FAILED_STATE)) {
-//do nothing global watcher will reinitialize things
-
-
-    }
-    else {
-
-        int load_graph = load_graph (ozookeeper);
-        // TODO carefull there, someone could crash the server
-        assert (load_graph == 1);
-
-        ozookeeper_update_load_graph (ozookeeper);
-
-    }
-
-}
-
-
-int
-load_graph (ozookeeper_t * ozookeeper)
-{
-
-
-    char octopus[50];
-    char host[50];
-
-    oconfig_octopus (ozookeeper->config, octopus);
-
-    char path[1000];
-    int result;
-    int load_graph;
-
-    sprintf (path, "/%s/load_graph", octopus);
-    Struct Stat stat;
-    result =
-        zoo_wget (zh, path, w_load_graph, ozookeeper, load_graph, sizeof (int),
-                  &stat);
-
-
-    if (result != ZOK) {
-        printf ("\nThere has been an Error setting a watcher on load_graph");
-        return 0;
-    }
-
-    return load_graph;
-
-}
-
-int start_graph_database (ozookeeper_t * ozookeeper);
-
-void
-w_start_graph_databse (zhandle_t * zh, int type,
-                       int state, const char *path, void *watcherCtx)
-{
-
-    ozookeeper_t *ozookeeper = (ozookeeper_t *) watcherCtx;
-
-
-    if (type == ZOO_SESSION_EVENT
-        && (state == ZOO_EXPIRED_SESSION_STATE
-            || state == ZOO_AUTH_FAILED_STATE)) {
-//do nothing global watcher will reinitialize things
-
-
-    }
-    else {
-
-        int start_graph_database = start_graph_database (ozookeeper);
-        // TODO carefull there, someone could crash the server
-        assert (start_graph_database == 1);
-
-        ozookeeper_update_start_graph_database (ozookeeper);
-
-    }
-
-}
-
-
-int
-start_graph_database (ozookeeper_t * ozookeeper)
-{
-
-
-    char octopus[50];
-    char host[50];
-
-    oconfig_octopus (ozookeeper->config, octopus);
-
-    char path[1000];
-    int result;
-    int start_graph_database;
-
-    sprintf (path, "/%s/start_graph_database", octopus);
-    Struct Stat stat;
-    result =
-        zoo_wget (zh, path, w_start_graph_database, ozookeeper,
-                  start_graph_database, sizeof (int), &stat);
-
-
-    if (result != ZOK) {
-        printf
-            ("\nThere has been an Error setting a watcher on start_graph_database");
-        return 0;
-    }
-
-    return start_graph_database;
-
-}
-
-
-
 //completions
 
 //i use this completion function simply to preserve the order of operations
@@ -1640,12 +1272,8 @@ c_computers (int rc, const struct String_vector *strings, const void *data)
 
     computers (ozookeeper, 1);
 
-    load_graph (ozookeeper);
-    start_graph_database (ozookeeper);
+    ozookeeper_update_go_online (ozookeeper);
 
-    ozookeeper_update_go_online (ozookeeper, 1);
-
-    ozookeeper_update_go_online (ozookeeper, 0);
 
 
 }
