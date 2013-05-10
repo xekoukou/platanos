@@ -21,12 +21,15 @@ cmake_minimum_required (VERSION 2.8)
 
     add_subdirectory (MurmurHash)
 
+    add_subdirectory (gproject)
 
     include_directories ("${PROJECT_SOURCE_DIR}/MurmurHash")
 
     include_directories ("${PROJECT_SOURCE_DIR}/tree")
 
     include_directories ("${PROJECT_SOURCE_DIR}/hash")
+   
+    include_directories ("${PROJECT_SOURCE_DIR}/api")
 
     add_executable (node_exec
                 hkey.c
@@ -50,5 +53,5 @@ cmake_minimum_required (VERSION 2.8)
                 zk_sync.c
                 on_give.c on_receive.c update.c zookeeper.c zk_updater.c main.c)
 
-    target_link_libraries (node_exec MurmurHash zookeeper_mt procps czmq leveldb
+    target_link_libraries (node_exec MurmurHash gproject zookeeper_mt procps czmq leveldb
                        tcmalloc)
