@@ -438,7 +438,7 @@ ozookeeper_update_add_node (ozookeeper_t * ozookeeper, int start,
 void
 ozookeeper_update_add_self (ozookeeper_t * ozookeeper, char *key,
                             int n_pieces, unsigned long st_piece,
-                            char **bind_points, int size,
+                            char bind_points[][50], int size,
                             char *bind_point_bl)
 {
     zmsg_t *msg = zmsg_new ();
@@ -452,7 +452,6 @@ ozookeeper_update_add_self (ozookeeper_t * ozookeeper, char *key,
     for (i = 0; i < size; i++) {
         zmsg_add (msg,
                   zframe_new (bind_points[i], strlen (bind_points[i]) + 1));
-        free (bind_points[i]);
     }
     free (bind_points);
 

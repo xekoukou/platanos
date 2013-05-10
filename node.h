@@ -34,13 +34,7 @@ struct node_t
     unsigned long st_piece;
     int n_pieces;
     char key[18];               //key is the routing_address or the subscription subject that we will accept from this node.
-    int alive;                  //this is only used in a db_routing, all worker nodes received 
-    //are assumed alive. The reason for this is that db nodes need 
-    //to remain the same for each vertex despite the failures
-    // so that the vertex can know which db to fix in case of failures
-
     platanos_node_t *platanos_node;
-    char bind_point_db[50];
     char bind_point_bl[50];
 
 };

@@ -330,7 +330,7 @@ main ()
         else {
 
 
-            platanos_register (zh, config[6], config[3], config[5]);
+            platanos_register (zh, config[6],config[2], config[3], config[5],fconfig);
 
 
             port = oconfig_incr_port (fconfig);

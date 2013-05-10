@@ -90,6 +90,10 @@ router_destroy (struct router_t *router)
         router_delete (router, hash->node);
     }
 
+//we have 2 nodes for self
+if(router->self){
+node_destroy(&(router->self));
+}
     free (router);
 
 }
@@ -679,7 +683,7 @@ router_add(dup,node);
 k++;
 }
 
-node_t *self=nodes_search(dup->nodes,router->self->key);
+node_t *self=node_dup(router->self);
 dup->self=self;
 
 return dup;

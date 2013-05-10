@@ -854,9 +854,9 @@ worker_fn (void *arg)
 
 
     platanos_poll_t *platanos_poll;
-    platanos_poll_init (&platanos_poll);
     platanos_t *platanos;
-    platanos_init (&platanos, platanos_poll, compute, worker->id, ctx);
+    platanos_init (&platanos, compute, worker->id, ctx);
+    platanos_poll=platanos_poll(platanos);
 
 
 //update object
