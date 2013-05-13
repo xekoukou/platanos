@@ -408,7 +408,7 @@ ozookeeper_update_sync_remove (ozookeeper_t * ozookeeper, char *key)
 void
 ozookeeper_update_add_node (ozookeeper_t * ozookeeper, int start,
                             char *key, int n_pieces, unsigned long st_piece,
-                            char **bind_points, int size, char *bind_point_bl)
+                            char (*bind_points)[][50], int size, char *bind_point_bl)
 {
     zmsg_t *msg = zmsg_new ();
         zmsg_add (msg, zframe_new ("w", strlen ("w") + 1));
@@ -421,8 +421,7 @@ ozookeeper_update_add_node (ozookeeper_t * ozookeeper, int start,
     int i;
     for (i = 0; i < size; i++) {
         zmsg_add (msg,
-                  zframe_new (bind_points[i], strlen (bind_points[i]) + 1));
-        free (bind_points[i]);
+                  zframe_new ((*bind_points)[i], strlen ((*bind_points)[i]) + 1));
     }
     free (bind_points);
 
@@ -438,7 +437,7 @@ ozookeeper_update_add_node (ozookeeper_t * ozookeeper, int start,
 void
 ozookeeper_update_add_self (ozookeeper_t * ozookeeper, char *key,
                             int n_pieces, unsigned long st_piece,
-                            char bind_points[][50], int size,
+                            char (*bind_points)[][50], int size,
                             char *bind_point_bl)
 {
     zmsg_t *msg = zmsg_new ();
@@ -451,7 +450,7 @@ ozookeeper_update_add_self (ozookeeper_t * ozookeeper, char *key,
     int i;
     for (i = 0; i < size; i++) {
         zmsg_add (msg,
-                  zframe_new (bind_points[i], strlen (bind_points[i]) + 1));
+                  zframe_new ((*bind_points)[i], strlen ((*bind_points)[i]) + 1));
     }
     free (bind_points);
 
@@ -535,7 +534,7 @@ online (ozookeeper_t * ozookeeper, int online, int start, int self,
     int buffer_len;
     unsigned long st_piece;
     int n_pieces;
-    char **bind_points;
+    char (*bind_points)[][50];
     int size;
     char bind_point_bl[50];
     struct Stat stat;
